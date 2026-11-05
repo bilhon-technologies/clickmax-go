@@ -25,7 +25,7 @@ type SegmentsService struct {
 // "equals", negation: false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator:
 // "equals", negation: false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1,
 // field: "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the
-// account hot cutoff `thresholdQuente` from `[TemperatureService.SettingsGet]`> }` (Temperature 0-100;
+// account hot cutoff `thresholdQuente` from `temperature_settings_get`> }` (Temperature 0-100;
 // `leadScore` is the criteria Score; use operator `isNotEmpty` with `negation: true` for "not
 // calculated yet"). Possible card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud",
 // operator: "equals", negation: false, valueBool: true }` (`false` = contacts NOT flagged) — a
@@ -183,7 +183,7 @@ func (s *SegmentsService) List(ctx context.Context, params SegmentsListParams, o
 // "equals", negation: false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator:
 // "equals", negation: false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1,
 // field: "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the
-// account hot cutoff `thresholdQuente` from `[TemperatureService.SettingsGet]`> }` (Temperature 0-100;
+// account hot cutoff `thresholdQuente` from `temperature_settings_get`> }` (Temperature 0-100;
 // `leadScore` is the criteria Score; use operator `isNotEmpty` with `negation: true` for "not
 // calculated yet"). Possible card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud",
 // operator: "equals", negation: false, valueBool: true }` (`false` = contacts NOT flagged) — a
@@ -272,11 +272,11 @@ func (s *SegmentsService) Reload(ctx context.Context, body SegmentsReloadInput, 
 // id>" }, { id: "b", order: 1, field: "tagId", operator: "equals", negation: false, valueUuid: "<tagB
 // id>" }]`. Tag + hot contacts: `{ id: "t", order: 1, field: "temperatureScore", operator:
 // "greaterThanOrEqual", negation: false, valueNumber: <the account hot cutoff `thresholdQuente` from
-// `[TemperatureService.SettingsGet]`> }` (Temperature 0-100; `leadScore` is the criteria Score; use
-// operator `isNotEmpty` with `negation: true` for "not calculated yet"). Possible card-testing fraud:
-// `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals", negation: false, valueBool: true
-// }` (`false` = contacts NOT flagged) — a contact is flagged when its e-mail has nothing to do with
-// its name AND its document looks suspicious; it is derived from the contact data at read time, so it
+// `temperature_settings_get`> }` (Temperature 0-100; `leadScore` is the criteria Score; use operator
+// `isNotEmpty` with `negation: true` for "not calculated yet"). Possible card-testing fraud: `{ id:
+// "f", order: 1, field: "suspectedFraud", operator: "equals", negation: false, valueBool: true }`
+// (`false` = contacts NOT flagged) — a contact is flagged when its e-mail has nothing to do with its
+// name AND its document looks suspicious; it is derived from the contact data at read time, so it
 // works in saved segments and combines with any other item. E-mail engagement: `{ id: "e", order: 1,
 // field: "emailEngagement", operator: "childrenAnd", negation: false, valueString:
 // "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened` (opened OR clicked;
@@ -361,12 +361,12 @@ func (s *SegmentsService) Update(ctx context.Context, body SegmentsUpdateInput, 
 // false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator: "equals", negation:
 // false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1, field:
 // "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the account hot
-// cutoff `thresholdQuente` from `[TemperatureService.SettingsGet]`> }` (Temperature 0-100; `leadScore`
-// is the criteria Score; use operator `isNotEmpty` with `negation: true` for "not calculated yet").
-// Possible card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals",
-// negation: false, valueBool: true }` (`false` = contacts NOT flagged) — a contact is flagged when
-// its e-mail has nothing to do with its name AND its document looks suspicious; it is derived from the
-// contact data at read time, so it works in saved segments and combines with any other item. E-mail
+// cutoff `thresholdQuente` from `temperature_settings_get`> }` (Temperature 0-100; `leadScore` is the
+// criteria Score; use operator `isNotEmpty` with `negation: true` for "not calculated yet"). Possible
+// card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals", negation:
+// false, valueBool: true }` (`false` = contacts NOT flagged) — a contact is flagged when its e-mail
+// has nothing to do with its name AND its document looks suspicious; it is derived from the contact
+// data at read time, so it works in saved segments and combines with any other item. E-mail
 // engagement: `{ id: "e", order: 1, field: "emailEngagement", operator: "childrenAnd", negation:
 // false, valueString: "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened`
 // (opened OR clicked; a click counts as an open), `clicked` (clicked a link) or `notOpened` (received

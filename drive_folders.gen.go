@@ -28,8 +28,8 @@ type DriveFoldersService struct {
 // not retry in a loop. Folder names are NOT unique and this call is not idempotent — calling twice
 // creates two folders. Browse first ([DriveFilesService.Browse]) and reuse an existing folder. To
 // build a tree, create the parent first and pass its `id` as `parentId` of the next one. Returns the
-// raw folder row; its `id` is what `[DriveFilesService.Update].folderId` and
-// `[DriveService.SharesCreate].folderId` take.
+// raw folder row; its `id` is what `drive_files_update.folderId` and `drive_shares_create.folderId`
+// take.
 //
 // Calls POST /drive-folders/create.
 func (s *DriveFoldersService) Create(ctx context.Context, body DriveFoldersCreateInput, opts ...Option) (*DriveFoldersCreateOutput, error) {

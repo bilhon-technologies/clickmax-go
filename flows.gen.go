@@ -351,8 +351,8 @@ func (s *FlowsService) GetMode(ctx context.Context, params FlowsGetModeParams, o
 // 'organize'` re-lays out the whole flow). Example — a flow fresh from [FlowsService.Create] has NO
 // trigger step, so add it first, then wait 1h → SMS, wait 23h → SMS: `ops: [{op:'add', ref:'$t',
 // type:'trigger', input:{type:'event'}}, {op:'setTriggers', triggerStart:[{eventName:'<from
-// [FlowsService.TriggersCatalog]>', constraints:[]}]}, {op:'add', ref:'$w1', type:'delay',
-// input:{when:1}, after:{step:'$t'}}, {op:'add', ref:'$sms1', type:'send_message', input:{type:'sms',
+// flows_triggers_catalog>', constraints:[]}]}, {op:'add', ref:'$w1', type:'delay', input:{when:1},
+// after:{step:'$t'}}, {op:'add', ref:'$sms1', type:'send_message', input:{type:'sms',
 // message:{type:'text', content:'Oi {name}, seu carrinho: {checkout}'}}, after:{step:'$w1',
 // handle:'continue'}}, {op:'add', ref:'$w2', type:'delay', input:{when:23}, after:{step:'$sms1'}},
 // {op:'add', ref:'$sms2', type:'send_message', input:{type:'sms', message:{type:'text',

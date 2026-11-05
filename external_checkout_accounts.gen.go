@@ -17,13 +17,12 @@ type ExternalCheckoutAccountsService struct {
 // Lists the workspace's active Whop, Hotmart, Stripe, Pagar.me or PagBank integrations (`platform`)
 // — the accounts a page's external checkout block can sell from. ALWAYS call this first when the
 // user wants a page/funnel checkout through Whop, Hotmart, Stripe, Pagar.me or PagBank. Use
-// `data[].id` as `incomingId` in the catalog tools and in
-// `[PagesService.ImportHTML].externalCheckout`. `data[].missingCredentials` lists the Integrations
-// fields still empty. When `setup` is not null, STOP and follow `setup.instructions`: relay
-// `setup.steps` in order (what to click in Clickmax and on the platform's site), link `setup.openPath`
-// (app route of the integration form) and `setup.docsUrl` — never invent an id, build a
-// checkout-less page, or swap platforms on your own. Only Whop, Hotmart, Stripe, Pagar.me and PagBank
-// have a page checkout block; never offer other gateways.
+// `data[].id` as `incomingId` in the catalog tools and in `pages_import_html.externalCheckout`.
+// `data[].missingCredentials` lists the Integrations fields still empty. When `setup` is not null,
+// STOP and follow `setup.instructions`: relay `setup.steps` in order (what to click in Clickmax and on
+// the platform's site), link `setup.openPath` (app route of the integration form) and `setup.docsUrl`
+// — never invent an id, build a checkout-less page, or swap platforms on your own. Only Whop,
+// Hotmart, Stripe, Pagar.me and PagBank have a page checkout block; never offer other gateways.
 //
 // Calls GET /external-checkout-accounts/list.
 func (s *ExternalCheckoutAccountsService) List(ctx context.Context, params ExternalCheckoutAccountsListParams, opts ...Option) (*ExternalCheckoutAccountsListOutput, error) {

@@ -48,10 +48,10 @@ func (s *BrandService) MarkReady(ctx context.Context, body BrandMarkReadyInput, 
 // Save brand draft (incremental patch).
 //
 // Patch the workspace brand with new fields (non-destructive: omitted fields stay). Pass the brand
-// `id` from [BrandService.Get] / `[AccountService.Snapshot].brand`. When the workspace has no brand
-// yet (`brand: null`), omit `id`: the brand is created as the workspace default, as a draft, and its
-// `id` is returned. A brand save is a write: only call it after the user agreed to save. `voiceTone`
-// is one of formal, professional, casual, playful, bold.
+// `id` from [BrandService.Get] / `account_snapshot.brand`. When the workspace has no brand yet
+// (`brand: null`), omit `id`: the brand is created as the workspace default, as a draft, and its `id`
+// is returned. A brand save is a write: only call it after the user agreed to save. `voiceTone` is one
+// of formal, professional, casual, playful, bold.
 //
 // Calls POST /brand/save-draft.
 func (s *BrandService) SaveDraft(ctx context.Context, body BrandSaveDraftInput, opts ...Option) (*BrandSaveDraftOutput, error) {

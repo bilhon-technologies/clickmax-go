@@ -15,7 +15,7 @@ type NodesService struct {
 
 // Get nodes.
 //
-// Reads nodes. Find ids with [NodesService.List] or `[NodesService.List]({ kind })`, then call
+// Reads nodes. Find ids with [NodesService.List] or `nodes_list({ kind })`, then call
 // [NodesService.List] again; [Client.Whoami] names the caller and `nodes_unknown` stays as written.
 //
 // Calls POST /nodes/get.

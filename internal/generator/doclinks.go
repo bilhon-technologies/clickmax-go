@@ -3,6 +3,8 @@ package main
 import (
 	"regexp"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // toolName is the MCP tool name of an operation: its path with `/` and `-` turned into `_`. The
@@ -18,8 +20,12 @@ var toolToken = regexp.MustCompile(`\b[a-z][a-z0-9]*(?:_[a-z0-9]+)*\b`)
 // tokens that are tool names change, so event names and enum values such as `purchase_approved`
 // stay as written. A token alone in its backticks loses them and becomes the link; inside a larger
 // code span only the token changes; in prose a snake_case one changes and a single word does not,
-// since a root method name such as whoami is also an ordinary word. Spans are tracked per line,
-// as descriptions do not break code spans across lines.
+// since a root method name such as whoami is also an ordinary word. Spans are tracked per line, so
+// a span that wraps onto the next line flips which tokens of that line count as code.
+//
+// A link only resolves when the rune on each side is a space, a line edge or punctuation, the rule
+// of go/doc/comment; `[TasksService.Summary].overdue` inside backticks would print as plain text,
+// so such a token keeps its original text.
 func linkToolNames(text string, links map[string]string) string {
 	lines := strings.Split(text, "\n")
 	for i, line := range lines {
@@ -47,10 +53,20 @@ func linkLine(line string, links map[string]string) string {
 		case !strings.Contains(token, "_"):
 			continue
 		}
+		before, _ := utf8.DecodeLastRuneInString(line[:start])
+		after, _ := utf8.DecodeRuneInString(line[end:])
+		if !linkEdge(before) || !linkEdge(after) {
+			continue
+		}
 		b.WriteString(line[last:start])
 		b.WriteString(link)
 		last = end
 	}
 	b.WriteString(line[last:])
 	return b.String()
+}
+
+// linkEdge reports whether r may sit next to a doc link; utf8.RuneError stands for a line edge.
+func linkEdge(r rune) bool {
+	return r == utf8.RuneError || r == ' ' || r == '\t' || unicode.IsPunct(r)
 }

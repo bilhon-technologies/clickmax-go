@@ -86,7 +86,7 @@ func (s *ActivitiesService) List(ctx context.Context, body ActivitiesListInput, 
 // minus `buckets` (the counters ARE the ongoing/done breakdown of one selection). `overdue` is a
 // subset of `ongoing` and follows the same "END already passed" rule as the `overdue` filter (a task
 // with a duration is late only after deadline + duration, so this can be lower than
-// `[TasksService.Summary].overdue`, which compares the bare deadline), so send `overdueBefore` and
+// `tasks_summary.overdue`, which compares the bare deadline), so send `overdueBefore` and
 // `allDayStart` for the caller clock. Do NOT pass `overdue: true` here unless you want the whole
 // selection restricted to late items — it then narrows `total` too. Use it for headline numbers
 // instead of paging through [ActivitiesService.List]. Every filter, the scoping (a plain attendant
