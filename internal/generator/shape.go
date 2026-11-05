@@ -220,8 +220,8 @@ func (sh *shaper) constant(s *schema) (*shape, error) {
 	return nil, fmt.Errorf("line %d: unsupported const %q", s.line, n.Value)
 }
 
-// allOf only supports parts that agree: unconstrained parts are dropped and the rest must all be
-// objects, whose properties are merged.
+// allOf only supports parts that agree: unconstrained and null parts are dropped and the rest must
+// all be objects, whose properties are merged.
 func (sh *shaper) allOf(s *schema) (*shape, error) {
 	if len(s.Type) > 0 || len(s.Properties) > 0 {
 		return nil, fmt.Errorf("line %d: allOf next to type or properties", s.line)
@@ -233,7 +233,7 @@ func (sh *shaper) allOf(s *schema) (*shape, error) {
 		if err != nil {
 			return nil, err
 		}
-		if ps.kind == kAny {
+		if ps.kind == kAny || ps.kind == kNull {
 			anyNullable = anyNullable || ps.nullable
 		} else {
 			parts = append(parts, ps)
