@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor declared in go.mod and the current release.
+        go: ['1.24', 'stable']
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - run: go test ./...
+
+  generated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Generator tests
+        run: go test ./...
+        working-directory: internal/generator
+      - name: Generated code matches openapi.yaml
+        run: |
+          go generate ./...
+          git add -A
+          git diff --cached --exit-code --stat || {
+            echo "::error::Run 'go generate ./...' and commit the result."
+            exit 1
+          }

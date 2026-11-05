@@ -1,0 +1,140 @@
+name: Release
+
+# The Clickmax release pipeline sends `openapi-updated` after it publishes a new spec. A manual run
+# releases changes to the hand-written code, or retries a release whose dispatch was lost.
+on:
+  repository_dispatch:
+    types: [openapi-updated]
+  workflow_dispatch:
+    inputs:
+      sha256:
+        description: sha256 the published spec must have (empty accepts whatever is published)
+        required: false
+      bump:
+        description: Version part to increment
+        type: choice
+        options: [minor, patch]
+        default: minor
+
+permissions:
+  contents: write
+
+# Two releases computing the next tag from the same base would collide.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      SPEC_URL: https://docs.clickmax.io/openapi.yaml
+      EXPECTED_SHA256: ${{ github.event.client_payload.sha256 || inputs.sha256 }}
+      API_VERSION: ${{ github.event.client_payload.version }}
+      BUMP: ${{ inputs.bump || 'minor' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Tags are needed to compute the next version.
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Validate inputs
+        run: |
+          if [ -n "$EXPECTED_SHA256" ] && ! [[ "$EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::sha256 must be 64 lowercase hex characters"; exit 1
+          fi
+          if [ -n "$API_VERSION" ] && ! [[ "$API_VERSION" =~ ^v[0-9A-Za-z.+-]{1,64}$ ]]; then
+            echo "::error::client_payload.version must look like v1.2.3"; exit 1
+          fi
+
+      # The dispatch can arrive before the docs site serves the new spec, so wait for the expected
+      # hash instead of generating from a stale file.
+      - name: Download spec
+        run: |
+          for attempt in $(seq 1 20); do
+            if ! curl -fsSL "$SPEC_URL" -o openapi.yaml.next; then
+              echo "Download failed ($attempt/20)"
+              sleep 30
+              continue
+            fi
+            actual=$(sha256sum openapi.yaml.next | cut -d' ' -f1)
+            if [ -z "$EXPECTED_SHA256" ] || [ "$actual" = "$EXPECTED_SHA256" ]; then
+              mv openapi.yaml.next openapi.yaml
+              echo "SPEC_SHA256=$actual" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Published spec is $actual, waiting for $EXPECTED_SHA256 ($attempt/20)"
+            sleep 30
+          done
+          echo "::error::$SPEC_URL never matched $EXPECTED_SHA256"
+          exit 1
+
+      - run: go generate ./...
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - run: go test ./...
+
+      - name: Decide whether to release
+        id: plan
+        run: |
+          git add -A
+          last=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
+          if git diff --cached --quiet && [ -n "$last" ] && [ "$(git rev-list --count "$last..HEAD")" = 0 ]; then
+            echo "Nothing changed since $last."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$last" ]; then
+            next=v0.1.0
+          else
+            IFS=. read -r major minor patch <<< "${last#v}"
+            if [ "$BUMP" = patch ]; then
+              next="v$major.$minor.$((patch + 1))"
+            else
+              next="v$major.$((minor + 1)).0"
+            fi
+          fi
+          echo "Releasing $next (previous: ${last:-none})."
+          echo "release=true" >> "$GITHUB_OUTPUT"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag and push
+        if: steps.plan.outputs.release == 'true'
+        env:
+          NEXT: ${{ steps.plan.outputs.next }}
+        run: |
+          sed -i -E "s/^const Version = \".*\"$/const Version = \"${NEXT#v}\"/" version.go
+          grep -q "^const Version = \"${NEXT#v}\"$" version.go || {
+            echo "::error::version.go no longer has a 'const Version = \"...\"' line"; exit 1
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          body="Spec sha256: $SPEC_SHA256"
+          if [ -n "$API_VERSION" ]; then body="$body"$'\n'"Clickmax release: $API_VERSION"; fi
+          git commit -m "Release $NEXT" -m "$body"
+          git tag "$NEXT"
+          git push origin HEAD:main
+          git push origin "$NEXT"
+
+      - name: GitHub release
+        if: steps.plan.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT: ${{ steps.plan.outputs.next }}
+        run: gh release create "$NEXT" --title "$NEXT" --notes "Generated from the Clickmax API spec (sha256 $SPEC_SHA256)."
+
+      # Fetching the version through the proxy makes it installable and listed on pkg.go.dev right
+      # away. It fails while clickmax.io/go does not serve the go-import tag, which is not fatal.
+      - name: Warm the Go module proxy
+        if: steps.plan.outputs.release == 'true'
+        continue-on-error: true
+        # Outside the checkout: inside it, clickmax.io/go is the main module and cannot be queried.
+        working-directory: ${{ runner.temp }}
+        env:
+          NEXT: ${{ steps.plan.outputs.next }}
+        run: GOPROXY=https://proxy.golang.org go list -m "clickmax.io/go@$NEXT"
