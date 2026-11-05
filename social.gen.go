@@ -468,22 +468,22 @@ type SocialInsightsOutputTotals struct {
 // SocialMediaUploadURLInput is the request body of [SocialService.MediaUploadURL].
 type SocialMediaUploadURLInput struct {
 	FileName  string                            `json:"fileName"`
-	MimeType  SocialMediaUploadURLInputMimeType `json:"mimeType"`
+	MIMEType  SocialMediaUploadURLInputMIMEType `json:"mimeType"`
 	SizeBytes int64                             `json:"sizeBytes"`
 }
 
-// SocialMediaUploadURLInputMimeType is the type of [SocialMediaUploadURLInput.MimeType].
-type SocialMediaUploadURLInputMimeType string
+// SocialMediaUploadURLInputMIMEType is the type of [SocialMediaUploadURLInput.MIMEType].
+type SocialMediaUploadURLInputMIMEType string
 
-// Values of [SocialMediaUploadURLInputMimeType].
+// Values of [SocialMediaUploadURLInputMIMEType].
 const (
-	SocialMediaUploadURLInputMimeTypeImageJpeg      SocialMediaUploadURLInputMimeType = "image/jpeg"
-	SocialMediaUploadURLInputMimeTypeImagePng       SocialMediaUploadURLInputMimeType = "image/png"
-	SocialMediaUploadURLInputMimeTypeImageWebp      SocialMediaUploadURLInputMimeType = "image/webp"
-	SocialMediaUploadURLInputMimeTypeImageGif       SocialMediaUploadURLInputMimeType = "image/gif"
-	SocialMediaUploadURLInputMimeTypeVideoMp4       SocialMediaUploadURLInputMimeType = "video/mp4"
-	SocialMediaUploadURLInputMimeTypeVideoQuicktime SocialMediaUploadURLInputMimeType = "video/quicktime"
-	SocialMediaUploadURLInputMimeTypeVideoWebm      SocialMediaUploadURLInputMimeType = "video/webm"
+	SocialMediaUploadURLInputMIMETypeImageJPEG      SocialMediaUploadURLInputMIMEType = "image/jpeg"
+	SocialMediaUploadURLInputMIMETypeImagePNG       SocialMediaUploadURLInputMIMEType = "image/png"
+	SocialMediaUploadURLInputMIMETypeImageWEBP      SocialMediaUploadURLInputMIMEType = "image/webp"
+	SocialMediaUploadURLInputMIMETypeImageGIF       SocialMediaUploadURLInputMIMEType = "image/gif"
+	SocialMediaUploadURLInputMIMETypeVideoMP4       SocialMediaUploadURLInputMIMEType = "video/mp4"
+	SocialMediaUploadURLInputMIMETypeVideoQuicktime SocialMediaUploadURLInputMIMEType = "video/quicktime"
+	SocialMediaUploadURLInputMIMETypeVideoWEBM      SocialMediaUploadURLInputMIMEType = "video/webm"
 )
 
 // SocialMediaUploadURLOutput is the response of [SocialService.MediaUploadURL].

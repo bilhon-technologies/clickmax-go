@@ -227,9 +227,9 @@ type TransactionsChartInputFiltersCurrencyItem string
 
 // Values of [TransactionsChartInputFiltersCurrencyItem].
 const (
-	TransactionsChartInputFiltersCurrencyItemBrl TransactionsChartInputFiltersCurrencyItem = "BRL"
-	TransactionsChartInputFiltersCurrencyItemEur TransactionsChartInputFiltersCurrencyItem = "EUR"
-	TransactionsChartInputFiltersCurrencyItemUsd TransactionsChartInputFiltersCurrencyItem = "USD"
+	TransactionsChartInputFiltersCurrencyItemBRL TransactionsChartInputFiltersCurrencyItem = "BRL"
+	TransactionsChartInputFiltersCurrencyItemEUR TransactionsChartInputFiltersCurrencyItem = "EUR"
+	TransactionsChartInputFiltersCurrencyItemUSD TransactionsChartInputFiltersCurrencyItem = "USD"
 )
 
 // TransactionsChartInputFiltersDeliveryEmailItem is an element of

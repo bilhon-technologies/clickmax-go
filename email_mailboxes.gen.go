@@ -106,10 +106,10 @@ func (s *EmailMailboxesService) SettingsUpdate(ctx context.Context, body EmailMa
 type EmailMailboxesGetOutput struct {
 	ChannelInstanceID   string                                `json:"channelInstanceId"`
 	EmailAddress        string                                `json:"emailAddress"`
-	ImapHost            string                                `json:"imapHost"`
-	ImapPort            float64                               `json:"imapPort"`
-	ImapSecure          bool                                  `json:"imapSecure"`
-	ImapUsername        string                                `json:"imapUsername"`
+	IMAPHost            string                                `json:"imapHost"`
+	IMAPPort            float64                               `json:"imapPort"`
+	IMAPSecure          bool                                  `json:"imapSecure"`
+	IMAPUsername        string                                `json:"imapUsername"`
 	SMTPHost            string                                `json:"smtpHost"`
 	SMTPPort            float64                               `json:"smtpPort"`
 	SMTPSecure          bool                                  `json:"smtpSecure"`

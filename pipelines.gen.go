@@ -1029,7 +1029,7 @@ type PipelinesPlaybookGetOutputPlaybookAttachmentsItem struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	URL      string `json:"url"`
-	MimeType string `json:"mimeType"`
+	MIMEType string `json:"mimeType"`
 	Size     int64  `json:"size"`
 }
 

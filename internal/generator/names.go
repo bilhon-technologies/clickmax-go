@@ -17,7 +17,34 @@ var initialisms = map[string]bool{
 	"XMPP": true, "XSRF": true, "XSS": true,
 	"AI": true, "CRM": true, "SMS": true, "SDR": true, "UTM": true, "PDF": true, "CSV": true,
 	"OTP": true, "FAQ": true, "CTA": true, "KPI": true, "NPS": true, "LTV": true, "VSL": true,
-	"CPF": true, "CNPJ": true,
+	"CPF": true, "CNPJ": true, "SEO": true, "KYC": true, "QR": true, "IMAP": true, "RSVP": true,
+	"MIME": true, "AB": true, "WABA": true, "USP": true,
+	// File formats.
+	"GIF": true, "PNG": true, "JPG": true, "JPEG": true, "MP4": true, "WEBP": true, "WEBM": true,
+}
+
+// codeList reports whether enum values are codes such as ISO 4217 currencies: all upper case,
+// nearly all three letters (the currency list also has USDC and WHOP_USD). Their constants keep
+// the codes' casing (CurrencyBRL), where pascal would write CurrencyBrl. Word-like upper-case
+// enums (GET, POST, PATCH; EQ, NEQ, CONTAINS) stay below the threshold.
+func codeList(values []string) bool {
+	three := 0
+	for _, v := range values {
+		for _, r := range v {
+			if !unicode.IsUpper(r) && !unicode.IsDigit(r) && r != '_' {
+				return false
+			}
+		}
+		if len(v) == 3 {
+			three++
+		}
+	}
+	return len(values) > 0 && three*10 >= len(values)*9
+}
+
+// code joins the words of an upper-case code without changing their case: WHOP_USD -> WHOPUSD.
+func code(v string) string {
+	return strings.Join(words(v), "")
 }
 
 // constantNames names the enum constants whose default name (type + value) is already a type,

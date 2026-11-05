@@ -158,9 +158,9 @@ type SubscriptionsAggregationsInputCurrencyItem string
 
 // Values of [SubscriptionsAggregationsInputCurrencyItem].
 const (
-	SubscriptionsAggregationsInputCurrencyItemBrl SubscriptionsAggregationsInputCurrencyItem = "BRL"
-	SubscriptionsAggregationsInputCurrencyItemEur SubscriptionsAggregationsInputCurrencyItem = "EUR"
-	SubscriptionsAggregationsInputCurrencyItemUsd SubscriptionsAggregationsInputCurrencyItem = "USD"
+	SubscriptionsAggregationsInputCurrencyItemBRL SubscriptionsAggregationsInputCurrencyItem = "BRL"
+	SubscriptionsAggregationsInputCurrencyItemEUR SubscriptionsAggregationsInputCurrencyItem = "EUR"
+	SubscriptionsAggregationsInputCurrencyItemUSD SubscriptionsAggregationsInputCurrencyItem = "USD"
 )
 
 // SubscriptionsAggregationsInputLifeTimeValue is the type of
@@ -430,9 +430,9 @@ type SubscriptionsChartInputFiltersCurrencyItem string
 
 // Values of [SubscriptionsChartInputFiltersCurrencyItem].
 const (
-	SubscriptionsChartInputFiltersCurrencyItemBrl SubscriptionsChartInputFiltersCurrencyItem = "BRL"
-	SubscriptionsChartInputFiltersCurrencyItemEur SubscriptionsChartInputFiltersCurrencyItem = "EUR"
-	SubscriptionsChartInputFiltersCurrencyItemUsd SubscriptionsChartInputFiltersCurrencyItem = "USD"
+	SubscriptionsChartInputFiltersCurrencyItemBRL SubscriptionsChartInputFiltersCurrencyItem = "BRL"
+	SubscriptionsChartInputFiltersCurrencyItemEUR SubscriptionsChartInputFiltersCurrencyItem = "EUR"
+	SubscriptionsChartInputFiltersCurrencyItemUSD SubscriptionsChartInputFiltersCurrencyItem = "USD"
 )
 
 // SubscriptionsChartInputFiltersLifeTimeValue is the type of
@@ -745,9 +745,9 @@ type SubscriptionsListInputCurrencyItem string
 
 // Values of [SubscriptionsListInputCurrencyItem].
 const (
-	SubscriptionsListInputCurrencyItemBrl SubscriptionsListInputCurrencyItem = "BRL"
-	SubscriptionsListInputCurrencyItemEur SubscriptionsListInputCurrencyItem = "EUR"
-	SubscriptionsListInputCurrencyItemUsd SubscriptionsListInputCurrencyItem = "USD"
+	SubscriptionsListInputCurrencyItemBRL SubscriptionsListInputCurrencyItem = "BRL"
+	SubscriptionsListInputCurrencyItemEUR SubscriptionsListInputCurrencyItem = "EUR"
+	SubscriptionsListInputCurrencyItemUSD SubscriptionsListInputCurrencyItem = "USD"
 )
 
 // SubscriptionsListInputLifeTimeValue is the type of [SubscriptionsListInput.LifeTimeValue].

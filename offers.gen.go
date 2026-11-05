@@ -513,9 +513,9 @@ type OffersCreateInputCurrency string
 
 // Values of [OffersCreateInputCurrency].
 const (
-	OffersCreateInputCurrencyBrl OffersCreateInputCurrency = "BRL"
-	OffersCreateInputCurrencyEur OffersCreateInputCurrency = "EUR"
-	OffersCreateInputCurrencyUsd OffersCreateInputCurrency = "USD"
+	OffersCreateInputCurrencyBRL OffersCreateInputCurrency = "BRL"
+	OffersCreateInputCurrencyEUR OffersCreateInputCurrency = "EUR"
+	OffersCreateInputCurrencyUSD OffersCreateInputCurrency = "USD"
 )
 
 // OffersCreateInputFreightConfig is the type of [OffersCreateInput.FreightConfig].
@@ -699,9 +699,9 @@ type OffersCreateOutputCurrency string
 
 // Values of [OffersCreateOutputCurrency].
 const (
-	OffersCreateOutputCurrencyBrl OffersCreateOutputCurrency = "BRL"
-	OffersCreateOutputCurrencyEur OffersCreateOutputCurrency = "EUR"
-	OffersCreateOutputCurrencyUsd OffersCreateOutputCurrency = "USD"
+	OffersCreateOutputCurrencyBRL OffersCreateOutputCurrency = "BRL"
+	OffersCreateOutputCurrencyEUR OffersCreateOutputCurrency = "EUR"
+	OffersCreateOutputCurrencyUSD OffersCreateOutputCurrency = "USD"
 )
 
 // OffersCreateOutputFreightConfig is the type of [OffersCreateOutput.FreightConfig].
@@ -1015,9 +1015,9 @@ type OffersGetOutputCurrency string
 
 // Values of [OffersGetOutputCurrency].
 const (
-	OffersGetOutputCurrencyBrl OffersGetOutputCurrency = "BRL"
-	OffersGetOutputCurrencyEur OffersGetOutputCurrency = "EUR"
-	OffersGetOutputCurrencyUsd OffersGetOutputCurrency = "USD"
+	OffersGetOutputCurrencyBRL OffersGetOutputCurrency = "BRL"
+	OffersGetOutputCurrencyEUR OffersGetOutputCurrency = "EUR"
+	OffersGetOutputCurrencyUSD OffersGetOutputCurrency = "USD"
 )
 
 // OffersGetOutputDeliverablesItem is an element of [OffersGetOutput.Deliverables].
@@ -1463,9 +1463,9 @@ type OffersUpdateInputCurrency string
 
 // Values of [OffersUpdateInputCurrency].
 const (
-	OffersUpdateInputCurrencyBrl OffersUpdateInputCurrency = "BRL"
-	OffersUpdateInputCurrencyEur OffersUpdateInputCurrency = "EUR"
-	OffersUpdateInputCurrencyUsd OffersUpdateInputCurrency = "USD"
+	OffersUpdateInputCurrencyBRL OffersUpdateInputCurrency = "BRL"
+	OffersUpdateInputCurrencyEUR OffersUpdateInputCurrency = "EUR"
+	OffersUpdateInputCurrencyUSD OffersUpdateInputCurrency = "USD"
 )
 
 // OffersUpdateInputFreightConfig is the type of [OffersUpdateInput.FreightConfig].

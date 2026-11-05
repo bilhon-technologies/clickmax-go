@@ -496,8 +496,8 @@ type FormsCreateInputSchemaSettings struct {
 	ShareMode          *FormsCreateInputSchemaSettingsShareMode     `json:"shareMode,omitzero"`
 	EmbedWidth         *string                                      `json:"embedWidth,omitzero"`
 	EmbedHeight        *string                                      `json:"embedHeight,omitzero"`
-	SeoTitle           *string                                      `json:"seoTitle,omitzero"`
-	SeoDescription     *string                                      `json:"seoDescription,omitzero"`
+	SEOTitle           *string                                      `json:"seoTitle,omitzero"`
+	SEODescription     *string                                      `json:"seoDescription,omitzero"`
 	AllowIndexing      *bool                                        `json:"allowIndexing,omitzero"`
 	OgTitle            *string                                      `json:"ogTitle,omitzero"`
 	OgDescription      *string                                      `json:"ogDescription,omitzero"`
@@ -1258,8 +1258,8 @@ type FormsGetOutputSchemaSettings struct {
 	ShareMode          *FormsGetOutputSchemaSettingsShareMode     `json:"shareMode,omitzero"`
 	EmbedWidth         *string                                    `json:"embedWidth,omitzero"`
 	EmbedHeight        *string                                    `json:"embedHeight,omitzero"`
-	SeoTitle           *string                                    `json:"seoTitle,omitzero"`
-	SeoDescription     *string                                    `json:"seoDescription,omitzero"`
+	SEOTitle           *string                                    `json:"seoTitle,omitzero"`
+	SEODescription     *string                                    `json:"seoDescription,omitzero"`
 	AllowIndexing      *bool                                      `json:"allowIndexing,omitzero"`
 	OgTitle            *string                                    `json:"ogTitle,omitzero"`
 	OgDescription      *string                                    `json:"ogDescription,omitzero"`
@@ -2051,8 +2051,8 @@ type FormsListOutputDataItemSchemaSettings struct {
 	ShareMode          *FormsListOutputDataItemSchemaSettingsShareMode     `json:"shareMode,omitzero"`
 	EmbedWidth         *string                                             `json:"embedWidth,omitzero"`
 	EmbedHeight        *string                                             `json:"embedHeight,omitzero"`
-	SeoTitle           *string                                             `json:"seoTitle,omitzero"`
-	SeoDescription     *string                                             `json:"seoDescription,omitzero"`
+	SEOTitle           *string                                             `json:"seoTitle,omitzero"`
+	SEODescription     *string                                             `json:"seoDescription,omitzero"`
 	AllowIndexing      *bool                                               `json:"allowIndexing,omitzero"`
 	OgTitle            *string                                             `json:"ogTitle,omitzero"`
 	OgDescription      *string                                             `json:"ogDescription,omitzero"`
@@ -2835,8 +2835,8 @@ type FormsReplaceSchemaInputSchemaSettings struct {
 	ShareMode          *FormsReplaceSchemaInputSchemaSettingsShareMode     `json:"shareMode,omitzero"`
 	EmbedWidth         *string                                             `json:"embedWidth,omitzero"`
 	EmbedHeight        *string                                             `json:"embedHeight,omitzero"`
-	SeoTitle           *string                                             `json:"seoTitle,omitzero"`
-	SeoDescription     *string                                             `json:"seoDescription,omitzero"`
+	SEOTitle           *string                                             `json:"seoTitle,omitzero"`
+	SEODescription     *string                                             `json:"seoDescription,omitzero"`
 	AllowIndexing      *bool                                               `json:"allowIndexing,omitzero"`
 	OgTitle            *string                                             `json:"ogTitle,omitzero"`
 	OgDescription      *string                                             `json:"ogDescription,omitzero"`

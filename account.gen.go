@@ -84,7 +84,7 @@ type AccountSnapshotOutputBrand struct {
 	BusinessName     *string                                      `json:"businessName"`
 	BusinessIndustry *string                                      `json:"businessIndustry"`
 	BusinessAudience *string                                      `json:"businessAudience"`
-	BusinessUsp      *string                                      `json:"businessUsp"`
+	BusinessUSP      *string                                      `json:"businessUsp"`
 	VoiceTone        *string                                      `json:"voiceTone"`
 	VoiceVocabulary  *AccountSnapshotOutputBrandVoiceVocabulary   `json:"voiceVocabulary"`
 	VoiceSamples     []AccountSnapshotOutputBrandVoiceSamplesItem `json:"voiceSamples"`

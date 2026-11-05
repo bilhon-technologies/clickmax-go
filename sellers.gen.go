@@ -33,7 +33,7 @@ type SellersStatusOutput struct {
 	BankAccountStatus               *SellersStatusOutputBankAccountStatus             `json:"bankAccountStatus,omitzero"`
 	SellerStatus                    *SellersStatusOutputSellerStatus                  `json:"sellerStatus,omitzero"`
 	SubmittedAt                     *time.Time                                        `json:"submittedAt,omitzero"`
-	KycSubmittedAt                  *time.Time                                        `json:"kycSubmittedAt,omitzero"`
+	KYCSubmittedAt                  *time.Time                                        `json:"kycSubmittedAt,omitzero"`
 	GatewayName                     *SellersStatusOutputGatewayName                   `json:"gatewayName,omitzero"`
 	Reason                          *string                                           `json:"reason,omitzero"`
 	BankAccountReason               *string                                           `json:"bankAccountReason,omitzero"`

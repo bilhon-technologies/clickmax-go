@@ -923,8 +923,8 @@ type CommunitiesEventsCreateOutputOccurrencesItem struct {
 	EventID   string     `json:"eventId"`
 	StartsAt  time.Time  `json:"startsAt"`
 	EndsAt    *time.Time `json:"endsAt,omitzero"`
-	RsvpCount int64      `json:"rsvpCount"`
-	HasRsvp   bool       `json:"hasRsvp"`
+	RSVPCount int64      `json:"rsvpCount"`
+	HasRSVP   bool       `json:"hasRsvp"`
 }
 
 // CommunitiesEventsDeleteInput is the request body of [CommunitiesService.EventsDelete].
@@ -987,8 +987,8 @@ type CommunitiesEventsUpdateOutputOccurrencesItem struct {
 	EventID   string     `json:"eventId"`
 	StartsAt  time.Time  `json:"startsAt"`
 	EndsAt    *time.Time `json:"endsAt,omitzero"`
-	RsvpCount int64      `json:"rsvpCount"`
-	HasRsvp   bool       `json:"hasRsvp"`
+	RSVPCount int64      `json:"rsvpCount"`
+	HasRSVP   bool       `json:"hasRsvp"`
 }
 
 // CommunitiesGetOutput is the response of [CommunitiesService.Get].

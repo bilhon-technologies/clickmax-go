@@ -297,8 +297,12 @@ func (b *builder) constants() error {
 		if d.kind != declEnum {
 			continue
 		}
+		codes := codeList(d.values)
 		for _, v := range d.values {
 			c := d.name + pascal(v)
+			if codes {
+				c = d.name + code(v)
+			}
 			if v == "" {
 				c = d.name + "Empty"
 			} else if pascal(v) == "" {

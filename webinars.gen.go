@@ -820,7 +820,7 @@ type WebinarsOffersCreateInput struct {
 	CountdownSeconds  *int64          `json:"countdownSeconds,omitzero"`
 	PassUTMs          *bool           `json:"passUtms,omitzero"`
 	OpenInSameWindow  *bool           `json:"openInSameWindow,omitzero"`
-	QrCodeEnabled     *bool           `json:"qrCodeEnabled,omitzero"`
+	QRCodeEnabled     *bool           `json:"qrCodeEnabled,omitzero"`
 	RaffleEnabled     *bool           `json:"raffleEnabled,omitzero"`
 	Disabled          *bool           `json:"disabled,omitzero"`
 }
@@ -947,7 +947,7 @@ type WebinarsOffersUpdateInput struct {
 	CountdownSeconds  *int64          `json:"countdownSeconds,omitzero"`
 	PassUTMs          *bool           `json:"passUtms,omitzero"`
 	OpenInSameWindow  *bool           `json:"openInSameWindow,omitzero"`
-	QrCodeEnabled     *bool           `json:"qrCodeEnabled,omitzero"`
+	QRCodeEnabled     *bool           `json:"qrCodeEnabled,omitzero"`
 	RaffleEnabled     *bool           `json:"raffleEnabled,omitzero"`
 	Disabled          *bool           `json:"disabled,omitzero"`
 }
@@ -1005,8 +1005,8 @@ type WebinarsRoomUpdateInputAppearance struct {
 	ShowViewerCount *bool                                          `json:"showViewerCount,omitzero"`
 	ShowShareButton *bool                                          `json:"showShareButton,omitzero"`
 	CornerRadius    *WebinarsRoomUpdateInputAppearanceCornerRadius `json:"cornerRadius,omitzero"`
-	SeoTitle        Nullable[string]                               `json:"seoTitle,omitzero"`
-	SeoDescription  Nullable[string]                               `json:"seoDescription,omitzero"`
+	SEOTitle        Nullable[string]                               `json:"seoTitle,omitzero"`
+	SEODescription  Nullable[string]                               `json:"seoDescription,omitzero"`
 }
 
 // WebinarsRoomUpdateInputAppearanceCornerRadius is the type of

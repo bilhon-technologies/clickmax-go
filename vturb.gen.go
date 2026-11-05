@@ -18,13 +18,13 @@ type VturbService struct {
 // Read-only. Lists the A/B tests (Vturb calls them comparison groups) of the connected account: `id`,
 // `name`, `variants` (each with `playerId`, `trafficPercentage`, `locked`), `startedAt`, `finishedAt`
 // and `running`. Use it to answer "qual variante ganhou / meu teste A/B está rodando" and to get the
-// `abTestId` + `playerId`s required by [VturbService.AbTestsStats]. `running: true` means the test is
+// `abTestId` + `playerId`s required by [VturbService.ABTestsStats]. `running: true` means the test is
 // STILL SPLITTING TRAFFIC — report partial numbers as a trend, never as a final winner. Optional
 // `startDate`/`endDate` filter by when the test was CREATED, not by the metric window.
 //
 // Calls GET /vturb/ab-tests-list.
-func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListParams, opts ...Option) (*VturbAbTestsListOutput, error) {
-	var out VturbAbTestsListOutput
+func (s *VturbService) ABTestsList(ctx context.Context, params VturbABTestsListParams, opts ...Option) (*VturbABTestsListOutput, error) {
+	var out VturbABTestsListOutput
 	if err := s.client.do(ctx, "GET", "/vturb/ab-tests-list", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListP
 // Compare variants of a Vturb A/B test.
 //
 // Read-only. Side-by-side metrics for the variants of one A/B test — the tool that actually picks a
-// winner. Pass `abTestId` and up to 2 `playerIds` (both from [VturbService.AbTestsList]; the upstream
+// winner. Pass `abTestId` and up to 2 `playerIds` (both from [VturbService.ABTestsList]; the upstream
 // compares at most 2 per call). Returns per variant: `views`, `plays`, `finishes`, `clicks`,
 // `conversions`, the rates `playRate`/`conversionRate`/`engagementRate`/`pitchRetentionRate` (ALL
 // fractions 0..1 — multiply by 100), `revenue` and `revenuePerVisitor` in usd/brl/eur, plus
@@ -45,8 +45,8 @@ func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListP
 // choose the second for the progressive-reveal CTA.
 //
 // Calls POST /vturb/ab-tests-stats.
-func (s *VturbService) AbTestsStats(ctx context.Context, body VturbAbTestsStatsInput, opts ...Option) (*VturbAbTestsStatsOutput, error) {
-	var out VturbAbTestsStatsOutput
+func (s *VturbService) ABTestsStats(ctx context.Context, body VturbABTestsStatsInput, opts ...Option) (*VturbABTestsStatsOutput, error) {
+	var out VturbABTestsStatsOutput
 	if err := s.client.do(ctx, "POST", "/vturb/ab-tests-stats", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -131,39 +131,39 @@ func (s *VturbService) Status(ctx context.Context, opts ...Option) (*VturbStatus
 	return &out, nil
 }
 
-// VturbAbTestsListOutput is the response of [VturbService.AbTestsList].
-type VturbAbTestsListOutput struct {
-	AbTests []VturbAbTestsListOutputAbTestsItem `json:"abTests"`
+// VturbABTestsListOutput is the response of [VturbService.ABTestsList].
+type VturbABTestsListOutput struct {
+	ABTests []VturbABTestsListOutputABTestsItem `json:"abTests"`
 }
 
-// VturbAbTestsListOutputAbTestsItem is an element of [VturbAbTestsListOutput.AbTests].
-type VturbAbTestsListOutputAbTestsItem struct {
+// VturbABTestsListOutputABTestsItem is an element of [VturbABTestsListOutput.ABTests].
+type VturbABTestsListOutputABTestsItem struct {
 	ID         string                                          `json:"id"`
 	Name       string                                          `json:"name"`
-	Variants   []VturbAbTestsListOutputAbTestsItemVariantsItem `json:"variants"`
+	Variants   []VturbABTestsListOutputABTestsItemVariantsItem `json:"variants"`
 	StartedAt  *string                                         `json:"startedAt"`
 	FinishedAt *string                                         `json:"finishedAt"`
 	CreatedAt  string                                          `json:"createdAt"`
 	Running    bool                                            `json:"running"`
 }
 
-// VturbAbTestsListOutputAbTestsItemVariantsItem is an element of
-// [VturbAbTestsListOutputAbTestsItem.Variants].
-type VturbAbTestsListOutputAbTestsItemVariantsItem struct {
+// VturbABTestsListOutputABTestsItemVariantsItem is an element of
+// [VturbABTestsListOutputABTestsItem.Variants].
+type VturbABTestsListOutputABTestsItemVariantsItem struct {
 	PlayerID          string  `json:"playerId"`
 	TrafficPercentage float64 `json:"trafficPercentage"`
 	StartedAt         *string `json:"startedAt"`
 	Locked            bool    `json:"locked"`
 }
 
-// VturbAbTestsListParams holds the query parameters of [VturbService.AbTestsList].
-type VturbAbTestsListParams struct {
+// VturbABTestsListParams holds the query parameters of [VturbService.ABTestsList].
+type VturbABTestsListParams struct {
 	StartDate *string
 	EndDate   *string
 	Timezone  *string
 }
 
-func (p VturbAbTestsListParams) values() url.Values {
+func (p VturbABTestsListParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "startDate", p.StartDate)
 	addString(v, "endDate", p.EndDate)
@@ -171,31 +171,31 @@ func (p VturbAbTestsListParams) values() url.Values {
 	return v
 }
 
-// VturbAbTestsStatsInput is the request body of [VturbService.AbTestsStats].
-type VturbAbTestsStatsInput struct {
-	AbTestID  string   `json:"abTestId"`
+// VturbABTestsStatsInput is the request body of [VturbService.ABTestsStats].
+type VturbABTestsStatsInput struct {
+	ABTestID  string   `json:"abTestId"`
 	PlayerIDs []string `json:"playerIds"`
 	StartDate *string  `json:"startDate,omitzero"`
 	EndDate   *string  `json:"endDate,omitzero"`
 	Timezone  *string  `json:"timezone,omitzero"`
 }
 
-// VturbAbTestsStatsOutput is the response of [VturbService.AbTestsStats].
-type VturbAbTestsStatsOutput struct {
-	AbTest   VturbAbTestsStatsOutputAbTest         `json:"abTest"`
-	Variants []VturbAbTestsStatsOutputVariantsItem `json:"variants"`
+// VturbABTestsStatsOutput is the response of [VturbService.ABTestsStats].
+type VturbABTestsStatsOutput struct {
+	ABTest   VturbABTestsStatsOutputABTest         `json:"abTest"`
+	Variants []VturbABTestsStatsOutputVariantsItem `json:"variants"`
 }
 
-// VturbAbTestsStatsOutputAbTest is the type of [VturbAbTestsStatsOutput.AbTest].
-type VturbAbTestsStatsOutputAbTest struct {
+// VturbABTestsStatsOutputABTest is the type of [VturbABTestsStatsOutput.ABTest].
+type VturbABTestsStatsOutputABTest struct {
 	ID         string  `json:"id"`
 	Name       string  `json:"name"`
 	StartedAt  *string `json:"startedAt"`
 	FinishedAt *string `json:"finishedAt"`
 }
 
-// VturbAbTestsStatsOutputVariantsItem is an element of [VturbAbTestsStatsOutput.Variants].
-type VturbAbTestsStatsOutputVariantsItem struct {
+// VturbABTestsStatsOutputVariantsItem is an element of [VturbABTestsStatsOutput.Variants].
+type VturbABTestsStatsOutputVariantsItem struct {
 	PlayerID           string                                                  `json:"playerId"`
 	PitchTime          int64                                                   `json:"pitchTime"`
 	VideoDuration      int64                                                   `json:"videoDuration"`
@@ -210,29 +210,29 @@ type VturbAbTestsStatsOutputVariantsItem struct {
 	PitchAudience      int64                                                   `json:"pitchAudience"`
 	PitchRetentionRate float64                                                 `json:"pitchRetentionRate"`
 	AverageWatchedTime float64                                                 `json:"averageWatchedTime"`
-	Revenue            VturbAbTestsStatsOutputVariantsItemRevenue              `json:"revenue"`
-	RevenuePerVisitor  VturbAbTestsStatsOutputVariantsItemRevenuePerVisitor    `json:"revenuePerVisitor"`
-	RetentionCurve     []VturbAbTestsStatsOutputVariantsItemRetentionCurveItem `json:"retentionCurve"`
+	Revenue            VturbABTestsStatsOutputVariantsItemRevenue              `json:"revenue"`
+	RevenuePerVisitor  VturbABTestsStatsOutputVariantsItemRevenuePerVisitor    `json:"revenuePerVisitor"`
+	RetentionCurve     []VturbABTestsStatsOutputVariantsItemRetentionCurveItem `json:"retentionCurve"`
 }
 
-// VturbAbTestsStatsOutputVariantsItemRetentionCurveItem is an element of
-// [VturbAbTestsStatsOutputVariantsItem.RetentionCurve].
-type VturbAbTestsStatsOutputVariantsItemRetentionCurveItem struct {
+// VturbABTestsStatsOutputVariantsItemRetentionCurveItem is an element of
+// [VturbABTestsStatsOutputVariantsItem.RetentionCurve].
+type VturbABTestsStatsOutputVariantsItemRetentionCurveItem struct {
 	Second  int64 `json:"second"`
 	Viewers int64 `json:"viewers"`
 }
 
-// VturbAbTestsStatsOutputVariantsItemRevenue is the type of
-// [VturbAbTestsStatsOutputVariantsItem.Revenue].
-type VturbAbTestsStatsOutputVariantsItemRevenue struct {
+// VturbABTestsStatsOutputVariantsItemRevenue is the type of
+// [VturbABTestsStatsOutputVariantsItem.Revenue].
+type VturbABTestsStatsOutputVariantsItemRevenue struct {
 	Usd float64 `json:"usd"`
 	Brl float64 `json:"brl"`
 	Eur float64 `json:"eur"`
 }
 
-// VturbAbTestsStatsOutputVariantsItemRevenuePerVisitor is the type of
-// [VturbAbTestsStatsOutputVariantsItem.RevenuePerVisitor].
-type VturbAbTestsStatsOutputVariantsItemRevenuePerVisitor struct {
+// VturbABTestsStatsOutputVariantsItemRevenuePerVisitor is the type of
+// [VturbABTestsStatsOutputVariantsItem.RevenuePerVisitor].
+type VturbABTestsStatsOutputVariantsItemRevenuePerVisitor struct {
 	Usd float64 `json:"usd"`
 	Brl float64 `json:"brl"`
 	Eur float64 `json:"eur"`

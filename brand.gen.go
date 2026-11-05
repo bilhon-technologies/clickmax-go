@@ -81,7 +81,7 @@ type BrandGetOutputBrand struct {
 	BusinessName     *string                               `json:"businessName"`
 	BusinessIndustry *string                               `json:"businessIndustry"`
 	BusinessAudience *string                               `json:"businessAudience"`
-	BusinessUsp      *string                               `json:"businessUsp"`
+	BusinessUSP      *string                               `json:"businessUsp"`
 	VoiceTone        *string                               `json:"voiceTone"`
 	VoiceVocabulary  *BrandGetOutputBrandVoiceVocabulary   `json:"voiceVocabulary"`
 	VoiceSamples     []BrandGetOutputBrandVoiceSamplesItem `json:"voiceSamples"`
@@ -136,7 +136,7 @@ type BrandSaveDraftInput struct {
 	BusinessName     Nullable[string]                                `json:"businessName,omitzero"`
 	BusinessIndustry Nullable[string]                                `json:"businessIndustry,omitzero"`
 	BusinessAudience Nullable[string]                                `json:"businessAudience,omitzero"`
-	BusinessUsp      Nullable[string]                                `json:"businessUsp,omitzero"`
+	BusinessUSP      Nullable[string]                                `json:"businessUsp,omitzero"`
 	VoiceTone        Nullable[BrandSaveDraftInputVoiceTone]          `json:"voiceTone,omitzero"`
 	VoiceVocabulary  Nullable[BrandSaveDraftInputVoiceVocabulary]    `json:"voiceVocabulary,omitzero"`
 	VoiceSamples     Nullable[[]BrandSaveDraftInputVoiceSamplesItem] `json:"voiceSamples,omitzero"`

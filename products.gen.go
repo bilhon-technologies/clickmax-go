@@ -141,9 +141,9 @@ type ProductsCreateInputCurrency string
 
 // Values of [ProductsCreateInputCurrency].
 const (
-	ProductsCreateInputCurrencyBrl ProductsCreateInputCurrency = "BRL"
-	ProductsCreateInputCurrencyEur ProductsCreateInputCurrency = "EUR"
-	ProductsCreateInputCurrencyUsd ProductsCreateInputCurrency = "USD"
+	ProductsCreateInputCurrencyBRL ProductsCreateInputCurrency = "BRL"
+	ProductsCreateInputCurrencyEUR ProductsCreateInputCurrency = "EUR"
+	ProductsCreateInputCurrencyUSD ProductsCreateInputCurrency = "USD"
 )
 
 // ProductsCreateInputPaymentConfig is the type of [ProductsCreateInput.PaymentConfig].
@@ -366,9 +366,9 @@ type ProductsCreateOutputOfferCurrency string
 
 // Values of [ProductsCreateOutputOfferCurrency].
 const (
-	ProductsCreateOutputOfferCurrencyBrl ProductsCreateOutputOfferCurrency = "BRL"
-	ProductsCreateOutputOfferCurrencyEur ProductsCreateOutputOfferCurrency = "EUR"
-	ProductsCreateOutputOfferCurrencyUsd ProductsCreateOutputOfferCurrency = "USD"
+	ProductsCreateOutputOfferCurrencyBRL ProductsCreateOutputOfferCurrency = "BRL"
+	ProductsCreateOutputOfferCurrencyEUR ProductsCreateOutputOfferCurrency = "EUR"
+	ProductsCreateOutputOfferCurrencyUSD ProductsCreateOutputOfferCurrency = "USD"
 )
 
 // ProductsCreateOutputOfferFreightConfig is the type of [ProductsCreateOutputOffer.FreightConfig].
@@ -661,9 +661,9 @@ type ProductsGetOutputOffersItemCurrency string
 
 // Values of [ProductsGetOutputOffersItemCurrency].
 const (
-	ProductsGetOutputOffersItemCurrencyBrl ProductsGetOutputOffersItemCurrency = "BRL"
-	ProductsGetOutputOffersItemCurrencyEur ProductsGetOutputOffersItemCurrency = "EUR"
-	ProductsGetOutputOffersItemCurrencyUsd ProductsGetOutputOffersItemCurrency = "USD"
+	ProductsGetOutputOffersItemCurrencyBRL ProductsGetOutputOffersItemCurrency = "BRL"
+	ProductsGetOutputOffersItemCurrencyEUR ProductsGetOutputOffersItemCurrency = "EUR"
+	ProductsGetOutputOffersItemCurrencyUSD ProductsGetOutputOffersItemCurrency = "USD"
 )
 
 // ProductsGetOutputOffersItemStatus is the type of [ProductsGetOutputOffersItem.Status].
@@ -918,9 +918,9 @@ type ProductsListOutputDataItemOffersItemCurrency string
 
 // Values of [ProductsListOutputDataItemOffersItemCurrency].
 const (
-	ProductsListOutputDataItemOffersItemCurrencyBrl ProductsListOutputDataItemOffersItemCurrency = "BRL"
-	ProductsListOutputDataItemOffersItemCurrencyEur ProductsListOutputDataItemOffersItemCurrency = "EUR"
-	ProductsListOutputDataItemOffersItemCurrencyUsd ProductsListOutputDataItemOffersItemCurrency = "USD"
+	ProductsListOutputDataItemOffersItemCurrencyBRL ProductsListOutputDataItemOffersItemCurrency = "BRL"
+	ProductsListOutputDataItemOffersItemCurrencyEUR ProductsListOutputDataItemOffersItemCurrency = "EUR"
+	ProductsListOutputDataItemOffersItemCurrencyUSD ProductsListOutputDataItemOffersItemCurrency = "USD"
 )
 
 // ProductsListOutputDataItemOffersItemDeliverableCategoriesItem is an element of

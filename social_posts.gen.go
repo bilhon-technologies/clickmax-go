@@ -373,7 +373,7 @@ type SocialPostsGetOutputMediaItem struct {
 	Width       *int64  `json:"width,omitzero"`
 	Height      *int64  `json:"height,omitzero"`
 	FileName    string  `json:"fileName"`
-	MimeType    string  `json:"mimeType"`
+	MIMEType    string  `json:"mimeType"`
 	SizeBytes   int64   `json:"sizeBytes"`
 	PreviewURL  string  `json:"previewUrl"`
 }

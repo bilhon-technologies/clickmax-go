@@ -435,7 +435,7 @@ type DriveFavoritesListOutputDataItemFile struct {
 	SpaceID              string                                              `json:"spaceId"`
 	FolderID             *string                                             `json:"folderId,omitzero"`
 	Name                 string                                              `json:"name"`
-	MimeType             string                                              `json:"mimeType"`
+	MIMEType             string                                              `json:"mimeType"`
 	Alt                  *string                                             `json:"alt,omitzero"`
 	Size                 string                                              `json:"size"`
 	Origin               DriveFavoritesListOutputDataItemFileOrigin          `json:"origin"`
@@ -921,7 +921,7 @@ type DriveOverviewOutputRecentsItem struct {
 	SpaceID              string                                        `json:"spaceId"`
 	FolderID             *string                                       `json:"folderId,omitzero"`
 	Name                 string                                        `json:"name"`
-	MimeType             string                                        `json:"mimeType"`
+	MIMEType             string                                        `json:"mimeType"`
 	Alt                  *string                                       `json:"alt,omitzero"`
 	Size                 string                                        `json:"size"`
 	Origin               DriveOverviewOutputRecentsItemOrigin          `json:"origin"`
@@ -1212,7 +1212,7 @@ type DrivePeopleGetOutputRecentFilesItem struct {
 	SpaceID              string                                             `json:"spaceId"`
 	FolderID             *string                                            `json:"folderId,omitzero"`
 	Name                 string                                             `json:"name"`
-	MimeType             string                                             `json:"mimeType"`
+	MIMEType             string                                             `json:"mimeType"`
 	Alt                  *string                                            `json:"alt,omitzero"`
 	Size                 string                                             `json:"size"`
 	Origin               DrivePeopleGetOutputRecentFilesItemOrigin          `json:"origin"`
@@ -1436,7 +1436,7 @@ type DriveRecentsListOutputDataItem struct {
 	SpaceID              string                                        `json:"spaceId"`
 	FolderID             *string                                       `json:"folderId,omitzero"`
 	Name                 string                                        `json:"name"`
-	MimeType             string                                        `json:"mimeType"`
+	MIMEType             string                                        `json:"mimeType"`
 	Alt                  *string                                       `json:"alt,omitzero"`
 	Size                 string                                        `json:"size"`
 	Origin               DriveRecentsListOutputDataItemOrigin          `json:"origin"`
@@ -1626,7 +1626,7 @@ type DriveSearchOutputDataItemFile struct {
 	SpaceID              string                                       `json:"spaceId"`
 	FolderID             *string                                      `json:"folderId,omitzero"`
 	Name                 string                                       `json:"name"`
-	MimeType             string                                       `json:"mimeType"`
+	MIMEType             string                                       `json:"mimeType"`
 	Alt                  *string                                      `json:"alt,omitzero"`
 	Size                 string                                       `json:"size"`
 	Origin               DriveSearchOutputDataItemFileOrigin          `json:"origin"`
@@ -2029,7 +2029,7 @@ type DriveSharesWithMeOutputDataItemFile struct {
 	SpaceID              string                                             `json:"spaceId"`
 	FolderID             *string                                            `json:"folderId,omitzero"`
 	Name                 string                                             `json:"name"`
-	MimeType             string                                             `json:"mimeType"`
+	MIMEType             string                                             `json:"mimeType"`
 	Alt                  *string                                            `json:"alt,omitzero"`
 	Size                 string                                             `json:"size"`
 	Origin               DriveSharesWithMeOutputDataItemFileOrigin          `json:"origin"`

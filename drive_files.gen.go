@@ -113,7 +113,7 @@ type DriveFilesBrowseOutputFilesItem struct {
 	SpaceID              string                                         `json:"spaceId"`
 	FolderID             *string                                        `json:"folderId,omitzero"`
 	Name                 string                                         `json:"name"`
-	MimeType             string                                         `json:"mimeType"`
+	MIMEType             string                                         `json:"mimeType"`
 	Alt                  *string                                        `json:"alt,omitzero"`
 	Size                 string                                         `json:"size"`
 	Origin               DriveFilesBrowseOutputFilesItemOrigin          `json:"origin"`
@@ -428,7 +428,7 @@ type DriveFilesGetOutput struct {
 	SpaceID              string                             `json:"spaceId"`
 	FolderID             *string                            `json:"folderId,omitzero"`
 	Name                 string                             `json:"name"`
-	MimeType             string                             `json:"mimeType"`
+	MIMEType             string                             `json:"mimeType"`
 	Alt                  *string                            `json:"alt,omitzero"`
 	Size                 string                             `json:"size"`
 	Origin               DriveFilesGetOutputOrigin          `json:"origin"`
@@ -593,7 +593,7 @@ type DriveFilesUpdateOutput struct {
 	SpaceID              string                                `json:"spaceId"`
 	FolderID             *string                               `json:"folderId,omitzero"`
 	Name                 string                                `json:"name"`
-	MimeType             string                                `json:"mimeType"`
+	MIMEType             string                                `json:"mimeType"`
 	Alt                  *string                               `json:"alt,omitzero"`
 	Size                 string                                `json:"size"`
 	Origin               DriveFilesUpdateOutputOrigin          `json:"origin"`

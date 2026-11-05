@@ -48,7 +48,7 @@ type ChannelInstancesListOutputDataItem struct {
 	DisplayName        *string `json:"displayName"`
 	Status             string  `json:"status"`
 	Phone              *string `json:"phone,omitzero"`
-	WabaDisplayName    *string `json:"wabaDisplayName,omitzero"`
+	WABADisplayName    *string `json:"wabaDisplayName,omitzero"`
 	NumberStatus       *string `json:"numberStatus,omitzero"`
 	QualityRating      *string `json:"qualityRating,omitzero"`
 	BusinessVerified   *bool   `json:"businessVerified,omitzero"`

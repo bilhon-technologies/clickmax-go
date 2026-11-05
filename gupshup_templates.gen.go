@@ -243,10 +243,10 @@ type GupshupTemplatesCreateInputFileType string
 
 // Values of [GupshupTemplatesCreateInputFileType].
 const (
-	GupshupTemplatesCreateInputFileTypeMp4 GupshupTemplatesCreateInputFileType = "mp4"
-	GupshupTemplatesCreateInputFileTypeJpg GupshupTemplatesCreateInputFileType = "jpg"
-	GupshupTemplatesCreateInputFileTypePng GupshupTemplatesCreateInputFileType = "png"
-	GupshupTemplatesCreateInputFileTypeGif GupshupTemplatesCreateInputFileType = "gif"
+	GupshupTemplatesCreateInputFileTypeMP4 GupshupTemplatesCreateInputFileType = "mp4"
+	GupshupTemplatesCreateInputFileTypeJPG GupshupTemplatesCreateInputFileType = "jpg"
+	GupshupTemplatesCreateInputFileTypePNG GupshupTemplatesCreateInputFileType = "png"
+	GupshupTemplatesCreateInputFileTypeGIF GupshupTemplatesCreateInputFileType = "gif"
 	GupshupTemplatesCreateInputFileTypePDF GupshupTemplatesCreateInputFileType = "pdf"
 )
 
@@ -770,10 +770,10 @@ type GupshupTemplatesUpdateInputFileType string
 
 // Values of [GupshupTemplatesUpdateInputFileType].
 const (
-	GupshupTemplatesUpdateInputFileTypeMp4 GupshupTemplatesUpdateInputFileType = "mp4"
-	GupshupTemplatesUpdateInputFileTypeJpg GupshupTemplatesUpdateInputFileType = "jpg"
-	GupshupTemplatesUpdateInputFileTypePng GupshupTemplatesUpdateInputFileType = "png"
-	GupshupTemplatesUpdateInputFileTypeGif GupshupTemplatesUpdateInputFileType = "gif"
+	GupshupTemplatesUpdateInputFileTypeMP4 GupshupTemplatesUpdateInputFileType = "mp4"
+	GupshupTemplatesUpdateInputFileTypeJPG GupshupTemplatesUpdateInputFileType = "jpg"
+	GupshupTemplatesUpdateInputFileTypePNG GupshupTemplatesUpdateInputFileType = "png"
+	GupshupTemplatesUpdateInputFileTypeGIF GupshupTemplatesUpdateInputFileType = "gif"
 	GupshupTemplatesUpdateInputFileTypePDF GupshupTemplatesUpdateInputFileType = "pdf"
 )
 

@@ -130,7 +130,7 @@ type DriveTrashListOutputFilesItem struct {
 	SpaceID              string                                       `json:"spaceId"`
 	FolderID             *string                                      `json:"folderId,omitzero"`
 	Name                 string                                       `json:"name"`
-	MimeType             string                                       `json:"mimeType"`
+	MIMEType             string                                       `json:"mimeType"`
 	Alt                  *string                                      `json:"alt,omitzero"`
 	Size                 string                                       `json:"size"`
 	Origin               DriveTrashListOutputFilesItemOrigin          `json:"origin"`
@@ -448,7 +448,7 @@ type DriveTrashMoveOutputItem struct {
 	DeletedByID          *string                                  `json:"deletedById,omitzero"`
 	TrashedViaFolderID   *string                                  `json:"trashedViaFolderId,omitzero"`
 	FolderID             *string                                  `json:"folderId,omitzero"`
-	MimeType             *string                                  `json:"mimeType,omitzero"`
+	MIMEType             *string                                  `json:"mimeType,omitzero"`
 	Alt                  *string                                  `json:"alt,omitzero"`
 	Size                 *string                                  `json:"size,omitzero"`
 	Origin               *DriveTrashMoveOutputItemOrigin          `json:"origin,omitzero"`
