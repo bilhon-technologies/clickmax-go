@@ -41,4 +41,7 @@
 // Optional request fields are pointers; [Ptr] builds one from a literal. Fields
 // that also accept null use [Nullable]: leave it as the zero value to omit the
 // field, set it to [Null] to send null, or to [NewNullable] to send a value.
+//
+// A required list field left nil is sent as null, which the API rejects. Pass
+// an empty slice ([]T{}) when there are no items.
 package clickmax

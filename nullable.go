@@ -10,12 +10,16 @@ import (
 // value, while null clears it. Request types use Nullable only where the API
 // accepts null.
 //
-// The zero value is unset and is omitted from the JSON body (fields carry the
-// omitzero option). Use [Null] to send null and [NewNullable] to send a value:
+// The zero value is unset. Use [Null] to send null and [NewNullable] to send a
+// value:
 //
 //	var phone clickmax.Nullable[string]      // omitted
 //	phone = clickmax.Null[string]()          // sends null
 //	phone = clickmax.NewNullable("+5511...") // sends "+5511..."
+//
+// In your own structs, give a Nullable field the omitzero JSON option, or an
+// unset field is sent as null. Always use a named field: an embedded Nullable
+// promotes its MarshalJSON, so the whole parent struct encodes as the value.
 type Nullable[T any] struct {
 	value T
 	state nullableState

@@ -142,20 +142,6 @@ func (e *Error) Unwrap() error {
 	return e.Err
 }
 
-// errorBody is the JSON error body of the API. Every field is optional here
-// because proxies in front of the API answer with other shapes.
-type errorBody struct {
-	Error          string  `json:"error"`
-	Message        string  `json:"message"`
-	Type           string  `json:"type"`
-	Code           string  `json:"code"`
-	RequestID      string  `json:"requestId"`
-	Issues         []Issue `json:"issues"`
-	Capability     string  `json:"capability"`
-	Metric         string  `json:"metric"`
-	UpstreamStatus int     `json:"upstreamStatus"`
-}
-
 // Plain text bodies longer than this are almost always HTML or stack traces,
 // not a message.
 const maxTextMessageLength = 300
@@ -164,34 +150,75 @@ const maxTextMessageLength = 300
 // and code win when present; the status mapping covers bodies produced in
 // front of the API, such as text or HTML pages from the edge.
 func errorFromResponse(status int, header http.Header, data []byte) *Error {
-	var body errorBody
-	// A body that is not a JSON object leaves body empty. A field of the wrong
-	// type is skipped while the others still decode, so the error is ignored.
+	// Decoded into raw fields, not a struct, because struct decoding matches
+	// keys case-insensitively and would read "TYPE" or "Error" from a body
+	// the API did not write. A body that is not a JSON object leaves body nil,
+	// and each field of the wrong type reads as absent.
+	var body map[string]json.RawMessage
 	_ = json.Unmarshal(data, &body)
 
-	typ := ErrorType(body.Type)
+	typ := ErrorType(stringField(body, "type"))
 	if !isAPIErrorType(typ) {
 		typ = typeFromStatus(status)
 	}
 	e := &Error{
 		Type:           typ,
-		Code:           firstNonEmpty(body.Code, string(typ)),
+		Code:           firstNonEmpty(stringField(body, "code"), string(typ)),
 		Status:         status,
-		Message:        firstNonEmpty(body.Error, body.Message, textMessage(header, data), fmt.Sprintf("Request failed with status %d", status)),
-		RequestID:      firstNonEmpty(body.RequestID, header.Get("Cf-Ray")),
+		Message:        firstNonEmpty(stringField(body, "error"), stringField(body, "message"), textMessage(header, data), fmt.Sprintf("Request failed with status %d", status)),
+		RequestID:      firstNonEmpty(stringField(body, "requestId"), header.Get("Cf-Ray")),
 		RetryAfter:     parseRetryAfter(header.Get("Retry-After"), time.Now()),
-		Issues:         body.Issues,
-		Capability:     body.Capability,
-		Metric:         body.Metric,
-		UpstreamStatus: body.UpstreamStatus,
+		Issues:         issuesField(body),
+		Capability:     stringField(body, "capability"),
+		Metric:         stringField(body, "metric"),
+		UpstreamStatus: intField(body, "upstreamStatus"),
 	}
 	if len(data) > 0 {
 		e.Raw = data
 	}
-	for i := range e.Issues {
-		normalizePath(e.Issues[i].Path)
-	}
 	return e
+}
+
+func stringField(fields map[string]json.RawMessage, key string) string {
+	var s string
+	if json.Unmarshal(fields[key], &s) != nil {
+		return ""
+	}
+	return s
+}
+
+func intField(fields map[string]json.RawMessage, key string) int {
+	var n int
+	if json.Unmarshal(fields[key], &n) != nil {
+		return 0
+	}
+	return n
+}
+
+// issuesField skips entries that are not JSON objects, which would otherwise
+// show up as empty issues.
+func issuesField(fields map[string]json.RawMessage) []Issue {
+	var entries []json.RawMessage
+	if json.Unmarshal(fields["issues"], &entries) != nil {
+		return nil
+	}
+	var issues []Issue
+	for _, raw := range entries {
+		var entry map[string]json.RawMessage
+		// A JSON null decodes into a nil map without an error.
+		if json.Unmarshal(raw, &entry) != nil || entry == nil {
+			continue
+		}
+		var path []any
+		_ = json.Unmarshal(entry["path"], &path)
+		normalizePath(path)
+		issues = append(issues, Issue{
+			Code:    stringField(entry, "code"),
+			Message: stringField(entry, "message"),
+			Path:    path,
+		})
+	}
+	return issues
 }
 
 // normalizePath turns the float64 array indexes produced by encoding/json into

@@ -35,7 +35,7 @@ func TestErrorFromResponse(t *testing.T) {
 			name:   "validation issues",
 			status: 400,
 			header: jsonType,
-			body:   `{"error":"Invalid input","type":"invalid_request","code":"invalid_input","issues":[{"code":"too_small","message":"Too short","path":["items",0,"name"]}]}`,
+			body:   `{"error":"Invalid input","type":"invalid_request","code":"invalid_input","issues":["oops",null,3,{"code":"too_small","message":"Too short","path":["items",0,"name"]}]}`,
 			want: Error{Type: ErrorTypeInvalidRequest, Code: "invalid_input", Status: 400, Message: "Invalid input",
 				Issues: []Issue{{Code: "too_small", Message: "Too short", Path: []any{"items", 0, "name"}}}},
 		},
@@ -52,6 +52,13 @@ func TestErrorFromResponse(t *testing.T) {
 			header: jsonType,
 			body:   `{"error":"Unauthorized"}`,
 			want:   Error{Type: ErrorTypeAuthentication, Code: "authentication", Status: 401, Message: "Unauthorized"},
+		},
+		{
+			name:   "keys match case-sensitively",
+			status: 400,
+			header: jsonType,
+			body:   `{"TYPE":"conflict","Error":"x","Code":"y"}`,
+			want:   Error{Type: ErrorTypeInvalidRequest, Code: "invalid_request", Status: 400, Message: "Request failed with status 400"},
 		},
 		{
 			name:   "unknown body type falls back to the status and message field is read",
