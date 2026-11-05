@@ -29,10 +29,9 @@ func currencyEnum(typeName string) bool {
 	return strings.HasSuffix(strings.TrimSuffix(typeName, "Item"), "Currency")
 }
 
-// currencyCode names a currency constant suffix, keeping the casing of codes (BRL, not Brl): an
-// upper-case value of one word keeps it whole (USDC), and in longer values the three-letter words
-// (the ISO 4217 length) and initialisms keep it while other words use Pascal casing
-// (WHOP_USD -> WhopUSD).
+// currencyCode keeps the upper case of currency codes (BRL, not Brl). A one-word upper-case value
+// stays as written (USDC). In longer values, 3-letter words (the ISO 4217 length) and initialisms
+// stay upper case and other words use Pascal case (WHOP_USD -> WhopUSD).
 func currencyCode(v string) string {
 	ws := words(v)
 	if len(ws) == 1 && strings.ToUpper(v) == v {

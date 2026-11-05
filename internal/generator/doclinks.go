@@ -23,9 +23,9 @@ var toolToken = regexp.MustCompile(`\b[a-z][a-z0-9]*(?:_[a-z0-9]+)*\b`)
 // since a root method name such as whoami is also an ordinary word. Spans are tracked per line, so
 // a span that wraps onto the next line flips which tokens of that line count as code.
 //
-// A link only resolves when the rune on each side is a space, a line edge or punctuation, the rule
-// of go/doc/comment; `[TasksService.Summary].overdue` inside backticks would print as plain text,
-// so such a token keeps its original text.
+// A link only resolves when the rune on each side is a space, a line edge or punctuation to
+// unicode.IsPunct, the go/doc/comment rule. A backtick, `<` and `>` are symbols, so
+// `tasks_summary.overdue` in a code span keeps its text.
 func linkToolNames(text string, links map[string]string) string {
 	lines := strings.Split(text, "\n")
 	for i, line := range lines {

@@ -42,11 +42,11 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-// TestConstantCollisionFails guards the rule that a constant taking a type's name stops
-// generation: renaming either one on the fly would break users of the published name.
-func TestConstantCollisionFails(t *testing.T) {
-	spec := filepath.Join(t.TempDir(), "spec.yaml")
-	err := os.WriteFile(spec, []byte(`openapi: 3.1.1
+// TestRunFails covers specs the generator must refuse instead of emitting a wrong type: a
+// constant taking a type's name (renaming either one on the fly would break users of the
+// published name), and an allOf of an object and null, which no value satisfies.
+func TestRunFails(t *testing.T) {
+	const head = `openapi: 3.1.1
 paths:
   /sorts/get:
     get:
@@ -61,15 +61,46 @@ components:
     Sort:
       type: object
       properties:
-        by: {type: string, enum: [mode]}
+`
+	tests := []struct {
+		name, props string
+		want        []string
+	}{
+		{
+			name: "constant collides with a type",
+			props: `        by: {type: string, enum: [mode]}
         byMode: {type: string, enum: [asc]}
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
+`,
+			want: []string{"SortByMode", "constantNames"},
+		},
+		{
+			name: "allOf of object and null",
+			props: `        by:
+          allOf:
+            - type: object
+              properties:
+                a: {type: string}
+            - type: "null"
+`,
+			want: []string{"allOf of null"},
+		},
 	}
-	err = run(spec, t.TempDir())
-	if err == nil || !strings.Contains(err.Error(), "SortByMode") || !strings.Contains(err.Error(), "constantNames") {
-		t.Fatalf("got %v, want a collision error on SortByMode pointing to constantNames", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := filepath.Join(t.TempDir(), "spec.yaml")
+			if err := os.WriteFile(spec, []byte(head+tt.props), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			err := run(spec, t.TempDir())
+			if err == nil {
+				t.Fatalf("run succeeded, want an error mentioning %q", tt.want)
+			}
+			for _, w := range tt.want {
+				if !strings.Contains(err.Error(), w) {
+					t.Fatalf("got %v, want it to mention %q", err, w)
+				}
+			}
+		})
 	}
 }
 

@@ -220,19 +220,20 @@ func (sh *shaper) constant(s *schema) (*shape, error) {
 	return nil, fmt.Errorf("line %d: unsupported const %q", s.line, n.Value)
 }
 
-// allOf only supports parts that agree: unconstrained and null parts are dropped and the rest must
-// all be objects, whose properties are merged.
+// allOf only supports parts that agree: unconstrained parts are dropped and the rest must all be
+// objects, whose properties are merged. A null part is only accepted next to unconstrained ones.
 func (sh *shaper) allOf(s *schema) (*shape, error) {
 	if len(s.Type) > 0 || len(s.Properties) > 0 {
 		return nil, fmt.Errorf("line %d: allOf next to type or properties", s.line)
 	}
 	var parts []*shape
-	anyNullable := false
+	anyNullable, hasNull := false, false
 	for _, p := range s.AllOf {
 		ps, err := sh.shape(p)
 		if err != nil {
 			return nil, err
 		}
+		hasNull = hasNull || ps.kind == kNull
 		if ps.kind == kAny || ps.kind == kNull {
 			anyNullable = anyNullable || ps.nullable
 		} else {
@@ -242,6 +243,9 @@ func (sh *shaper) allOf(s *schema) (*shape, error) {
 	if len(parts) == 0 {
 		// An unconstrained part admits null too, so one part allowing null is enough.
 		return &shape{kind: kAny, nullable: anyNullable}, nil
+	}
+	if hasNull {
+		return nil, fmt.Errorf("line %d: allOf of null and a constrained schema has no Go type", s.line)
 	}
 	out := &shape{kind: kObject, nullable: true}
 	for _, p := range parts {
