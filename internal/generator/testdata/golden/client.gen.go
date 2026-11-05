@@ -11,15 +11,21 @@ import (
 //
 // The methods of Client are the operations outside any resource.
 type Client struct {
+	// Flows groups the /flows/* operations.
+	Flows *FlowsService
 	// Nodes groups the /nodes/* operations.
 	Nodes *NodesService
+	// NodesGet groups the /nodes-get/* operations.
+	NodesGet *NodesGetService
 
 	cfg settings
 }
 
 func newClient(cfg settings) *Client {
 	c := &Client{cfg: cfg}
+	c.Flows = &FlowsService{client: c}
 	c.Nodes = &NodesService{client: c}
+	c.NodesGet = &NodesGetService{client: c}
 	return c
 }
 

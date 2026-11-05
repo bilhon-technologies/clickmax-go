@@ -8,13 +8,14 @@ import (
 
 // Node is the response of [NodesService.Get] and [Client.Whoami].
 type Node struct {
-	Name      string      `json:"name"`
-	CreatedAt time.Time   `json:"createdAt"`
-	Parent    *Node       `json:"parent"`
-	Children  []Node      `json:"children,omitzero"`
-	Sibling   *Node       `json:"sibling"`
-	Status    *NodeStatus `json:"status,omitzero"`
-	Tier      *NodeTier   `json:"tier,omitzero"`
+	Name      string        `json:"name"`
+	CreatedAt time.Time     `json:"createdAt"`
+	Parent    *Node         `json:"parent"`
+	Children  []Node        `json:"children,omitzero"`
+	Sibling   *Node         `json:"sibling"`
+	Status    *NodeStatus   `json:"status,omitzero"`
+	Currency  *NodeCurrency `json:"currency,omitzero"`
+	Tier      *NodeTier     `json:"tier,omitzero"`
 	// A button is a link or a reply.
 	Button *NodeButton `json:"button,omitzero"`
 }
@@ -41,6 +42,17 @@ const (
 	NodeButtonTypeReply NodeButtonType = "reply"
 )
 
+// NodeCurrency is the type of [Node.Currency].
+type NodeCurrency string
+
+// Values of [NodeCurrency].
+const (
+	NodeCurrencyBRL     NodeCurrency = "BRL"
+	NodeCurrencyUSD     NodeCurrency = "USD"
+	NodeCurrencyUSDC    NodeCurrency = "USDC"
+	NodeCurrencyWhopUSD NodeCurrency = "WHOP_USD"
+)
+
 // NodeStatus is the type of [Node.Status].
 type NodeStatus string
 
@@ -58,3 +70,12 @@ const (
 	NodeTierGold   NodeTier = "gold"
 	NodeTierSilver NodeTier = "silver"
 )
+
+// NodesListOutput is the response of [FlowsService.List], [NodesGetService.All], [NodesService.GetAll]
+// and [NodesService.List].
+type NodesListOutput []NodesListOutputItem
+
+// NodesListOutputItem is an element of [NodesListOutput].
+type NodesListOutputItem struct {
+	ID string `json:"id"`
+}

@@ -21,6 +21,8 @@ paths:
       summary: Get nodes
       description: Reads nodes. Find ids with `nodes_list` or `nodes_list({ kind })`, then call
         nodes_list again; `whoami` names the caller and `nodes_unknown` stays as written.
+        Ask whoami in prose. Filter with `nodes_list.kind` <from nodes_list>. `nodes_get_all`
+        names two operations.
       requestBody:
         required: true
         content:
@@ -62,8 +64,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NodesListOutput"
+  /nodes/get-all:
+    get:
+      operationId: nodesGetAll
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodesListOutput"
+  /nodes-get/all:
+    get:
+      operationId: nodesGetAllOther
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodesListOutput"
+  /flows/list:
+    post:
+      operationId: flowsList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowsListInput"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodesListOutput"
 components:
   schemas:
+    FlowsListInput:
+      type: object
+      properties:
+        orderBy:
+          type: string
+          enum: [mode, name]
+        orderByMode:
+          type: string
+          enum: [asc]
     ApiError:
       type: object
       properties:
@@ -89,6 +133,17 @@ components:
         label:
           type: [string, "null"]
           description: Send null to clear the label.
+        wipe:
+          allOf:
+            - {}
+            - type: "null"
+        currency:
+          type: array
+          items:
+            type: string
+            enum: [EUR, ETH]
+        sdrScore:
+          type: integer
         merged:
           allOf:
             - type: object
@@ -119,6 +174,9 @@ components:
         status:
           type: string
           enum: [active, paused, null]
+        currency:
+          type: string
+          enum: [BRL, USD, USDC, WHOP_USD]
         tier:
           anyOf:
             - const: gold

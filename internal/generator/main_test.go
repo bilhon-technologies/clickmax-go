@@ -42,6 +42,37 @@ func TestGolden(t *testing.T) {
 	}
 }
 
+// TestConstantCollisionFails guards the rule that a constant taking a type's name stops
+// generation: renaming either one on the fly would break users of the published name.
+func TestConstantCollisionFails(t *testing.T) {
+	spec := filepath.Join(t.TempDir(), "spec.yaml")
+	err := os.WriteFile(spec, []byte(`openapi: 3.1.1
+paths:
+  /sorts/get:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sort"
+components:
+  schemas:
+    Sort:
+      type: object
+      properties:
+        by: {type: string, enum: [mode]}
+        byMode: {type: string, enum: [asc]}
+`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = run(spec, t.TempDir())
+	if err == nil || !strings.Contains(err.Error(), "SortByMode") || !strings.Contains(err.Error(), "constantNames") {
+		t.Fatalf("got %v, want a collision error on SortByMode pointing to constantNames", err)
+	}
+}
+
 func names(paths []string) string {
 	var out []string
 	for _, p := range paths {

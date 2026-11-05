@@ -17,6 +17,8 @@ type NodesService struct {
 //
 // Reads nodes. Find ids with [NodesService.List] or `nodes_list({ kind })`, then call
 // [NodesService.List] again; [Client.Whoami] names the caller and `nodes_unknown` stays as written.
+// Ask whoami in prose. Filter with `nodes_list.kind` <from nodes_list>. `nodes_get_all` names two
+// operations.
 //
 // Calls POST /nodes/get.
 func (s *NodesService) Get(ctx context.Context, body NodesGetInput, opts ...Option) (*Node, error) {
@@ -25,6 +27,16 @@ func (s *NodesService) Get(ctx context.Context, body NodesGetInput, opts ...Opti
 		return nil, err
 	}
 	return &out, nil
+}
+
+// Calls GET /nodes/get-all.
+func (s *NodesService) GetAll(ctx context.Context, opts ...Option) (NodesListOutput, error) {
+	var out NodesListOutput
+	if err := s.client.do(ctx, "GET", "/nodes/get-all", nil, nil, &out, opts); err != nil {
+		var zero NodesListOutput
+		return zero, err
+	}
+	return out, nil
 }
 
 // Calls GET /nodes/list.
@@ -44,22 +56,26 @@ type NodesGetInput struct {
 	Clear  Nullable[any]       `json:"clear,omitzero"`
 	Extra  Nullable[any]       `json:"extra,omitzero"`
 	// Send null to clear the label.
-	Label  Nullable[string]     `json:"label,omitzero"`
-	Merged *NodesGetInputMerged `json:"merged,omitzero"`
+	Label    Nullable[string]            `json:"label,omitzero"`
+	Wipe     Nullable[any]               `json:"wipe,omitzero"`
+	Currency []NodesGetInputCurrencyItem `json:"currency,omitzero"`
+	SDRScore *int64                      `json:"sdrScore,omitzero"`
+	Merged   *NodesGetInputMerged        `json:"merged,omitzero"`
 }
+
+// NodesGetInputCurrencyItem is an element of [NodesGetInput.Currency].
+type NodesGetInputCurrencyItem string
+
+// Values of [NodesGetInputCurrencyItem].
+const (
+	NodesGetInputCurrencyItemEUR NodesGetInputCurrencyItem = "EUR"
+	NodesGetInputCurrencyItemETH NodesGetInputCurrencyItem = "ETH"
+)
 
 // NodesGetInputMerged is the type of [NodesGetInput.Merged].
 type NodesGetInputMerged struct {
 	A string          `json:"a"`
 	B Nullable[int64] `json:"b,omitzero"`
-}
-
-// NodesListOutput is the response of [NodesService.List].
-type NodesListOutput []NodesListOutputItem
-
-// NodesListOutputItem is an element of [NodesListOutput].
-type NodesListOutputItem struct {
-	ID string `json:"id"`
 }
 
 // NodesListParams holds the query parameters of [NodesService.List].
