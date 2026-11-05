@@ -47,6 +47,13 @@ func TestErrorFromResponse(t *testing.T) {
 			want:   Error{Type: ErrorTypeAPI, Code: "upstream_error", Status: 502, Message: "Upstream failed", UpstreamStatus: 503},
 		},
 		{
+			name:   "fractional upstream status reads as absent",
+			status: 502,
+			header: jsonType,
+			body:   `{"error":"Upstream failed","type":"api","code":"upstream_error","upstreamStatus":503.5}`,
+			want:   Error{Type: ErrorTypeAPI, Code: "upstream_error", Status: 502, Message: "Upstream failed"},
+		},
+		{
 			name:   "JSON body without type falls back to the status",
 			status: 401,
 			header: jsonType,
@@ -57,7 +64,7 @@ func TestErrorFromResponse(t *testing.T) {
 			name:   "fields of the wrong type read as absent",
 			status: 409,
 			header: http.Header{"Content-Type": {"application/json"}, "Cf-Ray": {"ray-3"}},
-			body:   `{"error":42,"message":"m","type":["x"],"requestId":7,"code":false}`,
+			body:   `{"error":42,"message":"m","type":["x"],"requestId":7,"code":false,"upstreamStatus":"503"}`,
 			want:   Error{Type: ErrorTypeConflict, Code: "conflict", Status: 409, Message: "m", RequestID: "ray-3"},
 		},
 		{

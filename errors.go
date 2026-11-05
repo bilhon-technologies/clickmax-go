@@ -109,7 +109,9 @@ type Issue struct {
 	// Message describes the problem for humans.
 	Message string `json:"message"`
 	// Path locates the invalid value in the request: string elements are
-	// object keys and int elements are array indexes.
+	// object keys and int elements are array indexes. A number that is not
+	// whole or does not fit in an int32 stays a float64, and other values are
+	// kept as encoding/json decodes them into an any.
 	Path []any `json:"path"`
 }
 
@@ -187,14 +189,25 @@ func stringField(fields map[string]json.RawMessage, key string) string {
 	return s
 }
 
-// intField accepts any whole JSON number, such as 503.0, which JSON.parse
-// reads as the integer 503 but encoding/json refuses to decode into an int.
+// intField accepts whole JSON numbers that fit in an int32, such as 503.0,
+// which JSON.parse reads as the integer 503 but encoding/json refuses to decode
+// into an int. Anything else reads as 0.
 func intField(fields map[string]json.RawMessage, key string) int {
 	var f float64
-	if json.Unmarshal(fields[key], &f) != nil || f != math.Trunc(f) || math.Abs(f) >= 1<<53 {
+	if json.Unmarshal(fields[key], &f) != nil {
 		return 0
 	}
-	return int(f)
+	n, _ := wholeInt(f)
+	return n
+}
+
+// wholeInt bounds f to the int32 range so the conversion is exact on 32-bit
+// builds too.
+func wholeInt(f float64) (int, bool) {
+	if f != math.Trunc(f) || f < math.MinInt32 || f > math.MaxInt32 {
+		return 0, false
+	}
+	return int(f), true
 }
 
 // issuesField skips entries that are not JSON objects, which would otherwise
@@ -227,8 +240,10 @@ func issuesField(fields map[string]json.RawMessage) []Issue {
 // ints, so callers can type-switch on string keys and int indexes.
 func normalizePath(path []any) {
 	for i, p := range path {
-		if f, ok := p.(float64); ok && f == math.Trunc(f) && math.Abs(f) < 1<<53 {
-			path[i] = int(f)
+		if f, ok := p.(float64); ok {
+			if n, ok := wholeInt(f); ok {
+				path[i] = n
+			}
 		}
 	}
 }
