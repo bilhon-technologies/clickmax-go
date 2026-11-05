@@ -18,6 +18,14 @@ var initialisms = map[string]bool{
 	"AI": true, "CRM": true, "SMS": true,
 }
 
+// constantNames names the enum constants whose default name (type + value) is already a type,
+// keyed by enum type and value. A new collision needs a person to pick the name: the generator
+// never renames on its own because renaming an exported constant breaks users. Entries apply
+// even after the type they collided with is gone, so a published name never changes.
+var constantNames = map[[2]string]string{
+	{"FlowsListInputOrderBy", "mode"}: "FlowsListInputOrderByModeValue",
+}
+
 // pascal turns a property name, path segment, operationId or enum value into an exported Go
 // identifier part: `ownerId` -> `OwnerID`, `ai-agents` -> `AIAgents`, `QUICK_REPLY` -> `QuickReply`.
 // Plurals of initialisms keep the initialism (`leadIds` -> `LeadIDs`).

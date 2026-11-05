@@ -257,9 +257,9 @@ func build(doc *document, reserved map[string]string) (*model, error) {
 	return m, nil
 }
 
-// constants names enum values once every type name is taken. A constant that would take the name
-// of a type (enum FlowsListInputOrderBy has the value "mode" and FlowsListInput has the field
-// orderByMode) gets a Value suffix, so type names never depend on enum values.
+// constants names enum values once every type name is taken, so a constant can never push a type
+// to another name. A constant that would take the name of a type fails generation unless
+// constantNames gives it one.
 func (b *builder) constants() error {
 	for _, name := range slices.Sorted(maps.Keys(b.decls)) {
 		d := b.decls[name]
@@ -273,8 +273,10 @@ func (b *builder) constants() error {
 			} else if pascal(v) == "" {
 				return fmt.Errorf("%s: enum value %q has no letters or digits", d.name, v)
 			}
-			if other := b.decls[c]; other != nil {
-				c += "Value"
+			if name, ok := constantNames[[2]string{d.name, v}]; ok {
+				c = name
+			} else if b.decls[c] != nil {
+				return fmt.Errorf("the %q value of %s would be named %s, which is a type; add a name for it to constantNames", v, d.name, c)
 			}
 			if err := b.claim(c, fmt.Sprintf("the %q value of %s", v, d.name)); err != nil {
 				return err
