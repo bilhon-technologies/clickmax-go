@@ -1091,15 +1091,15 @@ type CommunitiesListOutputMeta struct {
 
 // CommunitiesListParams holds the query parameters of [CommunitiesService.List].
 type CommunitiesListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 }
 
 func (p CommunitiesListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	return v
 }

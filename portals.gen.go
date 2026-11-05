@@ -346,8 +346,8 @@ func (p PortalsGetParams) values() url.Values {
 
 // PortalsListInput is the request body of [PortalsService.List].
 type PortalsListInput struct {
-	Page       *float64                    `json:"page,omitzero"`
-	PerPage    *float64                    `json:"perPage,omitzero"`
+	Page       *int64                      `json:"page,omitzero"`
+	PerPage    *int64                      `json:"perPage,omitzero"`
 	Theme      *PortalsListInputTheme      `json:"theme,omitzero"`
 	AccessType *PortalsListInputAccessType `json:"accessType,omitzero"`
 	Search     *string                     `json:"search,omitzero"`

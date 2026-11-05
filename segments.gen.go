@@ -1174,16 +1174,16 @@ type SegmentsGetLeadsOutputMeta struct {
 // SegmentsGetLeadsParams holds the query parameters of [SegmentsService.GetLeads].
 type SegmentsGetLeadsParams struct {
 	SegmentID string
-	Page      *float64
-	PerPage   *float64
+	Page      *int64
+	PerPage   *int64
 	Search    *string
 }
 
 func (p SegmentsGetLeadsParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "segmentId", &p.SegmentID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	return v
 }
@@ -1378,15 +1378,15 @@ type SegmentsListOutputMeta struct {
 
 // SegmentsListParams holds the query parameters of [SegmentsService.List].
 type SegmentsListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 }
 
 func (p SegmentsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	return v
 }

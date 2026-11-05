@@ -9,8 +9,8 @@ import (
 // AnalyticsRecentActivitiesInput is the request body of [AnalyticsService.RecentActivities],
 // [LeadActivitiesService.List] and [LeadActivitiesService.SystemList].
 type AnalyticsRecentActivitiesInput struct {
-	Page              *float64                                       `json:"page,omitzero"`
-	PerPage           *float64                                       `json:"perPage,omitzero"`
+	Page              *int64                                         `json:"page,omitzero"`
+	PerPage           *int64                                         `json:"perPage,omitzero"`
 	Search            *string                                        `json:"search,omitzero"`
 	Categories        []AnalyticsRecentActivitiesInputCategoriesItem `json:"categories,omitzero"`
 	EventName         []AnalyticsRecentActivitiesInputEventNameItem  `json:"eventName,omitzero"`

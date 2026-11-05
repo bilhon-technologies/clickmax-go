@@ -418,16 +418,16 @@ type ListsGetLeadsOutputMeta struct {
 // ListsGetLeadsParams holds the query parameters of [ListsService.GetLeads].
 type ListsGetLeadsParams struct {
 	ListID  string
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 }
 
 func (p ListsGetLeadsParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "listId", &p.ListID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	return v
 }
@@ -611,8 +611,8 @@ type ListsListOutputMeta struct {
 
 // ListsListParams holds the query parameters of [ListsService.List].
 type ListsListParams struct {
-	Page     *float64
-	PerPage  *float64
+	Page     *int64
+	PerPage  *int64
 	Search   *string
 	Favorite *bool
 	Match    *ListsListParamsMatch
@@ -620,8 +620,8 @@ type ListsListParams struct {
 
 func (p ListsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addBool(v, "favorite", p.Favorite)
 	addString(v, "match", (*string)(p.Match))

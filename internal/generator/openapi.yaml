@@ -2617,14 +2617,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -4458,14 +4459,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -4813,14 +4815,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
       responses:
@@ -5982,14 +5985,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -6644,14 +6648,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -6883,14 +6888,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -6932,14 +6938,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -7673,14 +7680,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -11661,14 +11669,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -11900,14 +11909,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
       responses:
@@ -12513,14 +12523,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -12605,14 +12616,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
       responses:
@@ -12658,14 +12670,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -12740,14 +12753,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -13986,14 +14000,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
       responses:
@@ -14817,14 +14832,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -14976,14 +14992,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
       responses:
@@ -15823,14 +15840,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -16750,14 +16768,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -16800,14 +16819,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -17086,14 +17106,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -19313,14 +19334,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -20261,14 +20283,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -23098,14 +23121,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -24656,14 +24680,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -26301,14 +26326,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
       responses:
@@ -26575,14 +26601,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -28403,14 +28430,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -28627,14 +28655,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -29090,14 +29119,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -29650,14 +29680,15 @@ paths:
           required: false
           schema:
             default: 1
-            type: number
+            type: integer
             minimum: 1
+            maximum: 9007199254740991
         - in: query
           name: perPage
           required: false
           schema:
             default: 10
-            type: number
+            type: integer
             minimum: 1
             maximum: 2000
         - in: query
@@ -33192,11 +33223,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -41603,11 +41635,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -61285,11 +61318,12 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -62723,11 +62757,12 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -73652,11 +73687,12 @@ components:
           properties:
             page:
               default: 1
-              type: number
+              type: integer
               minimum: 1
+              maximum: 9007199254740991
             perPage:
               default: 10
-              type: number
+              type: integer
               minimum: 1
               maximum: 2000
             filter:
@@ -74437,11 +74473,12 @@ components:
           properties:
             page:
               default: 1
-              type: number
+              type: integer
               minimum: 1
+              maximum: 9007199254740991
             perPage:
               default: 10
-              type: number
+              type: integer
               minimum: 1
               maximum: 2000
             filter:
@@ -84025,11 +84062,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         viewAsAttendantId:
@@ -88546,11 +88584,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         viewAsAttendantId:
@@ -95498,11 +95537,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -101540,11 +101580,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         startDate:
@@ -111143,11 +111184,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -116851,11 +116893,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         modes:
@@ -140099,11 +140142,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         search:
@@ -143701,11 +143745,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         theme:
@@ -144835,11 +144880,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         column:
@@ -146561,11 +146607,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         orderByMode:
@@ -148096,11 +148143,12 @@ components:
           properties:
             page:
               default: 1
-              type: number
+              type: integer
               minimum: 1
+              maximum: 9007199254740991
             perPage:
               default: 10
-              type: number
+              type: integer
               minimum: 1
               maximum: 2000
             orderByMode:
@@ -150426,11 +150474,12 @@ components:
       properties:
         page:
           default: 1
-          type: number
+          type: integer
           minimum: 1
+          maximum: 9007199254740991
         perPage:
           default: 10
-          type: number
+          type: integer
           minimum: 1
           maximum: 2000
         column:

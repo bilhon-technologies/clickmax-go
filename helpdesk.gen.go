@@ -250,8 +250,8 @@ type HelpdeskSearchOutputMeta struct {
 
 // HelpdeskSearchParams holds the query parameters of [HelpdeskService.Search].
 type HelpdeskSearchParams struct {
-	Page        *float64
-	PerPage     *float64
+	Page        *int64
+	PerPage     *int64
 	Search      string
 	Locale      *HelpdeskSearchParamsLocale
 	OrderBy     *HelpdeskSearchParamsOrderBy
@@ -260,8 +260,8 @@ type HelpdeskSearchParams struct {
 
 func (p HelpdeskSearchParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", &p.Search)
 	addString(v, "locale", (*string)(p.Locale))
 	addString(v, "orderBy", (*string)(p.OrderBy))

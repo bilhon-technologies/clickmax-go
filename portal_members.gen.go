@@ -133,8 +133,8 @@ type PortalMembersListOutputMeta struct {
 // PortalMembersListParams holds the query parameters of [PortalMembersService.List].
 type PortalMembersListParams struct {
 	PortalID    string
-	Page        *float64
-	PerPage     *float64
+	Page        *int64
+	PerPage     *int64
 	Search      *string
 	Active      *bool
 	OrderBy     *PortalMembersListParamsOrderBy
@@ -144,8 +144,8 @@ type PortalMembersListParams struct {
 func (p PortalMembersListParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "portalId", &p.PortalID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addBool(v, "active", p.Active)
 	addString(v, "orderBy", (*string)(p.OrderBy))

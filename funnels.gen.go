@@ -1469,8 +1469,8 @@ type FunnelsListOutputMeta struct {
 
 // FunnelsListParams holds the query parameters of [FunnelsService.List].
 type FunnelsListParams struct {
-	Page        *float64
-	PerPage     *float64
+	Page        *int64
+	PerPage     *int64
 	ProjectID   *string
 	Search      *string
 	OrderBy     *FunnelsListParamsOrderBy
@@ -1479,8 +1479,8 @@ type FunnelsListParams struct {
 
 func (p FunnelsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "projectId", p.ProjectID)
 	addString(v, "search", p.Search)
 	addString(v, "orderBy", (*string)(p.OrderBy))

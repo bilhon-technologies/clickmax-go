@@ -886,15 +886,15 @@ type ContentListOutputMeta struct {
 
 // ContentListParams holds the query parameters of [ContentService.List].
 type ContentListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 }
 
 func (p ContentListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	return v
 }

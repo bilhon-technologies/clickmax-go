@@ -2050,8 +2050,8 @@ type PagesListOutputMeta struct {
 
 // PagesListParams holds the query parameters of [PagesService.List].
 type PagesListParams struct {
-	Page               *float64
-	PerPage            *float64
+	Page               *int64
+	PerPage            *int64
 	Search             *string
 	Type               *PagesListParamsType
 	DomainID           *string
@@ -2070,8 +2070,8 @@ type PagesListParams struct {
 
 func (p PagesListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addString(v, "type", (*string)(p.Type))
 	addString(v, "domainId", p.DomainID)
@@ -2258,8 +2258,8 @@ const (
 
 // PagesTemplatesListInput is the request body of [PagesService.TemplatesList].
 type PagesTemplatesListInput struct {
-	Page        *float64                            `json:"page,omitzero"`
-	PerPage     *float64                            `json:"perPage,omitzero"`
+	Page        *int64                              `json:"page,omitzero"`
+	PerPage     *int64                              `json:"perPage,omitzero"`
 	Search      *string                             `json:"search,omitzero"`
 	Type        []PagesTemplatesListInputTypeItem   `json:"type,omitzero"`
 	Tags        []string                            `json:"tags,omitzero"`

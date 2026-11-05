@@ -1481,8 +1481,8 @@ func (p CardsListByLeadParams) values() url.Values {
 
 // CardsListInput is the request body of [CardsService.List].
 type CardsListInput struct {
-	Page                    *float64                         `json:"page,omitzero"`
-	PerPage                 *float64                         `json:"perPage,omitzero"`
+	Page                    *int64                           `json:"page,omitzero"`
+	PerPage                 *int64                           `json:"perPage,omitzero"`
 	ViewAsAttendantID       *string                          `json:"viewAsAttendantId,omitzero"`
 	PipelineID              *string                          `json:"pipelineId,omitzero"`
 	StageID                 *string                          `json:"stageId,omitzero"`

@@ -851,8 +851,8 @@ func (p TasksGetParams) values() url.Values {
 
 // TasksListInput is the request body of [TasksService.List].
 type TasksListInput struct {
-	Page              *float64                         `json:"page,omitzero"`
-	PerPage           *float64                         `json:"perPage,omitzero"`
+	Page              *int64                           `json:"page,omitzero"`
+	PerPage           *int64                           `json:"perPage,omitzero"`
 	ViewAsAttendantID *string                          `json:"viewAsAttendantId,omitzero"`
 	Search            *string                          `json:"search,omitzero"`
 	Types             []TasksListInputTypesItem        `json:"types,omitzero"`

@@ -371,8 +371,8 @@ func (p LeadActivitiesFilterOptionsParams) values() url.Values {
 // LeadActivitiesListByLeadInput is the request body of [LeadActivitiesService.ListByLead].
 type LeadActivitiesListByLeadInput struct {
 	LeadID            string                                        `json:"leadId"`
-	Page              *float64                                      `json:"page,omitzero"`
-	PerPage           *float64                                      `json:"perPage,omitzero"`
+	Page              *int64                                        `json:"page,omitzero"`
+	PerPage           *int64                                        `json:"perPage,omitzero"`
 	Search            *string                                       `json:"search,omitzero"`
 	Categories        []LeadActivitiesListByLeadInputCategoriesItem `json:"categories,omitzero"`
 	EventName         []LeadActivitiesListByLeadInputEventNameItem  `json:"eventName,omitzero"`
@@ -1174,8 +1174,8 @@ type LeadActivitiesOwnerTimeseriesOutputBucketsItem struct {
 // LeadActivitiesSystemByLeadInput is the request body of [LeadActivitiesService.SystemByLead].
 type LeadActivitiesSystemByLeadInput struct {
 	LeadID            string                                          `json:"leadId"`
-	Page              *float64                                        `json:"page,omitzero"`
-	PerPage           *float64                                        `json:"perPage,omitzero"`
+	Page              *int64                                          `json:"page,omitzero"`
+	PerPage           *int64                                          `json:"perPage,omitzero"`
 	Search            *string                                         `json:"search,omitzero"`
 	Categories        []LeadActivitiesSystemByLeadInputCategoriesItem `json:"categories,omitzero"`
 	EventName         []LeadActivitiesSystemByLeadInputEventNameItem  `json:"eventName,omitzero"`

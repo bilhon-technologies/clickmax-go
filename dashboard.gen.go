@@ -99,8 +99,8 @@ const (
 
 // DashboardExternalSalesChartInputFilters is the type of [DashboardExternalSalesChartInput.Filters].
 type DashboardExternalSalesChartInputFilters struct {
-	Page                *float64                                                    `json:"page,omitzero"`
-	PerPage             *float64                                                    `json:"perPage,omitzero"`
+	Page                *int64                                                      `json:"page,omitzero"`
+	PerPage             *int64                                                      `json:"perPage,omitzero"`
 	OrderByMode         *DashboardExternalSalesChartInputFiltersOrderByMode         `json:"orderByMode,omitzero"`
 	OrderBy             *DashboardExternalSalesChartInputFiltersOrderBy             `json:"orderBy,omitzero"`
 	SearchText          *string                                                     `json:"searchText,omitzero"`
@@ -438,8 +438,8 @@ type DashboardExternalSalesChartOutputRevenueDataItem struct {
 
 // DashboardExternalSalesInput is the request body of [DashboardService.ExternalSales].
 type DashboardExternalSalesInput struct {
-	Page                *float64                                        `json:"page,omitzero"`
-	PerPage             *float64                                        `json:"perPage,omitzero"`
+	Page                *int64                                          `json:"page,omitzero"`
+	PerPage             *int64                                          `json:"perPage,omitzero"`
 	OrderByMode         *DashboardExternalSalesInputOrderByMode         `json:"orderByMode,omitzero"`
 	OrderBy             *DashboardExternalSalesInputOrderBy             `json:"orderBy,omitzero"`
 	SearchText          *string                                         `json:"searchText,omitzero"`
@@ -1847,8 +1847,8 @@ type DashboardMySalesAggregationsOutputUTMSourceBreakdownItem struct {
 
 // DashboardMySalesInput is the request body of [DashboardService.MySales].
 type DashboardMySalesInput struct {
-	Page                      *float64                                        `json:"page,omitzero"`
-	PerPage                   *float64                                        `json:"perPage,omitzero"`
+	Page                      *int64                                          `json:"page,omitzero"`
+	PerPage                   *int64                                          `json:"perPage,omitzero"`
 	Column                    *DashboardMySalesInputColumn                    `json:"column,omitzero"`
 	Order                     *DashboardMySalesInputOrder                     `json:"order,omitzero"`
 	TransactionID             *string                                         `json:"transactionId,omitzero"`

@@ -951,8 +951,8 @@ func (p VisitorsLeadJourneyParams) values() url.Values {
 
 // VisitorsListInput is the request body of [VisitorsService.List].
 type VisitorsListInput struct {
-	Page      *float64   `json:"page,omitzero"`
-	PerPage   *float64   `json:"perPage,omitzero"`
+	Page      *int64     `json:"page,omitzero"`
+	PerPage   *int64     `json:"perPage,omitzero"`
 	StartDate *time.Time `json:"startDate,omitzero"`
 	EndDate   *time.Time `json:"endDate,omitzero"`
 	// Canal de aquisição derivado da primeira sessão do visitante (UTM e referrer). Não é

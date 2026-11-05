@@ -990,15 +990,15 @@ type PacksImportedListOutputMeta struct {
 
 // PacksImportedListParams holds the query parameters of [PacksService.ImportedList].
 type PacksImportedListParams struct {
-	Page      *float64
-	PerPage   *float64
+	Page      *int64
+	PerPage   *int64
 	ProjectID string
 }
 
 func (p PacksImportedListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "projectId", &p.ProjectID)
 	return v
 }
@@ -1074,8 +1074,8 @@ type PacksListOutputMeta struct {
 
 // PacksListParams holds the query parameters of [PacksService.List].
 type PacksListParams struct {
-	Page      *float64
-	PerPage   *float64
+	Page      *int64
+	PerPage   *int64
 	ProjectID *string
 	Order     *PacksListParamsOrder
 	Column    *PacksListParamsColumn
@@ -1083,8 +1083,8 @@ type PacksListParams struct {
 
 func (p PacksListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "projectId", p.ProjectID)
 	addString(v, "order", (*string)(p.Order))
 	addString(v, "column", (*string)(p.Column))

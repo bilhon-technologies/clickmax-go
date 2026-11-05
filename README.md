@@ -42,7 +42,7 @@ The package name is `clickmax`. Operations are grouped by resource: `c.<Resource
 Read operations take a params struct with the query parameters and write operations take the request body:
 
 ```go
-c.Tags.ManualList(ctx, clickmax.TagsManualListParams{Name: clickmax.Ptr("vip"), PerPage: clickmax.Ptr(50.0)})
+c.Tags.ManualList(ctx, clickmax.TagsManualListParams{Name: clickmax.Ptr("vip"), PerPage: clickmax.Ptr[int64](50)})
 c.Tags.Create(ctx, clickmax.TagsCreateInput{Name: "VIP", Color: clickmax.Ptr("ff8800")})
 ```
 

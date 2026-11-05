@@ -163,16 +163,16 @@ type ExternalProductsListOutputMeta struct {
 
 // ExternalProductsListParams holds the query parameters of [ExternalProductsService.List].
 type ExternalProductsListParams struct {
-	Page     *float64
-	PerPage  *float64
+	Page     *int64
+	PerPage  *int64
 	Platform *ExternalProductsListParamsPlatform
 	Search   *string
 }
 
 func (p ExternalProductsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "platform", (*string)(p.Platform))
 	addString(v, "search", p.Search)
 	return v

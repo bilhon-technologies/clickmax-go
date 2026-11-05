@@ -722,8 +722,8 @@ type CustomFieldsManagedListOutputMeta struct {
 
 // CustomFieldsManagedListParams holds the query parameters of [CustomFieldsService.ManagedList].
 type CustomFieldsManagedListParams struct {
-	Page         *float64
-	PerPage      *float64
+	Page         *int64
+	PerPage      *int64
 	EntityType   CustomFieldsManagedListParamsEntityType
 	ObjectID     *string
 	Search       *string
@@ -737,8 +737,8 @@ type CustomFieldsManagedListParams struct {
 
 func (p CustomFieldsManagedListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "entityType", (*string)(&p.EntityType))
 	addString(v, "objectId", p.ObjectID)
 	addString(v, "search", p.Search)

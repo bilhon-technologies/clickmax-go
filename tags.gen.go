@@ -539,15 +539,15 @@ type TagsManualLeadsTimelineOutputMeta struct {
 // TagsManualLeadsTimelineParams holds the query parameters of [TagsService.ManualLeadsTimeline].
 type TagsManualLeadsTimelineParams struct {
 	TagID   string
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 }
 
 func (p TagsManualLeadsTimelineParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "tagId", &p.TagID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	return v
 }
 
@@ -629,8 +629,8 @@ type TagsManualListOutputMeta struct {
 
 // TagsManualListParams holds the query parameters of [TagsService.ManualList].
 type TagsManualListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Name    *string
 	OrderBy *TagsManualListParamsOrderBy
 	Order   *TagsManualListParamsOrder
@@ -638,8 +638,8 @@ type TagsManualListParams struct {
 
 func (p TagsManualListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "name", p.Name)
 	addString(v, "orderBy", (*string)(p.OrderBy))
 	addString(v, "order", (*string)(p.Order))
@@ -707,15 +707,15 @@ type TagsSystemActivitiesOutputMeta struct {
 
 // TagsSystemActivitiesParams holds the query parameters of [TagsService.SystemActivities].
 type TagsSystemActivitiesParams struct {
-	Page      *float64
-	PerPage   *float64
+	Page      *int64
+	PerPage   *int64
 	EventName string
 }
 
 func (p TagsSystemActivitiesParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "eventName", &p.EventName)
 	return v
 }
@@ -820,8 +820,8 @@ type TagsSystemListOutputMeta struct {
 
 // TagsSystemListParams holds the query parameters of [TagsService.SystemList].
 type TagsSystemListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 	OrderBy *TagsSystemListParamsOrderBy
 	Order   *TagsSystemListParamsOrder
@@ -829,8 +829,8 @@ type TagsSystemListParams struct {
 
 func (p TagsSystemListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addString(v, "orderBy", (*string)(p.OrderBy))
 	addString(v, "order", (*string)(p.Order))

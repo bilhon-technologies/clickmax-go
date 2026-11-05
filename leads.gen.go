@@ -695,8 +695,8 @@ type LeadsCommonProductsInput struct {
 
 // LeadsCommonProductsInputFilter is the type of [LeadsCommonProductsInput.Filter].
 type LeadsCommonProductsInputFilter struct {
-	Page           *float64                                      `json:"page,omitzero"`
-	PerPage        *float64                                      `json:"perPage,omitzero"`
+	Page           *int64                                        `json:"page,omitzero"`
+	PerPage        *int64                                        `json:"perPage,omitzero"`
 	Filter         *LeadsCommonProductsInputFilterFilter         `json:"filter,omitzero"`
 	PaymentsFilter *LeadsCommonProductsInputFilterPaymentsFilter `json:"paymentsFilter,omitzero"`
 	MembersFilter  *LeadsCommonProductsInputFilterMembersFilter  `json:"membersFilter,omitzero"`
@@ -3633,8 +3633,8 @@ type LeadsInvoicesInput struct {
 
 // LeadsInvoicesInputFilter is the type of [LeadsInvoicesInput.Filter].
 type LeadsInvoicesInputFilter struct {
-	Page           *float64                                `json:"page,omitzero"`
-	PerPage        *float64                                `json:"perPage,omitzero"`
+	Page           *int64                                  `json:"page,omitzero"`
+	PerPage        *int64                                  `json:"perPage,omitzero"`
 	Filter         *LeadsInvoicesInputFilterFilter         `json:"filter,omitzero"`
 	PaymentsFilter *LeadsInvoicesInputFilterPaymentsFilter `json:"paymentsFilter,omitzero"`
 	MembersFilter  *LeadsInvoicesInputFilterMembersFilter  `json:"membersFilter,omitzero"`

@@ -366,8 +366,8 @@ type ProjectsListOutputMeta struct {
 
 // ProjectsListParams holds the query parameters of [ProjectsService.List].
 type ProjectsListParams struct {
-	Page        *float64
-	PerPage     *float64
+	Page        *int64
+	PerPage     *int64
 	Search      *string
 	IsActive    *bool
 	IsImported  *bool
@@ -377,8 +377,8 @@ type ProjectsListParams struct {
 
 func (p ProjectsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addBool(v, "isActive", p.IsActive)
 	addBool(v, "isImported", p.IsImported)

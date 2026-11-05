@@ -145,15 +145,15 @@ type RedirectDomainsListOutputMeta struct {
 
 // RedirectDomainsListParams holds the query parameters of [RedirectDomainsService.List].
 type RedirectDomainsListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 }
 
 func (p RedirectDomainsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	return v
 }

@@ -1211,8 +1211,8 @@ func (p MemberUsersListByClassroomParams) values() url.Values {
 
 // MemberUsersListInput is the request body of [MemberUsersService.List].
 type MemberUsersListInput struct {
-	Page               *float64                        `json:"page,omitzero"`
-	PerPage            *float64                        `json:"perPage,omitzero"`
+	Page               *int64                          `json:"page,omitzero"`
+	PerPage            *int64                          `json:"perPage,omitzero"`
 	Search             *string                         `json:"search,omitzero"`
 	Active             *bool                           `json:"active,omitzero"`
 	OrderBy            *MemberUsersListInputOrderBy    `json:"orderBy,omitzero"`

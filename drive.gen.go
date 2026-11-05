@@ -709,14 +709,14 @@ type DriveFavoritesListOutputMeta struct {
 
 // DriveFavoritesListParams holds the query parameters of [DriveService.FavoritesList].
 type DriveFavoritesListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 }
 
 func (p DriveFavoritesListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	return v
 }
 
@@ -1893,8 +1893,8 @@ type DriveSearchOutputMeta struct {
 
 // DriveSearchParams holds the query parameters of [DriveService.Search].
 type DriveSearchParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Q       *string
 	Type    *DriveSearchParamsType
 	OwnerID *string
@@ -1905,8 +1905,8 @@ type DriveSearchParams struct {
 
 func (p DriveSearchParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "q", p.Q)
 	addString(v, "type", (*string)(p.Type))
 	addString(v, "ownerId", p.OwnerID)
@@ -2312,14 +2312,14 @@ type DriveSharesWithMeOutputMeta struct {
 
 // DriveSharesWithMeParams holds the query parameters of [DriveService.SharesWithMe].
 type DriveSharesWithMeParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 }
 
 func (p DriveSharesWithMeParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	return v
 }
 

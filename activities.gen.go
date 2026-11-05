@@ -706,8 +706,8 @@ const (
 
 // ActivitiesListInput is the request body of [ActivitiesService.List].
 type ActivitiesListInput struct {
-	Page              *float64                            `json:"page,omitzero"`
-	PerPage           *float64                            `json:"perPage,omitzero"`
+	Page              *int64                              `json:"page,omitzero"`
+	PerPage           *int64                              `json:"perPage,omitzero"`
 	Search            *string                             `json:"search,omitzero"`
 	Types             []ActivitiesListInputTypesItem      `json:"types,omitzero"`
 	AttendantIDs      []string                            `json:"attendantIds,omitzero"`

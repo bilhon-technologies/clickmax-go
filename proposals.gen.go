@@ -175,8 +175,8 @@ func (p ProposalsGetParams) values() url.Values {
 
 // ProposalsListInput is the request body of [ProposalsService.List].
 type ProposalsListInput struct {
-	Page           *float64                         `json:"page,omitzero"`
-	PerPage        *float64                         `json:"perPage,omitzero"`
+	Page           *int64                           `json:"page,omitzero"`
+	PerPage        *int64                           `json:"perPage,omitzero"`
 	Search         *string                          `json:"search,omitzero"`
 	Status         *ProposalsListInputStatus        `json:"status,omitzero"`
 	OpportunityID  *string                          `json:"opportunityId,omitzero"`

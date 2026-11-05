@@ -662,8 +662,8 @@ func (p SubscriptionsGetParams) values() url.Values {
 
 // SubscriptionsListInput is the request body of [SubscriptionsService.List].
 type SubscriptionsListInput struct {
-	Page                      *float64                                         `json:"page,omitzero"`
-	PerPage                   *float64                                         `json:"perPage,omitzero"`
+	Page                      *int64                                           `json:"page,omitzero"`
+	PerPage                   *int64                                           `json:"perPage,omitzero"`
 	Column                    *SubscriptionsListInputColumn                    `json:"column,omitzero"`
 	Order                     *SubscriptionsListInputOrder                     `json:"order,omitzero"`
 	TransactionID             *string                                          `json:"transactionId,omitzero"`

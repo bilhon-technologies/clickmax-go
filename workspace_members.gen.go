@@ -208,8 +208,8 @@ type WorkspaceMembersListOutputMeta struct {
 
 // WorkspaceMembersListParams holds the query parameters of [WorkspaceMembersService.List].
 type WorkspaceMembersListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 	// Sort column. Default `name` (first name). `createdAt` = invitation date (empty for people who
 	// were never invited, e.g. the owner).
@@ -222,8 +222,8 @@ type WorkspaceMembersListParams struct {
 
 func (p WorkspaceMembersListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addString(v, "orderBy", (*string)(p.OrderBy))
 	addString(v, "orderByMode", (*string)(p.OrderByMode))

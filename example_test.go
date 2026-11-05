@@ -31,7 +31,7 @@ func ExampleTagsService_ManualList() {
 
 	page, err := c.Tags.ManualList(context.Background(), clickmax.TagsManualListParams{
 		Name:    clickmax.Ptr("vip"),
-		PerPage: clickmax.Ptr(50.0),
+		PerPage: clickmax.Ptr[int64](50),
 		Order:   clickmax.Ptr(clickmax.TagsManualListParamsOrderDesc),
 	})
 	if err != nil {

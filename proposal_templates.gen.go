@@ -389,15 +389,15 @@ type ProposalTemplatesDocumentVersionsListOutputMeta struct {
 // [ProposalTemplatesService.DocumentVersionsList].
 type ProposalTemplatesDocumentVersionsListParams struct {
 	ID      string
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 }
 
 func (p ProposalTemplatesDocumentVersionsListParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "id", &p.ID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	return v
 }
 
@@ -760,8 +760,8 @@ type ProposalTemplatesListOutputMeta struct {
 
 // ProposalTemplatesListParams holds the query parameters of [ProposalTemplatesService.List].
 type ProposalTemplatesListParams struct {
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 	Search  *string
 	Status  *ProposalTemplatesListParamsStatus
 	Kind    *ProposalTemplatesListParamsKind
@@ -770,8 +770,8 @@ type ProposalTemplatesListParams struct {
 
 func (p ProposalTemplatesListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addString(v, "status", (*string)(p.Status))
 	addString(v, "kind", (*string)(p.Kind))

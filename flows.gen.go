@@ -2097,8 +2097,8 @@ const (
 // FlowsExecutionsListParams holds the query parameters of [FlowsService.ExecutionsList].
 type FlowsExecutionsListParams struct {
 	FlowID    string
-	Page      *float64
-	PerPage   *float64
+	Page      *int64
+	PerPage   *int64
 	Status    *FlowsExecutionsListParamsStatus
 	Q         *string
 	StartDate *time.Time
@@ -2112,8 +2112,8 @@ type FlowsExecutionsListParams struct {
 func (p FlowsExecutionsListParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "flowId", &p.FlowID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "status", (*string)(p.Status))
 	addString(v, "q", p.Q)
 	addTime(v, "startDate", p.StartDate)
@@ -3200,8 +3200,8 @@ type FlowsLinkTargetsListOutputDataItemStats struct {
 
 // FlowsListInput is the request body of [FlowsService.List].
 type FlowsListInput struct {
-	Page              *float64                            `json:"page,omitzero"`
-	PerPage           *float64                            `json:"perPage,omitzero"`
+	Page              *int64                              `json:"page,omitzero"`
+	PerPage           *int64                              `json:"perPage,omitzero"`
 	Modes             []FlowsListInputModesItem           `json:"modes,omitzero"`
 	Category          *FlowsListInputCategory             `json:"category,omitzero"`
 	ProjectID         *string                             `json:"projectId,omitzero"`

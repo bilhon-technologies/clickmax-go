@@ -2643,8 +2643,8 @@ type FormsListOutputMeta struct {
 
 // FormsListParams holds the query parameters of [FormsService.List].
 type FormsListParams struct {
-	Page              *float64
-	PerPage           *float64
+	Page              *int64
+	PerPage           *int64
 	Search            *string
 	Status            *FormsListParamsStatus
 	Kind              *FormsListParamsKind
@@ -2654,8 +2654,8 @@ type FormsListParams struct {
 
 func (p FormsListParams) values() url.Values {
 	v := url.Values{}
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	addString(v, "search", p.Search)
 	addString(v, "status", (*string)(p.Status))
 	addString(v, "kind", (*string)(p.Kind))
@@ -3818,15 +3818,15 @@ type FormsSubmissionsListOutputMeta struct {
 // FormsSubmissionsListParams holds the query parameters of [FormsService.SubmissionsList].
 type FormsSubmissionsListParams struct {
 	ID      string
-	Page    *float64
-	PerPage *float64
+	Page    *int64
+	PerPage *int64
 }
 
 func (p FormsSubmissionsListParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "id", &p.ID)
-	addFloat(v, "page", p.Page)
-	addFloat(v, "perPage", p.PerPage)
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
 	return v
 }
 
