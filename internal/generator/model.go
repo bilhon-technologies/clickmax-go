@@ -10,10 +10,11 @@ import (
 const kNamed shapeKind = -1
 
 type goType struct {
-	kind   shapeKind // a scalar kind, kAny, kArray, kMap or kNamed
-	elem   *goType
-	decl   *decl
-	cyclic bool // refers to a type still being built, so a value field would be infinite
+	kind     shapeKind // a scalar kind, kAny, kArray, kMap or kNamed
+	elem     *goType
+	decl     *decl
+	cyclic   bool // refers to a type still being built, so a value field would be infinite
+	nullable bool // set on array items and map values only; fields carry their own flag
 }
 
 type declKind int
@@ -482,6 +483,7 @@ func (b *builder) typeOf(s *shape, hint, where string) (*goType, error) {
 		if err != nil {
 			return nil, err
 		}
+		elem.nullable = s.elem.nullable
 		return &goType{kind: s.kind, elem: elem}, nil
 	case kEnum:
 		d := &decl{name: hint, kind: declEnum, values: s.values}

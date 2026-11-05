@@ -106,13 +106,13 @@ func (sh *shaper) shapeOf(s *schema) (*shape, error) {
 		return &shape{kind: kAny}, nil
 	case 1:
 	default:
-		return &shape{kind: kAny}, nil
+		return &shape{kind: kAny, nullable: nullable}, nil
 	}
 
 	var out *shape
 	switch types[0] {
 	case "null":
-		out = &shape{kind: kNull}
+		out = &shape{kind: kNull, nullable: true}
 	case "string":
 		out = &shape{kind: kString}
 		if f, _ := s.Format.(string); f == "date-time" {
@@ -204,7 +204,7 @@ func (sh *shaper) constant(s *schema) (*shape, error) {
 	n := s.Const
 	switch n.Tag {
 	case "!!null":
-		return &shape{kind: kNull}, nil
+		return &shape{kind: kNull, nullable: true}, nil
 	case "!!str":
 		return &shape{kind: kEnum, values: []string{n.Value}}, nil
 	case "!!bool":
@@ -227,17 +227,21 @@ func (sh *shaper) allOf(s *schema) (*shape, error) {
 		return nil, fmt.Errorf("line %d: allOf next to type or properties", s.line)
 	}
 	var parts []*shape
+	anyNullable := false
 	for _, p := range s.AllOf {
 		ps, err := sh.shape(p)
 		if err != nil {
 			return nil, err
 		}
-		if ps.kind != kAny {
+		if ps.kind == kAny {
+			anyNullable = anyNullable || ps.nullable
+		} else {
 			parts = append(parts, ps)
 		}
 	}
 	if len(parts) == 0 {
-		return &shape{kind: kAny}, nil
+		// An unconstrained part admits null too, so one part allowing null is enough.
+		return &shape{kind: kAny, nullable: anyNullable}, nil
 	}
 	out := &shape{kind: kObject, nullable: true}
 	for _, p := range parts {
@@ -282,9 +286,7 @@ func union(variants []*shape) *shape {
 		rest = append(rest, v)
 	}
 	out := unionOf(rest)
-	if out.kind != kAny {
-		out.nullable = nullable
-	}
+	out.nullable = nullable
 	if len(rest) != 1 {
 		out.desc = ""
 	}

@@ -283,13 +283,22 @@ func typeStr(f *file, t *goType) string {
 	case kAny:
 		return "any"
 	case kArray:
-		return "[]" + typeStr(f, t.elem)
+		return "[]" + elemStr(f, t.elem)
 	case kMap:
-		return "map[string]" + typeStr(f, t.elem)
+		return "map[string]" + elemStr(f, t.elem)
 	case kNamed:
 		return t.decl.name
 	}
 	panic(fmt.Sprintf("unhandled type kind %d", t.kind))
+}
+
+// elemStr writes an array item or map value; a nullable one becomes a pointer so null survives a
+// round trip.
+func elemStr(f *file, t *goType) string {
+	if t.nullable && !nilable(t) {
+		return "*" + typeStr(f, t)
+	}
+	return typeStr(f, t)
 }
 
 // nilable types already have a zero value that encodes as null, so they never get a pointer.
@@ -305,10 +314,11 @@ func nilable(t *goType) bool {
 
 // fieldType applies the optionality rules: required non-null fields are values, required nullable
 // fields are pointers where nil sends null, optional fields are omitted when zero, and optional
-// nullable fields of request types use Nullable so a caller can send an explicit null.
+// nullable fields of request types use Nullable so a caller can send an explicit null (a nil any
+// would be omitted).
 func fieldType(f *file, fl *field) (typ string, omit bool) {
 	base := typeStr(f, fl.typ)
-	optionalNull := !fl.required && fl.nullable && fl.request && fl.typ.kind != kAny
+	optionalNull := !fl.required && fl.nullable && fl.request
 	switch {
 	case optionalNull:
 		return "Nullable[" + base + "]", true

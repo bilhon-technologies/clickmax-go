@@ -1157,7 +1157,7 @@ type TasksUpdateInput struct {
 	OutcomeNote     Nullable[string]          `json:"outcomeNote,omitzero"`
 	AttachmentURL   Nullable[string]          `json:"attachmentUrl,omitzero"`
 	AttachmentName  Nullable[string]          `json:"attachmentName,omitzero"`
-	Automation      any                       `json:"automation,omitzero"`
+	Automation      Nullable[any]             `json:"automation,omitzero"`
 }
 
 // TasksUpdateInputPriority is the type of [TasksUpdateInput.Priority].

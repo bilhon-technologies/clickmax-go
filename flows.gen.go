@@ -4489,7 +4489,7 @@ type FlowsStepsCreateInput struct {
 	Type         string                                  `json:"type"`
 	Input        any                                     `json:"input,omitzero"`
 	Action       *string                                 `json:"action,omitzero"`
-	Target       any                                     `json:"target,omitzero"`
+	Target       Nullable[any]                           `json:"target,omitzero"`
 	Dependencies []string                                `json:"dependencies,omitzero"`
 	Meta         any                                     `json:"meta,omitzero"`
 	TriggerStart []FlowsStepsCreateInputTriggerStartItem `json:"triggerStart,omitzero"`

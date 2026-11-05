@@ -2376,8 +2376,8 @@ type PagesUpdateConfigInputData struct {
 	Title               Nullable[string] `json:"title,omitzero"`
 	Description         Nullable[string] `json:"description,omitzero"`
 	Thumbnail           Nullable[string] `json:"thumbnail,omitzero"`
-	WhatsappConfig      any              `json:"whatsappConfig,omitzero"`
-	WebchatConfig       any              `json:"webchatConfig,omitzero"`
+	WhatsappConfig      Nullable[any]    `json:"whatsappConfig,omitzero"`
+	WebchatConfig       Nullable[any]    `json:"webchatConfig,omitzero"`
 	AllowFrameAncestors *bool            `json:"allowFrameAncestors,omitzero"`
 	CreatedAt           *time.Time       `json:"createdAt,omitzero"`
 	UpdatedAt           *time.Time       `json:"updatedAt,omitzero"`

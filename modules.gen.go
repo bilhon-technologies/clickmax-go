@@ -278,7 +278,7 @@ type ModulesUpdateInput struct {
 	ReleaseType            *ModulesUpdateInputReleaseType `json:"releaseType,omitzero"`
 	ReleaseDays            Nullable[int64]                `json:"releaseDays,omitzero"`
 	ReleaseDate            Nullable[string]               `json:"releaseDate,omitzero"`
-	AdditionalRules        any                            `json:"additionalRules,omitzero"`
+	AdditionalRules        Nullable[any]                  `json:"additionalRules,omitzero"`
 	Position               *int64                         `json:"position,omitzero"`
 }
 
