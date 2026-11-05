@@ -17,8 +17,8 @@ type Client struct {
 	Activities *ActivitiesService
 	// AIAgents groups the /ai-agents/* operations.
 	AIAgents *AIAgentsService
-	// AISdr groups the /ai-sdr/* operations.
-	AISdr *AISdrService
+	// AISDR groups the /ai-sdr/* operations.
+	AISDR *AISDRService
 	// Analytics groups the /analytics/* operations.
 	Analytics *AnalyticsService
 	// AnalyticsDashboards groups the /analytics-dashboards/* operations.
@@ -216,7 +216,7 @@ func newClient(cfg settings) *Client {
 	c.Account = &AccountService{client: c}
 	c.Activities = &ActivitiesService{client: c}
 	c.AIAgents = &AIAgentsService{client: c}
-	c.AISdr = &AISdrService{client: c}
+	c.AISDR = &AISDRService{client: c}
 	c.Analytics = &AnalyticsService{client: c}
 	c.AnalyticsDashboards = &AnalyticsDashboardsService{client: c}
 	c.AttendantTypes = &AttendantTypesService{client: c}

@@ -7,8 +7,8 @@ import (
 	"net/url"
 )
 
-// AISdrService groups the /ai-sdr/* operations. Reach it through [Client.AISdr].
-type AISdrService struct {
+// AISDRService groups the /ai-sdr/* operations. Reach it through [Client.AISDR].
+type AISDRService struct {
 	client *Client
 }
 
@@ -24,8 +24,8 @@ type AISdrService struct {
 // decision. Rows include the contact name: only repeat it to the user who asked.
 //
 // Calls GET /ai-sdr/decisions-list.
-func (s *AISdrService) DecisionsList(ctx context.Context, params AISdrDecisionsListParams, opts ...Option) (*AISdrDecisionsListOutput, error) {
-	var out AISdrDecisionsListOutput
+func (s *AISDRService) DecisionsList(ctx context.Context, params AISDRDecisionsListParams, opts ...Option) (*AISDRDecisionsListOutput, error) {
+	var out AISDRDecisionsListOutput
 	if err := s.client.do(ctx, "GET", "/ai-sdr/decisions-list", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
@@ -41,26 +41,26 @@ func (s *AISdrService) DecisionsList(ctx context.Context, params AISdrDecisionsL
 // follow-ups (`followUps`). Use for "how did the SDR do this week", "why did it stop answering",
 // "which number fails most". Failures = `totals.errors` plus `byReason` rows with reasonCode
 // `provider_failure` or `ai_error`. `placements[]` also gives the
-// `agentId`/`deploymentId`/`channelInstanceId` to filter [AISdrService.DecisionsList]. `openPath` =
+// `agentId`/`deploymentId`/`channelInstanceId` to filter [AISDRService.DecisionsList]. `openPath` =
 // the same view in the app.
 //
 // Calls GET /ai-sdr/overview.
-func (s *AISdrService) Overview(ctx context.Context, params AISdrOverviewParams, opts ...Option) (*AISdrOverviewOutput, error) {
-	var out AISdrOverviewOutput
+func (s *AISDRService) Overview(ctx context.Context, params AISDROverviewParams, opts ...Option) (*AISDROverviewOutput, error) {
+	var out AISDROverviewOutput
 	if err := s.client.do(ctx, "GET", "/ai-sdr/overview", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
-// AISdrDecisionsListOutput is the response of [AISdrService.DecisionsList].
-type AISdrDecisionsListOutput struct {
-	Data []AISdrDecisionsListOutputDataItem `json:"data"`
-	Meta AISdrDecisionsListOutputMeta       `json:"meta"`
+// AISDRDecisionsListOutput is the response of [AISDRService.DecisionsList].
+type AISDRDecisionsListOutput struct {
+	Data []AISDRDecisionsListOutputDataItem `json:"data"`
+	Meta AISDRDecisionsListOutputMeta       `json:"meta"`
 }
 
-// AISdrDecisionsListOutputDataItem is an element of [AISdrDecisionsListOutput.Data].
-type AISdrDecisionsListOutputDataItem struct {
+// AISDRDecisionsListOutputDataItem is an element of [AISDRDecisionsListOutput.Data].
+type AISDRDecisionsListOutputDataItem struct {
 	ID                  string                                   `json:"id"`
 	CreatedAt           string                                   `json:"createdAt"`
 	Trigger             string                                   `json:"trigger"`
@@ -68,7 +68,7 @@ type AISdrDecisionsListOutputDataItem struct {
 	ReasonCode          string                                   `json:"reasonCode"`
 	Detail              *string                                  `json:"detail"`
 	Delivered           bool                                     `json:"delivered"`
-	Autonomy            AISdrDecisionsListOutputDataItemAutonomy `json:"autonomy"`
+	Autonomy            AISDRDecisionsListOutputDataItemAutonomy `json:"autonomy"`
 	Channel             string                                   `json:"channel"`
 	Rounds              float64                                  `json:"rounds"`
 	ToolKeys            []string                                 `json:"toolKeys"`
@@ -86,27 +86,27 @@ type AISdrDecisionsListOutputDataItem struct {
 	FlowSessionID       *string                                  `json:"flowSessionId"`
 }
 
-// AISdrDecisionsListOutputDataItemAutonomy is the type of [AISdrDecisionsListOutputDataItem.Autonomy].
-type AISdrDecisionsListOutputDataItemAutonomy string
+// AISDRDecisionsListOutputDataItemAutonomy is the type of [AISDRDecisionsListOutputDataItem.Autonomy].
+type AISDRDecisionsListOutputDataItemAutonomy string
 
-// Values of [AISdrDecisionsListOutputDataItemAutonomy].
+// Values of [AISDRDecisionsListOutputDataItemAutonomy].
 const (
-	AISdrDecisionsListOutputDataItemAutonomySuggest   AISdrDecisionsListOutputDataItemAutonomy = "suggest"
-	AISdrDecisionsListOutputDataItemAutonomyAutopilot AISdrDecisionsListOutputDataItemAutonomy = "autopilot"
+	AISDRDecisionsListOutputDataItemAutonomySuggest   AISDRDecisionsListOutputDataItemAutonomy = "suggest"
+	AISDRDecisionsListOutputDataItemAutonomyAutopilot AISDRDecisionsListOutputDataItemAutonomy = "autopilot"
 )
 
-// AISdrDecisionsListOutputMeta is the type of [AISdrDecisionsListOutput.Meta].
-type AISdrDecisionsListOutputMeta struct {
+// AISDRDecisionsListOutputMeta is the type of [AISDRDecisionsListOutput.Meta].
+type AISDRDecisionsListOutputMeta struct {
 	CountItens float64 `json:"countItens"`
 	CountPages float64 `json:"countPages"`
 	PerPage    float64 `json:"perPage"`
 }
 
-// AISdrDecisionsListParams holds the query parameters of [AISdrService.DecisionsList].
-type AISdrDecisionsListParams struct {
+// AISDRDecisionsListParams holds the query parameters of [AISDRService.DecisionsList].
+type AISDRDecisionsListParams struct {
 	// Window in whole days ending now (default 7, max 90).
 	Days *int64
-	// AI agent id — `placements[].agentId` from [AISdrService.Overview].
+	// AI agent id — `placements[].agentId` from [AISDRService.Overview].
 	AgentID *string
 	// Deployment ("atendimento": the agent placed on a channel) — `placements[].deploymentId`.
 	DeploymentID *string
@@ -116,17 +116,17 @@ type AISdrDecisionsListParams struct {
 	TimeZone *string
 	// Contact id from [LeadsService.Search] — the decisions of ONE contact.
 	LeadID  *string
-	Outcome *AISdrDecisionsListParamsOutcome
+	Outcome *AISDRDecisionsListParamsOutcome
 	// Exact reason code, e.g. `outside_business_hours`, `window_closed`.
 	ReasonCode *string
-	Trigger    *AISdrDecisionsListParamsTrigger
+	Trigger    *AISDRDecisionsListParamsTrigger
 	// true = a message reached the contact; false = it did not.
 	Delivered *bool
 	Page      *int64
 	PerPage   *int64
 }
 
-func (p AISdrDecisionsListParams) values() url.Values {
+func (p AISDRDecisionsListParams) values() url.Values {
 	v := url.Values{}
 	addInt(v, "days", p.Days)
 	addString(v, "agentId", p.AgentID)
@@ -143,83 +143,83 @@ func (p AISdrDecisionsListParams) values() url.Values {
 	return v
 }
 
-// AISdrDecisionsListParamsOutcome is the type of [AISdrDecisionsListParams.Outcome].
-type AISdrDecisionsListParamsOutcome string
+// AISDRDecisionsListParamsOutcome is the type of [AISDRDecisionsListParams.Outcome].
+type AISDRDecisionsListParamsOutcome string
 
-// Values of [AISdrDecisionsListParamsOutcome].
+// Values of [AISDRDecisionsListParamsOutcome].
 const (
-	AISdrDecisionsListParamsOutcomeSpoke     AISdrDecisionsListParamsOutcome = "spoke"
-	AISdrDecisionsListParamsOutcomeSuggested AISdrDecisionsListParamsOutcome = "suggested"
-	AISdrDecisionsListParamsOutcomeNotSent   AISdrDecisionsListParamsOutcome = "not_sent"
-	AISdrDecisionsListParamsOutcomeClosed    AISdrDecisionsListParamsOutcome = "closed"
-	AISdrDecisionsListParamsOutcomeHandedOff AISdrDecisionsListParamsOutcome = "handed_off"
-	AISdrDecisionsListParamsOutcomeFlowEnded AISdrDecisionsListParamsOutcome = "flow_ended"
-	AISdrDecisionsListParamsOutcomeSilenced  AISdrDecisionsListParamsOutcome = "silenced"
-	AISdrDecisionsListParamsOutcomeSkipped   AISdrDecisionsListParamsOutcome = "skipped"
-	AISdrDecisionsListParamsOutcomeDeferred  AISdrDecisionsListParamsOutcome = "deferred"
-	AISdrDecisionsListParamsOutcomeError     AISdrDecisionsListParamsOutcome = "error"
+	AISDRDecisionsListParamsOutcomeSpoke     AISDRDecisionsListParamsOutcome = "spoke"
+	AISDRDecisionsListParamsOutcomeSuggested AISDRDecisionsListParamsOutcome = "suggested"
+	AISDRDecisionsListParamsOutcomeNotSent   AISDRDecisionsListParamsOutcome = "not_sent"
+	AISDRDecisionsListParamsOutcomeClosed    AISDRDecisionsListParamsOutcome = "closed"
+	AISDRDecisionsListParamsOutcomeHandedOff AISDRDecisionsListParamsOutcome = "handed_off"
+	AISDRDecisionsListParamsOutcomeFlowEnded AISDRDecisionsListParamsOutcome = "flow_ended"
+	AISDRDecisionsListParamsOutcomeSilenced  AISDRDecisionsListParamsOutcome = "silenced"
+	AISDRDecisionsListParamsOutcomeSkipped   AISDRDecisionsListParamsOutcome = "skipped"
+	AISDRDecisionsListParamsOutcomeDeferred  AISDRDecisionsListParamsOutcome = "deferred"
+	AISDRDecisionsListParamsOutcomeError     AISDRDecisionsListParamsOutcome = "error"
 )
 
-// AISdrDecisionsListParamsTrigger is the type of [AISdrDecisionsListParams.Trigger].
-type AISdrDecisionsListParamsTrigger string
+// AISDRDecisionsListParamsTrigger is the type of [AISDRDecisionsListParams.Trigger].
+type AISDRDecisionsListParamsTrigger string
 
-// Values of [AISdrDecisionsListParamsTrigger].
+// Values of [AISDRDecisionsListParamsTrigger].
 const (
-	AISdrDecisionsListParamsTriggerInbound     AISdrDecisionsListParamsTrigger = "inbound"
-	AISdrDecisionsListParamsTriggerFollowUp    AISdrDecisionsListParamsTrigger = "follow_up"
-	AISdrDecisionsListParamsTriggerFlowOpening AISdrDecisionsListParamsTrigger = "flow_opening"
+	AISDRDecisionsListParamsTriggerInbound     AISDRDecisionsListParamsTrigger = "inbound"
+	AISDRDecisionsListParamsTriggerFollowUp    AISDRDecisionsListParamsTrigger = "follow_up"
+	AISDRDecisionsListParamsTriggerFlowOpening AISDRDecisionsListParamsTrigger = "flow_opening"
 )
 
-// AISdrOverviewOutput is the response of [AISdrService.Overview].
-type AISdrOverviewOutput struct {
+// AISDROverviewOutput is the response of [AISDRService.Overview].
+type AISDROverviewOutput struct {
 	Days       float64                             `json:"days"`
 	TimeZone   string                              `json:"timeZone"`
-	Totals     AISdrOverviewOutputTotals           `json:"totals"`
-	Previous   AISdrOverviewOutputPrevious         `json:"previous"`
-	ByReason   []AISdrOverviewOutputByReasonItem   `json:"byReason"`
-	ByTrigger  []AISdrOverviewOutputByTriggerItem  `json:"byTrigger"`
-	Daily      []AISdrOverviewOutputDailyItem      `json:"daily"`
-	Placements []AISdrOverviewOutputPlacementsItem `json:"placements"`
-	Tools      []AISdrOverviewOutputToolsItem      `json:"tools"`
-	Flow       AISdrOverviewOutputFlow             `json:"flow"`
-	FollowUps  AISdrOverviewOutputFollowUps        `json:"followUps"`
+	Totals     AISDROverviewOutputTotals           `json:"totals"`
+	Previous   AISDROverviewOutputPrevious         `json:"previous"`
+	ByReason   []AISDROverviewOutputByReasonItem   `json:"byReason"`
+	ByTrigger  []AISDROverviewOutputByTriggerItem  `json:"byTrigger"`
+	Daily      []AISDROverviewOutputDailyItem      `json:"daily"`
+	Placements []AISDROverviewOutputPlacementsItem `json:"placements"`
+	Tools      []AISDROverviewOutputToolsItem      `json:"tools"`
+	Flow       AISDROverviewOutputFlow             `json:"flow"`
+	FollowUps  AISDROverviewOutputFollowUps        `json:"followUps"`
 	OpenPath   string                              `json:"openPath"`
 }
 
-// AISdrOverviewOutputByReasonItem is an element of [AISdrOverviewOutput.ByReason].
-type AISdrOverviewOutputByReasonItem struct {
+// AISDROverviewOutputByReasonItem is an element of [AISDROverviewOutput.ByReason].
+type AISDROverviewOutputByReasonItem struct {
 	Outcome    string  `json:"outcome"`
 	ReasonCode string  `json:"reasonCode"`
 	Count      float64 `json:"count"`
 }
 
-// AISdrOverviewOutputByTriggerItem is an element of [AISdrOverviewOutput.ByTrigger].
-type AISdrOverviewOutputByTriggerItem struct {
+// AISDROverviewOutputByTriggerItem is an element of [AISDROverviewOutput.ByTrigger].
+type AISDROverviewOutputByTriggerItem struct {
 	Trigger string  `json:"trigger"`
 	Count   float64 `json:"count"`
 }
 
-// AISdrOverviewOutputDailyItem is an element of [AISdrOverviewOutput.Daily].
-type AISdrOverviewOutputDailyItem struct {
+// AISDROverviewOutputDailyItem is an element of [AISDROverviewOutput.Daily].
+type AISDROverviewOutputDailyItem struct {
 	Day     string  `json:"day"`
 	Outcome string  `json:"outcome"`
 	Count   float64 `json:"count"`
 }
 
-// AISdrOverviewOutputFlow is the type of [AISdrOverviewOutput.Flow].
-type AISdrOverviewOutputFlow struct {
+// AISDROverviewOutputFlow is the type of [AISDROverviewOutput.Flow].
+type AISDROverviewOutputFlow struct {
 	Active float64                            `json:"active"`
-	Exits  []AISdrOverviewOutputFlowExitsItem `json:"exits"`
+	Exits  []AISDROverviewOutputFlowExitsItem `json:"exits"`
 }
 
-// AISdrOverviewOutputFlowExitsItem is an element of [AISdrOverviewOutputFlow.Exits].
-type AISdrOverviewOutputFlowExitsItem struct {
+// AISDROverviewOutputFlowExitsItem is an element of [AISDROverviewOutputFlow.Exits].
+type AISDROverviewOutputFlowExitsItem struct {
 	Exit  string  `json:"exit"`
 	Count float64 `json:"count"`
 }
 
-// AISdrOverviewOutputFollowUps is the type of [AISdrOverviewOutput.FollowUps].
-type AISdrOverviewOutputFollowUps struct {
+// AISDROverviewOutputFollowUps is the type of [AISDROverviewOutput.FollowUps].
+type AISDROverviewOutputFollowUps struct {
 	Pending   float64                                   `json:"pending"`
 	Overdue   float64                                   `json:"overdue"`
 	Claimed   float64                                   `json:"claimed"`
@@ -227,31 +227,31 @@ type AISdrOverviewOutputFollowUps struct {
 	Cancelled float64                                   `json:"cancelled"`
 	Failed    float64                                   `json:"failed"`
 	NextDueAt *string                                   `json:"nextDueAt"`
-	Reasons   []AISdrOverviewOutputFollowUpsReasonsItem `json:"reasons"`
+	Reasons   []AISDROverviewOutputFollowUpsReasonsItem `json:"reasons"`
 }
 
-// AISdrOverviewOutputFollowUpsReasonsItem is an element of [AISdrOverviewOutputFollowUps.Reasons].
-type AISdrOverviewOutputFollowUpsReasonsItem struct {
-	Status AISdrOverviewOutputFollowUpsReasonsItemStatus `json:"status"`
+// AISDROverviewOutputFollowUpsReasonsItem is an element of [AISDROverviewOutputFollowUps.Reasons].
+type AISDROverviewOutputFollowUpsReasonsItem struct {
+	Status AISDROverviewOutputFollowUpsReasonsItemStatus `json:"status"`
 	Code   string                                        `json:"code"`
 	Count  float64                                       `json:"count"`
 }
 
-// AISdrOverviewOutputFollowUpsReasonsItemStatus is the type of
-// [AISdrOverviewOutputFollowUpsReasonsItem.Status].
-type AISdrOverviewOutputFollowUpsReasonsItemStatus string
+// AISDROverviewOutputFollowUpsReasonsItemStatus is the type of
+// [AISDROverviewOutputFollowUpsReasonsItem.Status].
+type AISDROverviewOutputFollowUpsReasonsItemStatus string
 
-// Values of [AISdrOverviewOutputFollowUpsReasonsItemStatus].
+// Values of [AISDROverviewOutputFollowUpsReasonsItemStatus].
 const (
-	AISdrOverviewOutputFollowUpsReasonsItemStatusCancelled AISdrOverviewOutputFollowUpsReasonsItemStatus = "cancelled"
-	AISdrOverviewOutputFollowUpsReasonsItemStatusFailed    AISdrOverviewOutputFollowUpsReasonsItemStatus = "failed"
+	AISDROverviewOutputFollowUpsReasonsItemStatusCancelled AISDROverviewOutputFollowUpsReasonsItemStatus = "cancelled"
+	AISDROverviewOutputFollowUpsReasonsItemStatusFailed    AISDROverviewOutputFollowUpsReasonsItemStatus = "failed"
 )
 
-// AISdrOverviewOutputPlacementsItem is an element of [AISdrOverviewOutput.Placements].
-type AISdrOverviewOutputPlacementsItem struct {
+// AISDROverviewOutputPlacementsItem is an element of [AISDROverviewOutput.Placements].
+type AISDROverviewOutputPlacementsItem struct {
 	DeploymentID        string                                            `json:"deploymentId"`
 	DeploymentName      string                                            `json:"deploymentName"`
-	Autonomies          []AISdrOverviewOutputPlacementsItemAutonomiesItem `json:"autonomies"`
+	Autonomies          []AISDROverviewOutputPlacementsItemAutonomiesItem `json:"autonomies"`
 	AgentID             string                                            `json:"agentId"`
 	AgentName           string                                            `json:"agentName"`
 	ChannelInstanceID   *string                                           `json:"channelInstanceId"`
@@ -267,18 +267,18 @@ type AISdrOverviewOutputPlacementsItem struct {
 	LastAt              string                                            `json:"lastAt"`
 }
 
-// AISdrOverviewOutputPlacementsItemAutonomiesItem is an element of
-// [AISdrOverviewOutputPlacementsItem.Autonomies].
-type AISdrOverviewOutputPlacementsItemAutonomiesItem string
+// AISDROverviewOutputPlacementsItemAutonomiesItem is an element of
+// [AISDROverviewOutputPlacementsItem.Autonomies].
+type AISDROverviewOutputPlacementsItemAutonomiesItem string
 
-// Values of [AISdrOverviewOutputPlacementsItemAutonomiesItem].
+// Values of [AISDROverviewOutputPlacementsItemAutonomiesItem].
 const (
-	AISdrOverviewOutputPlacementsItemAutonomiesItemSuggest   AISdrOverviewOutputPlacementsItemAutonomiesItem = "suggest"
-	AISdrOverviewOutputPlacementsItemAutonomiesItemAutopilot AISdrOverviewOutputPlacementsItemAutonomiesItem = "autopilot"
+	AISDROverviewOutputPlacementsItemAutonomiesItemSuggest   AISDROverviewOutputPlacementsItemAutonomiesItem = "suggest"
+	AISDROverviewOutputPlacementsItemAutonomiesItemAutopilot AISDROverviewOutputPlacementsItemAutonomiesItem = "autopilot"
 )
 
-// AISdrOverviewOutputPrevious is the type of [AISdrOverviewOutput.Previous].
-type AISdrOverviewOutputPrevious struct {
+// AISDROverviewOutputPrevious is the type of [AISDROverviewOutput.Previous].
+type AISDROverviewOutputPrevious struct {
 	Decisions    float64  `json:"decisions"`
 	Delivered    float64  `json:"delivered"`
 	Spoke        float64  `json:"spoke"`
@@ -303,8 +303,8 @@ type AISdrOverviewOutputPrevious struct {
 	WaitP95Ms    *float64 `json:"waitP95Ms"`
 }
 
-// AISdrOverviewOutputToolsItem is an element of [AISdrOverviewOutput.Tools].
-type AISdrOverviewOutputToolsItem struct {
+// AISDROverviewOutputToolsItem is an element of [AISDROverviewOutput.Tools].
+type AISDROverviewOutputToolsItem struct {
 	ToolKey      string  `json:"toolKey"`
 	Calls        float64 `json:"calls"`
 	Ok           float64 `json:"ok"`
@@ -313,8 +313,8 @@ type AISdrOverviewOutputToolsItem struct {
 	TopErrorCode *string `json:"topErrorCode"`
 }
 
-// AISdrOverviewOutputTotals is the type of [AISdrOverviewOutput.Totals].
-type AISdrOverviewOutputTotals struct {
+// AISDROverviewOutputTotals is the type of [AISDROverviewOutput.Totals].
+type AISDROverviewOutputTotals struct {
 	Decisions    float64  `json:"decisions"`
 	Delivered    float64  `json:"delivered"`
 	Spoke        float64  `json:"spoke"`
@@ -339,11 +339,11 @@ type AISdrOverviewOutputTotals struct {
 	WaitP95Ms    *float64 `json:"waitP95Ms"`
 }
 
-// AISdrOverviewParams holds the query parameters of [AISdrService.Overview].
-type AISdrOverviewParams struct {
+// AISDROverviewParams holds the query parameters of [AISDRService.Overview].
+type AISDROverviewParams struct {
 	// Window in whole days ending now (default 7, max 90).
 	Days *int64
-	// AI agent id — `placements[].agentId` from [AISdrService.Overview].
+	// AI agent id — `placements[].agentId` from [AISDRService.Overview].
 	AgentID *string
 	// Deployment ("atendimento": the agent placed on a channel) — `placements[].deploymentId`.
 	DeploymentID *string
@@ -353,7 +353,7 @@ type AISdrOverviewParams struct {
 	TimeZone *string
 }
 
-func (p AISdrOverviewParams) values() url.Values {
+func (p AISDROverviewParams) values() url.Values {
 	v := url.Values{}
 	addInt(v, "days", p.Days)
 	addString(v, "agentId", p.AgentID)

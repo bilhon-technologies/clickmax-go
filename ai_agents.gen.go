@@ -164,7 +164,7 @@ func (s *AIAgentsService) Get(ctx context.Context, params AIAgentsGetParams, opt
 // the agent repeats them to contacts as fact.
 //
 // Calls POST /ai-agents/knowledge-add-faq.
-func (s *AIAgentsService) KnowledgeAddFaq(ctx context.Context, body AIAgentsKnowledgeAddFaqInput, opts ...Option) (*AIAgentsKnowledgeAddURLOutput, error) {
+func (s *AIAgentsService) KnowledgeAddFAQ(ctx context.Context, body AIAgentsKnowledgeAddFAQInput, opts ...Option) (*AIAgentsKnowledgeAddURLOutput, error) {
 	var out AIAgentsKnowledgeAddURLOutput
 	if err := s.client.do(ctx, "POST", "/ai-agents/knowledge-add-faq", nil, body, &out, opts); err != nil {
 		return nil, err
@@ -381,7 +381,7 @@ type AIAgentsDeploymentsCreateInputRole string
 
 // Values of [AIAgentsDeploymentsCreateInputRole].
 const (
-	AIAgentsDeploymentsCreateInputRoleSdrInbound AIAgentsDeploymentsCreateInputRole = "sdr_inbound"
+	AIAgentsDeploymentsCreateInputRoleSDRInbound AIAgentsDeploymentsCreateInputRole = "sdr_inbound"
 )
 
 // AIAgentsDeploymentsGetOutput is the response of [AIAgentsService.DeploymentsActivate],
@@ -612,15 +612,15 @@ func (p AIAgentsGetParams) values() url.Values {
 	return v
 }
 
-// AIAgentsKnowledgeAddFaqInput is the request body of [AIAgentsService.KnowledgeAddFaq].
-type AIAgentsKnowledgeAddFaqInput struct {
+// AIAgentsKnowledgeAddFAQInput is the request body of [AIAgentsService.KnowledgeAddFAQ].
+type AIAgentsKnowledgeAddFAQInput struct {
 	AgentID string                                  `json:"agentId"`
 	Name    string                                  `json:"name"`
-	Items   []AIAgentsKnowledgeAddFaqInputItemsItem `json:"items"`
+	Items   []AIAgentsKnowledgeAddFAQInputItemsItem `json:"items"`
 }
 
-// AIAgentsKnowledgeAddFaqInputItemsItem is an element of [AIAgentsKnowledgeAddFaqInput.Items].
-type AIAgentsKnowledgeAddFaqInputItemsItem struct {
+// AIAgentsKnowledgeAddFAQInputItemsItem is an element of [AIAgentsKnowledgeAddFAQInput.Items].
+type AIAgentsKnowledgeAddFAQInputItemsItem struct {
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
 }
@@ -631,7 +631,7 @@ type AIAgentsKnowledgeAddURLInput struct {
 	URL     string `json:"url"`
 }
 
-// AIAgentsKnowledgeAddURLOutput is the response of [AIAgentsService.KnowledgeAddFaq] and
+// AIAgentsKnowledgeAddURLOutput is the response of [AIAgentsService.KnowledgeAddFAQ] and
 // [AIAgentsService.KnowledgeAddURL].
 type AIAgentsKnowledgeAddURLOutput struct {
 	ID         string                              `json:"id"`
@@ -652,7 +652,7 @@ type AIAgentsKnowledgeAddURLOutputKind string
 const (
 	AIAgentsKnowledgeAddURLOutputKindDocument AIAgentsKnowledgeAddURLOutputKind = "document"
 	AIAgentsKnowledgeAddURLOutputKindURL      AIAgentsKnowledgeAddURLOutputKind = "url"
-	AIAgentsKnowledgeAddURLOutputKindFaq      AIAgentsKnowledgeAddURLOutputKind = "faq"
+	AIAgentsKnowledgeAddURLOutputKindFAQ      AIAgentsKnowledgeAddURLOutputKind = "faq"
 )
 
 // AIAgentsKnowledgeAddURLOutputStatus is the type of [AIAgentsKnowledgeAddURLOutput.Status].
@@ -701,7 +701,7 @@ type AIAgentsKnowledgeListOutputDataItemKind string
 const (
 	AIAgentsKnowledgeListOutputDataItemKindDocument AIAgentsKnowledgeListOutputDataItemKind = "document"
 	AIAgentsKnowledgeListOutputDataItemKindURL      AIAgentsKnowledgeListOutputDataItemKind = "url"
-	AIAgentsKnowledgeListOutputDataItemKindFaq      AIAgentsKnowledgeListOutputDataItemKind = "faq"
+	AIAgentsKnowledgeListOutputDataItemKindFAQ      AIAgentsKnowledgeListOutputDataItemKind = "faq"
 )
 
 // AIAgentsKnowledgeListOutputDataItemStatus is the type of

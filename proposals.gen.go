@@ -100,7 +100,7 @@ type ProposalsConsolidateOutputKind string
 const (
 	ProposalsConsolidateOutputKindSlideDeck ProposalsConsolidateOutputKind = "slide_deck"
 	ProposalsConsolidateOutputKindDocument  ProposalsConsolidateOutputKind = "document"
-	ProposalsConsolidateOutputKindPdf       ProposalsConsolidateOutputKind = "pdf"
+	ProposalsConsolidateOutputKindPDF       ProposalsConsolidateOutputKind = "pdf"
 )
 
 // ProposalsConsolidateOutputStatus is the type of [ProposalsConsolidateOutput.Status].
@@ -146,7 +146,7 @@ type ProposalsGetOutputKind string
 const (
 	ProposalsGetOutputKindSlideDeck ProposalsGetOutputKind = "slide_deck"
 	ProposalsGetOutputKindDocument  ProposalsGetOutputKind = "document"
-	ProposalsGetOutputKindPdf       ProposalsGetOutputKind = "pdf"
+	ProposalsGetOutputKindPDF       ProposalsGetOutputKind = "pdf"
 )
 
 // ProposalsGetOutputStatus is the type of [ProposalsGetOutput.Status].
@@ -197,7 +197,7 @@ type ProposalsListInputKindsItem string
 const (
 	ProposalsListInputKindsItemSlideDeck ProposalsListInputKindsItem = "slide_deck"
 	ProposalsListInputKindsItemDocument  ProposalsListInputKindsItem = "document"
-	ProposalsListInputKindsItemPdf       ProposalsListInputKindsItem = "pdf"
+	ProposalsListInputKindsItemPDF       ProposalsListInputKindsItem = "pdf"
 )
 
 // ProposalsListInputOrderBy is the type of [ProposalsListInput.OrderBy].
@@ -287,7 +287,7 @@ type ProposalsListOutputDataItemKind string
 const (
 	ProposalsListOutputDataItemKindSlideDeck ProposalsListOutputDataItemKind = "slide_deck"
 	ProposalsListOutputDataItemKindDocument  ProposalsListOutputDataItemKind = "document"
-	ProposalsListOutputDataItemKindPdf       ProposalsListOutputDataItemKind = "pdf"
+	ProposalsListOutputDataItemKindPDF       ProposalsListOutputDataItemKind = "pdf"
 )
 
 // ProposalsListOutputDataItemStatus is the type of [ProposalsListOutputDataItem.Status].

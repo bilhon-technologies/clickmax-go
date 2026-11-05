@@ -580,7 +580,7 @@ const (
 	PagesCreateExternalInputTypeDownsell     PagesCreateExternalInputType = "downsell"
 	PagesCreateExternalInputTypeTermsPrivacy PagesCreateExternalInputType = "termsPrivacy"
 	PagesCreateExternalInputTypeThankYou     PagesCreateExternalInputType = "thankYou"
-	PagesCreateExternalInputTypeVsl          PagesCreateExternalInputType = "vsl"
+	PagesCreateExternalInputTypeVSL          PagesCreateExternalInputType = "vsl"
 	PagesCreateExternalInputTypeWebinar      PagesCreateExternalInputType = "webinar"
 )
 
@@ -625,7 +625,7 @@ const (
 	PagesCreateInputTypeDownsell     PagesCreateInputType = "downsell"
 	PagesCreateInputTypeTermsPrivacy PagesCreateInputType = "termsPrivacy"
 	PagesCreateInputTypeThankYou     PagesCreateInputType = "thankYou"
-	PagesCreateInputTypeVsl          PagesCreateInputType = "vsl"
+	PagesCreateInputTypeVSL          PagesCreateInputType = "vsl"
 	PagesCreateInputTypeWebinar      PagesCreateInputType = "webinar"
 )
 
@@ -695,7 +695,7 @@ const (
 	PagesGenerationContextGetInputPlacementTypeDownsell     PagesGenerationContextGetInputPlacementType = "downsell"
 	PagesGenerationContextGetInputPlacementTypeTermsPrivacy PagesGenerationContextGetInputPlacementType = "termsPrivacy"
 	PagesGenerationContextGetInputPlacementTypeThankYou     PagesGenerationContextGetInputPlacementType = "thankYou"
-	PagesGenerationContextGetInputPlacementTypeVsl          PagesGenerationContextGetInputPlacementType = "vsl"
+	PagesGenerationContextGetInputPlacementTypeVSL          PagesGenerationContextGetInputPlacementType = "vsl"
 	PagesGenerationContextGetInputPlacementTypeWebinar      PagesGenerationContextGetInputPlacementType = "webinar"
 )
 
@@ -794,8 +794,19 @@ type PagesGenerationContextGetOutputRecipe struct {
 type PagesGenerationContextGetOutputRecipeCapabilities struct {
 	LeadCapture PagesGenerationContextGetOutputRecipeCapabilitiesLeadCapture `json:"leadCapture"`
 	Checkout    PagesGenerationContextGetOutputRecipeCapabilitiesCheckout    `json:"checkout"`
-	Cta         PagesGenerationContextGetOutputRecipeCapabilitiesCta         `json:"cta"`
+	CTA         PagesGenerationContextGetOutputRecipeCapabilitiesCTA         `json:"cta"`
 }
+
+// PagesGenerationContextGetOutputRecipeCapabilitiesCTA is the type of
+// [PagesGenerationContextGetOutputRecipeCapabilities.CTA].
+type PagesGenerationContextGetOutputRecipeCapabilitiesCTA string
+
+// Values of [PagesGenerationContextGetOutputRecipeCapabilitiesCTA].
+const (
+	PagesGenerationContextGetOutputRecipeCapabilitiesCTARequired  PagesGenerationContextGetOutputRecipeCapabilitiesCTA = "required"
+	PagesGenerationContextGetOutputRecipeCapabilitiesCTAOptional  PagesGenerationContextGetOutputRecipeCapabilitiesCTA = "optional"
+	PagesGenerationContextGetOutputRecipeCapabilitiesCTAForbidden PagesGenerationContextGetOutputRecipeCapabilitiesCTA = "forbidden"
+)
 
 // PagesGenerationContextGetOutputRecipeCapabilitiesCheckout is the type of
 // [PagesGenerationContextGetOutputRecipeCapabilities.Checkout].
@@ -806,17 +817,6 @@ const (
 	PagesGenerationContextGetOutputRecipeCapabilitiesCheckoutRequired  PagesGenerationContextGetOutputRecipeCapabilitiesCheckout = "required"
 	PagesGenerationContextGetOutputRecipeCapabilitiesCheckoutOptional  PagesGenerationContextGetOutputRecipeCapabilitiesCheckout = "optional"
 	PagesGenerationContextGetOutputRecipeCapabilitiesCheckoutForbidden PagesGenerationContextGetOutputRecipeCapabilitiesCheckout = "forbidden"
-)
-
-// PagesGenerationContextGetOutputRecipeCapabilitiesCta is the type of
-// [PagesGenerationContextGetOutputRecipeCapabilities.Cta].
-type PagesGenerationContextGetOutputRecipeCapabilitiesCta string
-
-// Values of [PagesGenerationContextGetOutputRecipeCapabilitiesCta].
-const (
-	PagesGenerationContextGetOutputRecipeCapabilitiesCtaRequired  PagesGenerationContextGetOutputRecipeCapabilitiesCta = "required"
-	PagesGenerationContextGetOutputRecipeCapabilitiesCtaOptional  PagesGenerationContextGetOutputRecipeCapabilitiesCta = "optional"
-	PagesGenerationContextGetOutputRecipeCapabilitiesCtaForbidden PagesGenerationContextGetOutputRecipeCapabilitiesCta = "forbidden"
 )
 
 // PagesGenerationContextGetOutputRecipeCapabilitiesLeadCapture is the type of
@@ -846,7 +846,7 @@ const (
 	PagesGenerationContextGetOutputRecipeCompatiblePageTypesItemDownsell     PagesGenerationContextGetOutputRecipeCompatiblePageTypesItem = "downsell"
 	PagesGenerationContextGetOutputRecipeCompatiblePageTypesItemTermsPrivacy PagesGenerationContextGetOutputRecipeCompatiblePageTypesItem = "termsPrivacy"
 	PagesGenerationContextGetOutputRecipeCompatiblePageTypesItemThankYou     PagesGenerationContextGetOutputRecipeCompatiblePageTypesItem = "thankYou"
-	PagesGenerationContextGetOutputRecipeCompatiblePageTypesItemVsl          PagesGenerationContextGetOutputRecipeCompatiblePageTypesItem = "vsl"
+	PagesGenerationContextGetOutputRecipeCompatiblePageTypesItemVSL          PagesGenerationContextGetOutputRecipeCompatiblePageTypesItem = "vsl"
 	PagesGenerationContextGetOutputRecipeCompatiblePageTypesItemWebinar      PagesGenerationContextGetOutputRecipeCompatiblePageTypesItem = "webinar"
 )
 
@@ -1254,7 +1254,7 @@ const (
 	PagesImportHTMLDraftInputPlacementTypeDownsell     PagesImportHTMLDraftInputPlacementType = "downsell"
 	PagesImportHTMLDraftInputPlacementTypeTermsPrivacy PagesImportHTMLDraftInputPlacementType = "termsPrivacy"
 	PagesImportHTMLDraftInputPlacementTypeThankYou     PagesImportHTMLDraftInputPlacementType = "thankYou"
-	PagesImportHTMLDraftInputPlacementTypeVsl          PagesImportHTMLDraftInputPlacementType = "vsl"
+	PagesImportHTMLDraftInputPlacementTypeVSL          PagesImportHTMLDraftInputPlacementType = "vsl"
 	PagesImportHTMLDraftInputPlacementTypeWebinar      PagesImportHTMLDraftInputPlacementType = "webinar"
 )
 
@@ -1552,7 +1552,7 @@ const (
 	PagesImportHTMLInputPlacementTypeDownsell     PagesImportHTMLInputPlacementType = "downsell"
 	PagesImportHTMLInputPlacementTypeTermsPrivacy PagesImportHTMLInputPlacementType = "termsPrivacy"
 	PagesImportHTMLInputPlacementTypeThankYou     PagesImportHTMLInputPlacementType = "thankYou"
-	PagesImportHTMLInputPlacementTypeVsl          PagesImportHTMLInputPlacementType = "vsl"
+	PagesImportHTMLInputPlacementTypeVSL          PagesImportHTMLInputPlacementType = "vsl"
 	PagesImportHTMLInputPlacementTypeWebinar      PagesImportHTMLInputPlacementType = "webinar"
 )
 
@@ -2015,7 +2015,7 @@ const (
 	PagesListOutputDataItemTypeDownsell     PagesListOutputDataItemType = "downsell"
 	PagesListOutputDataItemTypeTermsPrivacy PagesListOutputDataItemType = "termsPrivacy"
 	PagesListOutputDataItemTypeThankYou     PagesListOutputDataItemType = "thankYou"
-	PagesListOutputDataItemTypeVsl          PagesListOutputDataItemType = "vsl"
+	PagesListOutputDataItemTypeVSL          PagesListOutputDataItemType = "vsl"
 	PagesListOutputDataItemTypeWebinar      PagesListOutputDataItemType = "webinar"
 )
 
@@ -2133,7 +2133,7 @@ const (
 	PagesListParamsTypeDownsell     PagesListParamsType = "downsell"
 	PagesListParamsTypeTermsPrivacy PagesListParamsType = "termsPrivacy"
 	PagesListParamsTypeThankYou     PagesListParamsType = "thankYou"
-	PagesListParamsTypeVsl          PagesListParamsType = "vsl"
+	PagesListParamsTypeVSL          PagesListParamsType = "vsl"
 	PagesListParamsTypeWebinar      PagesListParamsType = "webinar"
 )
 
@@ -2169,8 +2169,19 @@ type PagesRecipesListOutputDataItem struct {
 type PagesRecipesListOutputDataItemCapabilities struct {
 	LeadCapture PagesRecipesListOutputDataItemCapabilitiesLeadCapture `json:"leadCapture"`
 	Checkout    PagesRecipesListOutputDataItemCapabilitiesCheckout    `json:"checkout"`
-	Cta         PagesRecipesListOutputDataItemCapabilitiesCta         `json:"cta"`
+	CTA         PagesRecipesListOutputDataItemCapabilitiesCTA         `json:"cta"`
 }
+
+// PagesRecipesListOutputDataItemCapabilitiesCTA is the type of
+// [PagesRecipesListOutputDataItemCapabilities.CTA].
+type PagesRecipesListOutputDataItemCapabilitiesCTA string
+
+// Values of [PagesRecipesListOutputDataItemCapabilitiesCTA].
+const (
+	PagesRecipesListOutputDataItemCapabilitiesCTARequired  PagesRecipesListOutputDataItemCapabilitiesCTA = "required"
+	PagesRecipesListOutputDataItemCapabilitiesCTAOptional  PagesRecipesListOutputDataItemCapabilitiesCTA = "optional"
+	PagesRecipesListOutputDataItemCapabilitiesCTAForbidden PagesRecipesListOutputDataItemCapabilitiesCTA = "forbidden"
+)
 
 // PagesRecipesListOutputDataItemCapabilitiesCheckout is the type of
 // [PagesRecipesListOutputDataItemCapabilities.Checkout].
@@ -2181,17 +2192,6 @@ const (
 	PagesRecipesListOutputDataItemCapabilitiesCheckoutRequired  PagesRecipesListOutputDataItemCapabilitiesCheckout = "required"
 	PagesRecipesListOutputDataItemCapabilitiesCheckoutOptional  PagesRecipesListOutputDataItemCapabilitiesCheckout = "optional"
 	PagesRecipesListOutputDataItemCapabilitiesCheckoutForbidden PagesRecipesListOutputDataItemCapabilitiesCheckout = "forbidden"
-)
-
-// PagesRecipesListOutputDataItemCapabilitiesCta is the type of
-// [PagesRecipesListOutputDataItemCapabilities.Cta].
-type PagesRecipesListOutputDataItemCapabilitiesCta string
-
-// Values of [PagesRecipesListOutputDataItemCapabilitiesCta].
-const (
-	PagesRecipesListOutputDataItemCapabilitiesCtaRequired  PagesRecipesListOutputDataItemCapabilitiesCta = "required"
-	PagesRecipesListOutputDataItemCapabilitiesCtaOptional  PagesRecipesListOutputDataItemCapabilitiesCta = "optional"
-	PagesRecipesListOutputDataItemCapabilitiesCtaForbidden PagesRecipesListOutputDataItemCapabilitiesCta = "forbidden"
 )
 
 // PagesRecipesListOutputDataItemCapabilitiesLeadCapture is the type of
@@ -2221,7 +2221,7 @@ const (
 	PagesRecipesListOutputDataItemCompatiblePageTypesItemDownsell     PagesRecipesListOutputDataItemCompatiblePageTypesItem = "downsell"
 	PagesRecipesListOutputDataItemCompatiblePageTypesItemTermsPrivacy PagesRecipesListOutputDataItemCompatiblePageTypesItem = "termsPrivacy"
 	PagesRecipesListOutputDataItemCompatiblePageTypesItemThankYou     PagesRecipesListOutputDataItemCompatiblePageTypesItem = "thankYou"
-	PagesRecipesListOutputDataItemCompatiblePageTypesItemVsl          PagesRecipesListOutputDataItemCompatiblePageTypesItem = "vsl"
+	PagesRecipesListOutputDataItemCompatiblePageTypesItemVSL          PagesRecipesListOutputDataItemCompatiblePageTypesItem = "vsl"
 	PagesRecipesListOutputDataItemCompatiblePageTypesItemWebinar      PagesRecipesListOutputDataItemCompatiblePageTypesItem = "webinar"
 )
 
@@ -2302,7 +2302,7 @@ const (
 	PagesTemplatesListInputTypeItemDownsell     PagesTemplatesListInputTypeItem = "downsell"
 	PagesTemplatesListInputTypeItemTermsPrivacy PagesTemplatesListInputTypeItem = "termsPrivacy"
 	PagesTemplatesListInputTypeItemThankYou     PagesTemplatesListInputTypeItem = "thankYou"
-	PagesTemplatesListInputTypeItemVsl          PagesTemplatesListInputTypeItem = "vsl"
+	PagesTemplatesListInputTypeItemVSL          PagesTemplatesListInputTypeItem = "vsl"
 	PagesTemplatesListInputTypeItemWebinar      PagesTemplatesListInputTypeItem = "webinar"
 )
 
@@ -2354,7 +2354,7 @@ const (
 	PagesTemplatesListOutputDataItemTypeDownsell     PagesTemplatesListOutputDataItemType = "downsell"
 	PagesTemplatesListOutputDataItemTypeTermsPrivacy PagesTemplatesListOutputDataItemType = "termsPrivacy"
 	PagesTemplatesListOutputDataItemTypeThankYou     PagesTemplatesListOutputDataItemType = "thankYou"
-	PagesTemplatesListOutputDataItemTypeVsl          PagesTemplatesListOutputDataItemType = "vsl"
+	PagesTemplatesListOutputDataItemTypeVSL          PagesTemplatesListOutputDataItemType = "vsl"
 	PagesTemplatesListOutputDataItemTypeWebinar      PagesTemplatesListOutputDataItemType = "webinar"
 )
 
@@ -2442,7 +2442,7 @@ const (
 	PagesUpdateInputDataTypeDownsell     PagesUpdateInputDataType = "downsell"
 	PagesUpdateInputDataTypeTermsPrivacy PagesUpdateInputDataType = "termsPrivacy"
 	PagesUpdateInputDataTypeThankYou     PagesUpdateInputDataType = "thankYou"
-	PagesUpdateInputDataTypeVsl          PagesUpdateInputDataType = "vsl"
+	PagesUpdateInputDataTypeVSL          PagesUpdateInputDataType = "vsl"
 	PagesUpdateInputDataTypeWebinar      PagesUpdateInputDataType = "webinar"
 )
 
@@ -2744,7 +2744,7 @@ const (
 	PagesValidateHTMLInputPlacementTypeDownsell     PagesValidateHTMLInputPlacementType = "downsell"
 	PagesValidateHTMLInputPlacementTypeTermsPrivacy PagesValidateHTMLInputPlacementType = "termsPrivacy"
 	PagesValidateHTMLInputPlacementTypeThankYou     PagesValidateHTMLInputPlacementType = "thankYou"
-	PagesValidateHTMLInputPlacementTypeVsl          PagesValidateHTMLInputPlacementType = "vsl"
+	PagesValidateHTMLInputPlacementTypeVSL          PagesValidateHTMLInputPlacementType = "vsl"
 	PagesValidateHTMLInputPlacementTypeWebinar      PagesValidateHTMLInputPlacementType = "webinar"
 )
 
@@ -2762,7 +2762,7 @@ type PagesValidateHTMLOutput struct {
 type PagesValidateHTMLOutputCapabilities struct {
 	LeadCaptureForms float64 `json:"leadCaptureForms"`
 	CheckoutBlocks   float64 `json:"checkoutBlocks"`
-	Ctas             float64 `json:"ctas"`
+	CTAs             float64 `json:"ctas"`
 	Links            float64 `json:"links"`
 }
 

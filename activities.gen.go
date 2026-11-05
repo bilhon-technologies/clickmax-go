@@ -287,7 +287,7 @@ type ActivitiesCalendarOutputDaysItemItemsItemAppointment struct {
 	ReminderSentAt              *time.Time                                                                 `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                                                    `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                                                 `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                                                 `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                                                 `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ActivitiesCalendarOutputDaysItemItemsItemAppointmentScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                                                    `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ActivitiesCalendarOutputDaysItemItemsItemAppointmentMeetRoomStatus        `json:"meetRoomStatus,omitzero"`
@@ -881,7 +881,7 @@ type ActivitiesListOutputDataItemAppointment struct {
 	ReminderSentAt              *time.Time                                                    `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                                       `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                                    `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                                    `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                                    `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ActivitiesListOutputDataItemAppointmentScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                                       `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ActivitiesListOutputDataItemAppointmentMeetRoomStatus        `json:"meetRoomStatus,omitzero"`

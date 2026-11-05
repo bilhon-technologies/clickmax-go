@@ -60,8 +60,8 @@ func (s *SalesService) GetExternalDetails(ctx context.Context, params SalesGetEx
 // Returns UTM source/medium/campaign data attached to the originating sale, for attribution analysis.
 //
 // Calls GET /sales/get-utms.
-func (s *SalesService) GetUtms(ctx context.Context, params SalesGetUtmsParams, opts ...Option) (*SalesGetUtmsOutput, error) {
-	var out SalesGetUtmsOutput
+func (s *SalesService) GetUTMs(ctx context.Context, params SalesGetUTMsParams, opts ...Option) (*SalesGetUTMsOutput, error) {
+	var out SalesGetUTMsOutput
 	if err := s.client.do(ctx, "GET", "/sales/get-utms", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func (p SalesGetDetailsParams) values() url.Values {
 type SalesGetExternalDetailsOutput struct {
 	SaleDetails     SalesGetExternalDetailsOutputSaleDetails           `json:"saleDetails"`
 	LeadDetails     SalesGetExternalDetailsOutputLeadDetails           `json:"leadDetails"`
-	UtmDetails      []SalesGetExternalDetailsOutputUtmDetailsItem      `json:"utmDetails"`
+	UTMDetails      []SalesGetExternalDetailsOutputUTMDetailsItem      `json:"utmDetails"`
 	PurchaseHistory []SalesGetExternalDetailsOutputPurchaseHistoryItem `json:"purchaseHistory"`
 }
 
@@ -835,15 +835,15 @@ type SalesGetExternalDetailsOutputSaleDetailsPage struct {
 	Name *string `json:"name,omitzero"`
 }
 
-// SalesGetExternalDetailsOutputUtmDetailsItem is an element of
-// [SalesGetExternalDetailsOutput.UtmDetails].
-type SalesGetExternalDetailsOutputUtmDetailsItem struct {
+// SalesGetExternalDetailsOutputUTMDetailsItem is an element of
+// [SalesGetExternalDetailsOutput.UTMDetails].
+type SalesGetExternalDetailsOutputUTMDetailsItem struct {
 	ID          string    `json:"id"`
-	UtmSource   *string   `json:"utmSource,omitzero"`
-	UtmMedium   *string   `json:"utmMedium,omitzero"`
-	UtmCampaign *string   `json:"utmCampaign,omitzero"`
-	UtmContent  *string   `json:"utmContent,omitzero"`
-	UtmTerm     *string   `json:"utmTerm,omitzero"`
+	UTMSource   *string   `json:"utmSource,omitzero"`
+	UTMMedium   *string   `json:"utmMedium,omitzero"`
+	UTMCampaign *string   `json:"utmCampaign,omitzero"`
+	UTMContent  *string   `json:"utmContent,omitzero"`
+	UTMTerm     *string   `json:"utmTerm,omitzero"`
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
@@ -858,28 +858,28 @@ func (p SalesGetExternalDetailsParams) values() url.Values {
 	return v
 }
 
-// SalesGetUtmsOutput is the response of [SalesService.GetUtms].
-type SalesGetUtmsOutput struct {
-	Utms SalesGetUtmsOutputUtms `json:"utms"`
+// SalesGetUTMsOutput is the response of [SalesService.GetUTMs].
+type SalesGetUTMsOutput struct {
+	UTMs SalesGetUTMsOutputUTMs `json:"utms"`
 }
 
-// SalesGetUtmsOutputUtms is the type of [SalesGetUtmsOutput.Utms].
-type SalesGetUtmsOutputUtms struct {
-	UtmSource   *string `json:"utmSource,omitzero"`
-	UtmMedium   *string `json:"utmMedium,omitzero"`
-	UtmCampaign *string `json:"utmCampaign,omitzero"`
-	UtmTerm     *string `json:"utmTerm,omitzero"`
-	UtmContent  *string `json:"utmContent,omitzero"`
+// SalesGetUTMsOutputUTMs is the type of [SalesGetUTMsOutput.UTMs].
+type SalesGetUTMsOutputUTMs struct {
+	UTMSource   *string `json:"utmSource,omitzero"`
+	UTMMedium   *string `json:"utmMedium,omitzero"`
+	UTMCampaign *string `json:"utmCampaign,omitzero"`
+	UTMTerm     *string `json:"utmTerm,omitzero"`
+	UTMContent  *string `json:"utmContent,omitzero"`
 	Src         *string `json:"src,omitzero"`
 	Sck         *string `json:"sck,omitzero"`
 }
 
-// SalesGetUtmsParams holds the query parameters of [SalesService.GetUtms].
-type SalesGetUtmsParams struct {
+// SalesGetUTMsParams holds the query parameters of [SalesService.GetUTMs].
+type SalesGetUTMsParams struct {
 	ID string
 }
 
-func (p SalesGetUtmsParams) values() url.Values {
+func (p SalesGetUTMsParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "id", &p.ID)
 	return v

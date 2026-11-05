@@ -135,7 +135,7 @@ type PortalsCreateInput struct {
 	UseVideoLogin               *bool                                  `json:"useVideoLogin,omitzero"`
 	RemoveVideoOverlay          *bool                                  `json:"removeVideoOverlay,omitzero"`
 	ShowFullscreenButton        *bool                                  `json:"showFullscreenButton,omitzero"`
-	UseCtaLogin                 *bool                                  `json:"useCtaLogin,omitzero"`
+	UseCTALogin                 *bool                                  `json:"useCtaLogin,omitzero"`
 	SupportEmail                *string                                `json:"supportEmail,omitzero"`
 	SupportURL                  *string                                `json:"supportUrl,omitzero"`
 	ShowColoredImageWhenBlocked *bool                                  `json:"showColoredImageWhenBlocked,omitzero"`
@@ -151,8 +151,8 @@ type PortalsCreateInput struct {
 	TwoFaEnabled                *bool                                  `json:"twoFaEnabled,omitzero"`
 	FirstAccessWithoutPass      *bool                                  `json:"firstAccessWithoutPass,omitzero"`
 	AllowSimplePass             *bool                                  `json:"allowSimplePass,omitzero"`
-	OtpWhatsappEnabled          *bool                                  `json:"otpWhatsappEnabled,omitzero"`
-	OtpWhatsappTemplateID       Nullable[string]                       `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          *bool                                  `json:"otpWhatsappEnabled,omitzero"`
+	OTPWhatsappTemplateID       Nullable[string]                       `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    *string                                `json:"timezone,omitzero"`
 	CalendarTitle               Nullable[string]                       `json:"calendarTitle,omitzero"`
 	CalendarDescription         Nullable[string]                       `json:"calendarDescription,omitzero"`
@@ -230,7 +230,7 @@ type PortalsGetOutput struct {
 	UseVideoLogin               bool                                `json:"useVideoLogin"`
 	RemoveVideoOverlay          bool                                `json:"removeVideoOverlay"`
 	ShowFullscreenButton        bool                                `json:"showFullscreenButton"`
-	UseCtaLogin                 bool                                `json:"useCtaLogin"`
+	UseCTALogin                 bool                                `json:"useCtaLogin"`
 	Name                        string                              `json:"name"`
 	Description                 string                              `json:"description"`
 	SupportEmail                *string                             `json:"supportEmail,omitzero"`
@@ -249,8 +249,8 @@ type PortalsGetOutput struct {
 	TwoFaEnabled                bool                                `json:"twoFaEnabled"`
 	FirstAccessWithoutPass      bool                                `json:"firstAccessWithoutPass"`
 	AllowSimplePass             bool                                `json:"allowSimplePass"`
-	OtpWhatsappEnabled          bool                                `json:"otpWhatsappEnabled"`
-	OtpWhatsappTemplateID       *string                             `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          bool                                `json:"otpWhatsappEnabled"`
+	OTPWhatsappTemplateID       *string                             `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    string                              `json:"timezone"`
 	NavConfig                   *PortalsGetOutputNavConfig          `json:"navConfig,omitzero"`
 	CalendarTitle               *string                             `json:"calendarTitle,omitzero"`
@@ -401,7 +401,7 @@ type PortalsListOutputDataItem struct {
 	UseVideoLogin               bool                                         `json:"useVideoLogin"`
 	RemoveVideoOverlay          bool                                         `json:"removeVideoOverlay"`
 	ShowFullscreenButton        bool                                         `json:"showFullscreenButton"`
-	UseCtaLogin                 bool                                         `json:"useCtaLogin"`
+	UseCTALogin                 bool                                         `json:"useCtaLogin"`
 	Name                        string                                       `json:"name"`
 	Description                 string                                       `json:"description"`
 	SupportEmail                *string                                      `json:"supportEmail,omitzero"`
@@ -420,8 +420,8 @@ type PortalsListOutputDataItem struct {
 	TwoFaEnabled                bool                                         `json:"twoFaEnabled"`
 	FirstAccessWithoutPass      bool                                         `json:"firstAccessWithoutPass"`
 	AllowSimplePass             bool                                         `json:"allowSimplePass"`
-	OtpWhatsappEnabled          bool                                         `json:"otpWhatsappEnabled"`
-	OtpWhatsappTemplateID       *string                                      `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          bool                                         `json:"otpWhatsappEnabled"`
+	OTPWhatsappTemplateID       *string                                      `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    string                                       `json:"timezone"`
 	NavConfig                   *PortalsListOutputDataItemNavConfig          `json:"navConfig,omitzero"`
 	CalendarTitle               *string                                      `json:"calendarTitle,omitzero"`
@@ -544,7 +544,7 @@ type PortalsUpdateInput struct {
 	UseVideoLogin               *bool                                  `json:"useVideoLogin,omitzero"`
 	RemoveVideoOverlay          *bool                                  `json:"removeVideoOverlay,omitzero"`
 	ShowFullscreenButton        *bool                                  `json:"showFullscreenButton,omitzero"`
-	UseCtaLogin                 *bool                                  `json:"useCtaLogin,omitzero"`
+	UseCTALogin                 *bool                                  `json:"useCtaLogin,omitzero"`
 	SupportEmail                *string                                `json:"supportEmail,omitzero"`
 	SupportURL                  *string                                `json:"supportUrl,omitzero"`
 	ShowColoredImageWhenBlocked *bool                                  `json:"showColoredImageWhenBlocked,omitzero"`
@@ -560,8 +560,8 @@ type PortalsUpdateInput struct {
 	TwoFaEnabled                *bool                                  `json:"twoFaEnabled,omitzero"`
 	FirstAccessWithoutPass      *bool                                  `json:"firstAccessWithoutPass,omitzero"`
 	AllowSimplePass             *bool                                  `json:"allowSimplePass,omitzero"`
-	OtpWhatsappEnabled          *bool                                  `json:"otpWhatsappEnabled,omitzero"`
-	OtpWhatsappTemplateID       Nullable[string]                       `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          *bool                                  `json:"otpWhatsappEnabled,omitzero"`
+	OTPWhatsappTemplateID       Nullable[string]                       `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    *string                                `json:"timezone,omitzero"`
 	CalendarTitle               Nullable[string]                       `json:"calendarTitle,omitzero"`
 	CalendarDescription         Nullable[string]                       `json:"calendarDescription,omitzero"`

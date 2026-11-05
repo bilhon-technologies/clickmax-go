@@ -220,7 +220,7 @@ type ProposalTemplatesCreateInputKind string
 const (
 	ProposalTemplatesCreateInputKindSlideDeck ProposalTemplatesCreateInputKind = "slide_deck"
 	ProposalTemplatesCreateInputKindDocument  ProposalTemplatesCreateInputKind = "document"
-	ProposalTemplatesCreateInputKindPdf       ProposalTemplatesCreateInputKind = "pdf"
+	ProposalTemplatesCreateInputKindPDF       ProposalTemplatesCreateInputKind = "pdf"
 )
 
 // ProposalTemplatesCreateInputStatus is the type of [ProposalTemplatesCreateInput.Status].
@@ -317,7 +317,7 @@ type ProposalTemplatesCreateOutputKind string
 const (
 	ProposalTemplatesCreateOutputKindSlideDeck ProposalTemplatesCreateOutputKind = "slide_deck"
 	ProposalTemplatesCreateOutputKindDocument  ProposalTemplatesCreateOutputKind = "document"
-	ProposalTemplatesCreateOutputKindPdf       ProposalTemplatesCreateOutputKind = "pdf"
+	ProposalTemplatesCreateOutputKindPDF       ProposalTemplatesCreateOutputKind = "pdf"
 )
 
 // ProposalTemplatesCreateOutputPagesItem is an element of [ProposalTemplatesCreateOutput.Pages].
@@ -496,7 +496,7 @@ type ProposalTemplatesDocumentVersionsRestoreOutputKind string
 const (
 	ProposalTemplatesDocumentVersionsRestoreOutputKindSlideDeck ProposalTemplatesDocumentVersionsRestoreOutputKind = "slide_deck"
 	ProposalTemplatesDocumentVersionsRestoreOutputKindDocument  ProposalTemplatesDocumentVersionsRestoreOutputKind = "document"
-	ProposalTemplatesDocumentVersionsRestoreOutputKindPdf       ProposalTemplatesDocumentVersionsRestoreOutputKind = "pdf"
+	ProposalTemplatesDocumentVersionsRestoreOutputKindPDF       ProposalTemplatesDocumentVersionsRestoreOutputKind = "pdf"
 )
 
 // ProposalTemplatesDocumentVersionsRestoreOutputPagesItem is an element of
@@ -607,7 +607,7 @@ type ProposalTemplatesGetOutputKind string
 const (
 	ProposalTemplatesGetOutputKindSlideDeck ProposalTemplatesGetOutputKind = "slide_deck"
 	ProposalTemplatesGetOutputKindDocument  ProposalTemplatesGetOutputKind = "document"
-	ProposalTemplatesGetOutputKindPdf       ProposalTemplatesGetOutputKind = "pdf"
+	ProposalTemplatesGetOutputKindPDF       ProposalTemplatesGetOutputKind = "pdf"
 )
 
 // ProposalTemplatesGetOutputPagesItem is an element of [ProposalTemplatesGetOutput.Pages].
@@ -737,7 +737,7 @@ type ProposalTemplatesListOutputDataItemKind string
 const (
 	ProposalTemplatesListOutputDataItemKindSlideDeck ProposalTemplatesListOutputDataItemKind = "slide_deck"
 	ProposalTemplatesListOutputDataItemKindDocument  ProposalTemplatesListOutputDataItemKind = "document"
-	ProposalTemplatesListOutputDataItemKindPdf       ProposalTemplatesListOutputDataItemKind = "pdf"
+	ProposalTemplatesListOutputDataItemKindPDF       ProposalTemplatesListOutputDataItemKind = "pdf"
 )
 
 // ProposalTemplatesListOutputDataItemStatus is the type of
@@ -786,7 +786,7 @@ type ProposalTemplatesListParamsKind string
 const (
 	ProposalTemplatesListParamsKindSlideDeck ProposalTemplatesListParamsKind = "slide_deck"
 	ProposalTemplatesListParamsKindDocument  ProposalTemplatesListParamsKind = "document"
-	ProposalTemplatesListParamsKindPdf       ProposalTemplatesListParamsKind = "pdf"
+	ProposalTemplatesListParamsKindPDF       ProposalTemplatesListParamsKind = "pdf"
 )
 
 // ProposalTemplatesListParamsStatus is the type of [ProposalTemplatesListParams.Status].
@@ -895,7 +895,7 @@ type ProposalTemplatesPagesUpsertOutputKind string
 const (
 	ProposalTemplatesPagesUpsertOutputKindSlideDeck ProposalTemplatesPagesUpsertOutputKind = "slide_deck"
 	ProposalTemplatesPagesUpsertOutputKindDocument  ProposalTemplatesPagesUpsertOutputKind = "document"
-	ProposalTemplatesPagesUpsertOutputKindPdf       ProposalTemplatesPagesUpsertOutputKind = "pdf"
+	ProposalTemplatesPagesUpsertOutputKindPDF       ProposalTemplatesPagesUpsertOutputKind = "pdf"
 )
 
 // ProposalTemplatesPagesUpsertOutputPagesItem is an element of
@@ -1001,7 +1001,7 @@ type ProposalTemplatesUpdateInputKind string
 const (
 	ProposalTemplatesUpdateInputKindSlideDeck ProposalTemplatesUpdateInputKind = "slide_deck"
 	ProposalTemplatesUpdateInputKindDocument  ProposalTemplatesUpdateInputKind = "document"
-	ProposalTemplatesUpdateInputKindPdf       ProposalTemplatesUpdateInputKind = "pdf"
+	ProposalTemplatesUpdateInputKindPDF       ProposalTemplatesUpdateInputKind = "pdf"
 )
 
 // ProposalTemplatesUpdateInputStatus is the type of [ProposalTemplatesUpdateInput.Status].
@@ -1098,7 +1098,7 @@ type ProposalTemplatesUpdateOutputKind string
 const (
 	ProposalTemplatesUpdateOutputKindSlideDeck ProposalTemplatesUpdateOutputKind = "slide_deck"
 	ProposalTemplatesUpdateOutputKindDocument  ProposalTemplatesUpdateOutputKind = "document"
-	ProposalTemplatesUpdateOutputKindPdf       ProposalTemplatesUpdateOutputKind = "pdf"
+	ProposalTemplatesUpdateOutputKindPDF       ProposalTemplatesUpdateOutputKind = "pdf"
 )
 
 // ProposalTemplatesUpdateOutputPagesItem is an element of [ProposalTemplatesUpdateOutput.Pages].

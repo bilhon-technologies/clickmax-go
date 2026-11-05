@@ -164,9 +164,9 @@ type VisitorsAnalyticsOutput struct {
 	Summary          VisitorsAnalyticsOutputSummary                `json:"summary"`
 	Timeseries       []VisitorsAnalyticsOutputTimeseriesItem       `json:"timeseries"`
 	Channels         []VisitorsAnalyticsOutputChannelsItem         `json:"channels"`
-	UtmSources       []VisitorsAnalyticsOutputUtmSourcesItem       `json:"utmSources"`
-	UtmMediums       []VisitorsAnalyticsOutputUtmMediumsItem       `json:"utmMediums"`
-	UtmCampaigns     []VisitorsAnalyticsOutputUtmCampaignsItem     `json:"utmCampaigns"`
+	UTMSources       []VisitorsAnalyticsOutputUTMSourcesItem       `json:"utmSources"`
+	UTMMediums       []VisitorsAnalyticsOutputUTMMediumsItem       `json:"utmMediums"`
+	UTMCampaigns     []VisitorsAnalyticsOutputUTMCampaignsItem     `json:"utmCampaigns"`
 	Referrers        []VisitorsAnalyticsOutputReferrersItem        `json:"referrers"`
 	LandingPages     []VisitorsAnalyticsOutputLandingPagesItem     `json:"landingPages"`
 	Projects         []VisitorsAnalyticsOutputProjectsItem         `json:"projects"`
@@ -406,8 +406,8 @@ type VisitorsAnalyticsOutputTopPagesItem struct {
 	ConversionRate float64 `json:"conversionRate"`
 }
 
-// VisitorsAnalyticsOutputUtmCampaignsItem is an element of [VisitorsAnalyticsOutput.UtmCampaigns].
-type VisitorsAnalyticsOutputUtmCampaignsItem struct {
+// VisitorsAnalyticsOutputUTMCampaignsItem is an element of [VisitorsAnalyticsOutput.UTMCampaigns].
+type VisitorsAnalyticsOutputUTMCampaignsItem struct {
 	Key      string `json:"key"`
 	Label    string `json:"label"`
 	Sessions int64  `json:"sessions"`
@@ -415,8 +415,8 @@ type VisitorsAnalyticsOutputUtmCampaignsItem struct {
 	Leads    int64  `json:"leads"`
 }
 
-// VisitorsAnalyticsOutputUtmMediumsItem is an element of [VisitorsAnalyticsOutput.UtmMediums].
-type VisitorsAnalyticsOutputUtmMediumsItem struct {
+// VisitorsAnalyticsOutputUTMMediumsItem is an element of [VisitorsAnalyticsOutput.UTMMediums].
+type VisitorsAnalyticsOutputUTMMediumsItem struct {
 	Key      string `json:"key"`
 	Label    string `json:"label"`
 	Sessions int64  `json:"sessions"`
@@ -424,8 +424,8 @@ type VisitorsAnalyticsOutputUtmMediumsItem struct {
 	Leads    int64  `json:"leads"`
 }
 
-// VisitorsAnalyticsOutputUtmSourcesItem is an element of [VisitorsAnalyticsOutput.UtmSources].
-type VisitorsAnalyticsOutputUtmSourcesItem struct {
+// VisitorsAnalyticsOutputUTMSourcesItem is an element of [VisitorsAnalyticsOutput.UTMSources].
+type VisitorsAnalyticsOutputUTMSourcesItem struct {
 	Key      string `json:"key"`
 	Label    string `json:"label"`
 	Sessions int64  `json:"sessions"`
@@ -616,9 +616,9 @@ type VisitorsGetOutputFirstTouch struct {
 	Channel         VisitorsGetOutputFirstTouchChannel        `json:"channel"`
 	StartedAt       time.Time                                 `json:"startedAt"`
 	Referrer        *string                                   `json:"referrer,omitzero"`
-	UtmSource       *string                                   `json:"utmSource,omitzero"`
-	UtmMedium       *string                                   `json:"utmMedium,omitzero"`
-	UtmCampaign     *string                                   `json:"utmCampaign,omitzero"`
+	UTMSource       *string                                   `json:"utmSource,omitzero"`
+	UTMMedium       *string                                   `json:"utmMedium,omitzero"`
+	UTMCampaign     *string                                   `json:"utmCampaign,omitzero"`
 	LandingHostname *string                                   `json:"landingHostname,omitzero"`
 	LandingPathname *string                                   `json:"landingPathname,omitzero"`
 	LandingURL      *string                                   `json:"landingUrl,omitzero"`
@@ -683,9 +683,9 @@ type VisitorsGetOutputSessionsItem struct {
 	// persistido.
 	Channel           VisitorsGetOutputSessionsItemChannel        `json:"channel"`
 	Referrer          *string                                     `json:"referrer,omitzero"`
-	UtmSource         *string                                     `json:"utmSource,omitzero"`
-	UtmMedium         *string                                     `json:"utmMedium,omitzero"`
-	UtmCampaign       *string                                     `json:"utmCampaign,omitzero"`
+	UTMSource         *string                                     `json:"utmSource,omitzero"`
+	UTMMedium         *string                                     `json:"utmMedium,omitzero"`
+	UTMCampaign       *string                                     `json:"utmCampaign,omitzero"`
 	LandingHostname   *string                                     `json:"landingHostname,omitzero"`
 	LandingPathname   *string                                     `json:"landingPathname,omitzero"`
 	LandingURL        *string                                     `json:"landingUrl,omitzero"`
@@ -828,9 +828,9 @@ type VisitorsLeadJourneyOutputVisitorsItemFirstTouch struct {
 	Channel         VisitorsLeadJourneyOutputVisitorsItemFirstTouchChannel        `json:"channel"`
 	StartedAt       time.Time                                                     `json:"startedAt"`
 	Referrer        *string                                                       `json:"referrer,omitzero"`
-	UtmSource       *string                                                       `json:"utmSource,omitzero"`
-	UtmMedium       *string                                                       `json:"utmMedium,omitzero"`
-	UtmCampaign     *string                                                       `json:"utmCampaign,omitzero"`
+	UTMSource       *string                                                       `json:"utmSource,omitzero"`
+	UTMMedium       *string                                                       `json:"utmMedium,omitzero"`
+	UTMCampaign     *string                                                       `json:"utmCampaign,omitzero"`
 	LandingHostname *string                                                       `json:"landingHostname,omitzero"`
 	LandingPathname *string                                                       `json:"landingPathname,omitzero"`
 	ClickIDs        []VisitorsLeadJourneyOutputVisitorsItemFirstTouchClickIDsItem `json:"clickIds"`
@@ -900,8 +900,8 @@ type VisitorsLeadJourneyOutputVisitorsItemSessionsBeforeLinkItem struct {
 	// Canal de aquisição derivado da primeira sessão do visitante (UTM e referrer). Não é
 	// persistido.
 	Channel         VisitorsLeadJourneyOutputVisitorsItemSessionsBeforeLinkItemChannel     `json:"channel"`
-	UtmSource       *string                                                                `json:"utmSource,omitzero"`
-	UtmCampaign     *string                                                                `json:"utmCampaign,omitzero"`
+	UTMSource       *string                                                                `json:"utmSource,omitzero"`
+	UTMCampaign     *string                                                                `json:"utmCampaign,omitzero"`
 	LandingHostname *string                                                                `json:"landingHostname,omitzero"`
 	LandingPathname *string                                                                `json:"landingPathname,omitzero"`
 	Pages           []VisitorsLeadJourneyOutputVisitorsItemSessionsBeforeLinkItemPagesItem `json:"pages"`

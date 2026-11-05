@@ -1927,7 +1927,7 @@ const (
 	DriveSearchParamsTypeDocument     DriveSearchParamsType = "document"
 	DriveSearchParamsTypeSpreadsheet  DriveSearchParamsType = "spreadsheet"
 	DriveSearchParamsTypePresentation DriveSearchParamsType = "presentation"
-	DriveSearchParamsTypePdf          DriveSearchParamsType = "pdf"
+	DriveSearchParamsTypePDF          DriveSearchParamsType = "pdf"
 	DriveSearchParamsTypeArchive      DriveSearchParamsType = "archive"
 	DriveSearchParamsTypePage         DriveSearchParamsType = "page"
 	DriveSearchParamsTypeOther        DriveSearchParamsType = "other"

@@ -154,11 +154,11 @@ type TransactionsChartInputFilters struct {
 	SaleReasons               []string                                                `json:"saleReasons,omitzero"`
 	SearchText                *string                                                 `json:"searchText,omitzero"`
 	ExternalID                *string                                                 `json:"externalId,omitzero"`
-	UtmSource                 []string                                                `json:"utmSource,omitzero"`
-	UtmMedium                 []string                                                `json:"utmMedium,omitzero"`
-	UtmCampaign               []string                                                `json:"utmCampaign,omitzero"`
-	UtmContent                []string                                                `json:"utmContent,omitzero"`
-	UtmTerm                   []string                                                `json:"utmTerm,omitzero"`
+	UTMSource                 []string                                                `json:"utmSource,omitzero"`
+	UTMMedium                 []string                                                `json:"utmMedium,omitzero"`
+	UTMCampaign               []string                                                `json:"utmCampaign,omitzero"`
+	UTMContent                []string                                                `json:"utmContent,omitzero"`
+	UTMTerm                   []string                                                `json:"utmTerm,omitzero"`
 	Src                       []string                                                `json:"src,omitzero"`
 	Sck                       []string                                                `json:"sck,omitzero"`
 	ProjectIDs                []string                                                `json:"projectIds,omitzero"`
@@ -464,7 +464,7 @@ type TransactionsGetOutput struct {
 	OrderBumps       []string                                 `json:"orderBumps"`
 	History          []TransactionsGetOutputHistoryItem       `json:"history"`
 	Buyer            TransactionsGetOutputBuyer               `json:"buyer"`
-	Utm              TransactionsGetOutputUtm                 `json:"utm"`
+	UTM              TransactionsGetOutputUTM                 `json:"utm"`
 	Affiliation      *TransactionsGetOutputAffiliation        `json:"affiliation,omitzero"`
 	Coproductions    []TransactionsGetOutputCoproductionsItem `json:"coproductions"`
 	Type             TransactionsGetOutputType                `json:"type"`
@@ -566,8 +566,8 @@ const (
 	TransactionsGetOutputTypeFree   TransactionsGetOutputType = "free"
 )
 
-// TransactionsGetOutputUtm is the type of [TransactionsGetOutput.Utm].
-type TransactionsGetOutputUtm struct {
+// TransactionsGetOutputUTM is the type of [TransactionsGetOutput.UTM].
+type TransactionsGetOutputUTM struct {
 	Source   *string `json:"source,omitzero"`
 	Medium   *string `json:"medium,omitzero"`
 	Campaign *string `json:"campaign,omitzero"`

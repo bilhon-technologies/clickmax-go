@@ -104,10 +104,10 @@ type TeamsListOutputDataItemAppointmentSchedulesItem struct {
 	MeetingLocationURL               *string                                                                  `json:"meetingLocationUrl,omitzero"`
 	MeetPlaybookID                   *string                                                                  `json:"meetPlaybookId,omitzero"`
 	MeetCopilotAgentID               *string                                                                  `json:"meetCopilotAgentId,omitzero"`
-	OtpVerificationEnabled           bool                                                                     `json:"otpVerificationEnabled"`
-	OtpChannel                       TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel                `json:"otpChannel"`
-	OtpEmailSenderSignatureID        *string                                                                  `json:"otpEmailSenderSignatureId,omitzero"`
-	OtpWhatsappTemplateID            *string                                                                  `json:"otpWhatsappTemplateId,omitzero"`
+	OTPVerificationEnabled           bool                                                                     `json:"otpVerificationEnabled"`
+	OTPChannel                       TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel                `json:"otpChannel"`
+	OTPEmailSenderSignatureID        *string                                                                  `json:"otpEmailSenderSignatureId,omitzero"`
+	OTPWhatsappTemplateID            *string                                                                  `json:"otpWhatsappTemplateId,omitzero"`
 	BookingScreeningMode             TeamsListOutputDataItemAppointmentSchedulesItemBookingScreeningMode      `json:"bookingScreeningMode"`
 	GroupCapacity                    *int64                                                                   `json:"groupCapacity,omitzero"`
 	GroupShowSeatsLeft               bool                                                                     `json:"groupShowSeatsLeft"`
@@ -218,15 +218,15 @@ const (
 	TeamsListOutputDataItemAppointmentSchedulesItemMeetingLocationModeClickmaxMeet  TeamsListOutputDataItemAppointmentSchedulesItemMeetingLocationMode = "clickmax_meet"
 )
 
-// TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel is the type of
-// [TeamsListOutputDataItemAppointmentSchedulesItem.OtpChannel].
-type TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel string
+// TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel is the type of
+// [TeamsListOutputDataItemAppointmentSchedulesItem.OTPChannel].
+type TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel string
 
-// Values of [TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel].
+// Values of [TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel].
 const (
-	TeamsListOutputDataItemAppointmentSchedulesItemOtpChannelEmail    TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel = "email"
-	TeamsListOutputDataItemAppointmentSchedulesItemOtpChannelSMS      TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel = "sms"
-	TeamsListOutputDataItemAppointmentSchedulesItemOtpChannelWhatsapp TeamsListOutputDataItemAppointmentSchedulesItemOtpChannel = "whatsapp"
+	TeamsListOutputDataItemAppointmentSchedulesItemOTPChannelEmail    TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel = "email"
+	TeamsListOutputDataItemAppointmentSchedulesItemOTPChannelSMS      TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel = "sms"
+	TeamsListOutputDataItemAppointmentSchedulesItemOTPChannelWhatsapp TeamsListOutputDataItemAppointmentSchedulesItemOTPChannel = "whatsapp"
 )
 
 // TeamsListOutputDataItemAppointmentSchedulesItemSchedulingType is the type of

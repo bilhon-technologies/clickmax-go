@@ -419,11 +419,11 @@ const (
 	CardsAddLeadsToPipelineInputFiltersItemFieldProductID                     CardsAddLeadsToPipelineInputFiltersItemField = "productId"
 	CardsAddLeadsToPipelineInputFiltersItemFieldProductName                   CardsAddLeadsToPipelineInputFiltersItemField = "productName"
 	CardsAddLeadsToPipelineInputFiltersItemFieldSearchTransactionCode         CardsAddLeadsToPipelineInputFiltersItemField = "searchTransactionCode"
-	CardsAddLeadsToPipelineInputFiltersItemFieldUtmCampaign                   CardsAddLeadsToPipelineInputFiltersItemField = "utmCampaign"
-	CardsAddLeadsToPipelineInputFiltersItemFieldUtmContent                    CardsAddLeadsToPipelineInputFiltersItemField = "utmContent"
-	CardsAddLeadsToPipelineInputFiltersItemFieldUtmMedium                     CardsAddLeadsToPipelineInputFiltersItemField = "utmMedium"
-	CardsAddLeadsToPipelineInputFiltersItemFieldUtmSource                     CardsAddLeadsToPipelineInputFiltersItemField = "utmSource"
-	CardsAddLeadsToPipelineInputFiltersItemFieldUtmTerm                       CardsAddLeadsToPipelineInputFiltersItemField = "utmTerm"
+	CardsAddLeadsToPipelineInputFiltersItemFieldUTMCampaign                   CardsAddLeadsToPipelineInputFiltersItemField = "utmCampaign"
+	CardsAddLeadsToPipelineInputFiltersItemFieldUTMContent                    CardsAddLeadsToPipelineInputFiltersItemField = "utmContent"
+	CardsAddLeadsToPipelineInputFiltersItemFieldUTMMedium                     CardsAddLeadsToPipelineInputFiltersItemField = "utmMedium"
+	CardsAddLeadsToPipelineInputFiltersItemFieldUTMSource                     CardsAddLeadsToPipelineInputFiltersItemField = "utmSource"
+	CardsAddLeadsToPipelineInputFiltersItemFieldUTMTerm                       CardsAddLeadsToPipelineInputFiltersItemField = "utmTerm"
 	CardsAddLeadsToPipelineInputFiltersItemFieldSrc                           CardsAddLeadsToPipelineInputFiltersItemField = "src"
 	CardsAddLeadsToPipelineInputFiltersItemFieldSck                           CardsAddLeadsToPipelineInputFiltersItemField = "sck"
 	CardsAddLeadsToPipelineInputFiltersItemFieldAverageTicket                 CardsAddLeadsToPipelineInputFiltersItemField = "averageTicket"
@@ -1269,7 +1269,7 @@ type CardsInsightsOutput struct {
 
 // CardsInsightsOutputPurchaseBehavior is the type of [CardsInsightsOutput.PurchaseBehavior].
 type CardsInsightsOutputPurchaseBehavior struct {
-	LtvCents       int64 `json:"ltvCents"`
+	LTVCents       int64 `json:"ltvCents"`
 	AvgTicketCents int64 `json:"avgTicketCents"`
 	TotalPurchases int64 `json:"totalPurchases"`
 	TotalVisits    int64 `json:"totalVisits"`

@@ -150,7 +150,7 @@ type BrandSaveDraftInput struct {
 type BrandSaveDraftInputPostKit struct {
 	HashtagGroups []BrandSaveDraftInputPostKitHashtagGroupsItem `json:"hashtagGroups"`
 	Signature     string                                        `json:"signature"`
-	Ctas          []string                                      `json:"ctas"`
+	CTAs          []string                                      `json:"ctas"`
 	BannedWords   []string                                      `json:"bannedWords"`
 }
 

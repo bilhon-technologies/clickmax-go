@@ -1828,14 +1828,14 @@ type FlowsExecutionsGetOutputStepsItem struct {
 	Error      *string                                      `json:"error,omitzero"`
 	Input      any                                          `json:"input,omitzero"`
 	Output     any                                          `json:"output,omitzero"`
-	AISdr      *FlowsExecutionsGetOutputStepsItemAISdr      `json:"aiSdr,omitzero"`
+	AISDR      *FlowsExecutionsGetOutputStepsItemAISDR      `json:"aiSdr,omitzero"`
 	Replayable bool                                         `json:"replayable"`
 	IsCurrent  bool                                         `json:"isCurrent"`
 }
 
-// FlowsExecutionsGetOutputStepsItemAISdr is the type of [FlowsExecutionsGetOutputStepsItem.AISdr].
-type FlowsExecutionsGetOutputStepsItemAISdr struct {
-	Status            FlowsExecutionsGetOutputStepsItemAISdrStatus          `json:"status"`
+// FlowsExecutionsGetOutputStepsItemAISDR is the type of [FlowsExecutionsGetOutputStepsItem.AISDR].
+type FlowsExecutionsGetOutputStepsItemAISDR struct {
+	Status            FlowsExecutionsGetOutputStepsItemAISDRStatus          `json:"status"`
 	Exit              *string                                               `json:"exit,omitzero"`
 	ExitReason        *string                                               `json:"exitReason,omitzero"`
 	AIMessages        int64                                                 `json:"aiMessages"`
@@ -1847,13 +1847,13 @@ type FlowsExecutionsGetOutputStepsItemAISdr struct {
 	EndedAt           *time.Time                                            `json:"endedAt,omitzero"`
 	NoReplyDeadlineAt *time.Time                                            `json:"noReplyDeadlineAt,omitzero"`
 	ConversationID    *string                                               `json:"conversationId,omitzero"`
-	Fields            []FlowsExecutionsGetOutputStepsItemAISdrFieldsItem    `json:"fields"`
-	ToolCalls         []FlowsExecutionsGetOutputStepsItemAISdrToolCallsItem `json:"toolCalls"`
+	Fields            []FlowsExecutionsGetOutputStepsItemAISDRFieldsItem    `json:"fields"`
+	ToolCalls         []FlowsExecutionsGetOutputStepsItemAISDRToolCallsItem `json:"toolCalls"`
 }
 
-// FlowsExecutionsGetOutputStepsItemAISdrFieldsItem is an element of
-// [FlowsExecutionsGetOutputStepsItemAISdr.Fields].
-type FlowsExecutionsGetOutputStepsItemAISdrFieldsItem struct {
+// FlowsExecutionsGetOutputStepsItemAISDRFieldsItem is an element of
+// [FlowsExecutionsGetOutputStepsItemAISDR.Fields].
+type FlowsExecutionsGetOutputStepsItemAISDRFieldsItem struct {
 	FieldID  string  `json:"fieldId"`
 	Name     string  `json:"name"`
 	Required bool    `json:"required"`
@@ -1861,19 +1861,19 @@ type FlowsExecutionsGetOutputStepsItemAISdrFieldsItem struct {
 	Source   *string `json:"source,omitzero"`
 }
 
-// FlowsExecutionsGetOutputStepsItemAISdrStatus is the type of
-// [FlowsExecutionsGetOutputStepsItemAISdr.Status].
-type FlowsExecutionsGetOutputStepsItemAISdrStatus string
+// FlowsExecutionsGetOutputStepsItemAISDRStatus is the type of
+// [FlowsExecutionsGetOutputStepsItemAISDR.Status].
+type FlowsExecutionsGetOutputStepsItemAISDRStatus string
 
-// Values of [FlowsExecutionsGetOutputStepsItemAISdrStatus].
+// Values of [FlowsExecutionsGetOutputStepsItemAISDRStatus].
 const (
-	FlowsExecutionsGetOutputStepsItemAISdrStatusActive FlowsExecutionsGetOutputStepsItemAISdrStatus = "active"
-	FlowsExecutionsGetOutputStepsItemAISdrStatusEnded  FlowsExecutionsGetOutputStepsItemAISdrStatus = "ended"
+	FlowsExecutionsGetOutputStepsItemAISDRStatusActive FlowsExecutionsGetOutputStepsItemAISDRStatus = "active"
+	FlowsExecutionsGetOutputStepsItemAISDRStatusEnded  FlowsExecutionsGetOutputStepsItemAISDRStatus = "ended"
 )
 
-// FlowsExecutionsGetOutputStepsItemAISdrToolCallsItem is an element of
-// [FlowsExecutionsGetOutputStepsItemAISdr.ToolCalls].
-type FlowsExecutionsGetOutputStepsItemAISdrToolCallsItem struct {
+// FlowsExecutionsGetOutputStepsItemAISDRToolCallsItem is an element of
+// [FlowsExecutionsGetOutputStepsItemAISDR.ToolCalls].
+type FlowsExecutionsGetOutputStepsItemAISDRToolCallsItem struct {
 	Tool      string    `json:"tool"`
 	Status    string    `json:"status"`
 	Input     any       `json:"input"`
@@ -3931,12 +3931,12 @@ type FlowsSendEmailInput struct {
 	// placeholder items. `format: html` only.
 	Benefits []string `json:"benefits,omitzero"`
 	// CTA button label. `format: html` only.
-	CtaLabel *string `json:"ctaLabel,omitzero"`
+	CTALabel *string `json:"ctaLabel,omitzero"`
 	// CTA button link — a real URL, or a checkout token ({checkout} / {checkout:offerId}). `format:
 	// html` only.
-	CtaHref *string `json:"ctaHref,omitzero"`
+	CTAHref *string `json:"ctaHref,omitzero"`
 	// Small text under the CTA button, e.g. a fallback instruction. `format: html` only.
-	CtaNote *string `json:"ctaNote,omitzero"`
+	CTANote *string `json:"ctaNote,omitzero"`
 	// Small print at the very bottom of the email (e.g. company address). `format: html` only. OMIT
 	// IT: the tool fills this with the sender's own business name + registered address (account
 	// profile), which is what an email needs at the bottom. Pass a value only when the user dictates

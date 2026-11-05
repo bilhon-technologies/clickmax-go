@@ -247,7 +247,7 @@ const (
 	GupshupTemplatesCreateInputFileTypeJpg GupshupTemplatesCreateInputFileType = "jpg"
 	GupshupTemplatesCreateInputFileTypePng GupshupTemplatesCreateInputFileType = "png"
 	GupshupTemplatesCreateInputFileTypeGif GupshupTemplatesCreateInputFileType = "gif"
-	GupshupTemplatesCreateInputFileTypePdf GupshupTemplatesCreateInputFileType = "pdf"
+	GupshupTemplatesCreateInputFileTypePDF GupshupTemplatesCreateInputFileType = "pdf"
 )
 
 // GupshupTemplatesCreateInputTemplate is the type of [GupshupTemplatesCreateInput.Template].
@@ -314,16 +314,16 @@ type GupshupTemplatesCreateInputTemplateButtonsItem struct {
 	Suffix      *string                                            `json:"suffix,omitzero"`
 	// Required when the URL is dynamic (has a {{n}}).
 	Example []string                                               `json:"example,omitzero"`
-	OtpType *GupshupTemplatesCreateInputTemplateButtonsItemOtpType `json:"otp_type,omitzero"`
+	OTPType *GupshupTemplatesCreateInputTemplateButtonsItemOTPType `json:"otp_type,omitzero"`
 }
 
-// GupshupTemplatesCreateInputTemplateButtonsItemOtpType is the type of
-// [GupshupTemplatesCreateInputTemplateButtonsItem.OtpType].
-type GupshupTemplatesCreateInputTemplateButtonsItemOtpType string
+// GupshupTemplatesCreateInputTemplateButtonsItemOTPType is the type of
+// [GupshupTemplatesCreateInputTemplateButtonsItem.OTPType].
+type GupshupTemplatesCreateInputTemplateButtonsItemOTPType string
 
-// Values of [GupshupTemplatesCreateInputTemplateButtonsItemOtpType].
+// Values of [GupshupTemplatesCreateInputTemplateButtonsItemOTPType].
 const (
-	GupshupTemplatesCreateInputTemplateButtonsItemOtpTypeCopyCode GupshupTemplatesCreateInputTemplateButtonsItemOtpType = "COPY_CODE"
+	GupshupTemplatesCreateInputTemplateButtonsItemOTPTypeCopyCode GupshupTemplatesCreateInputTemplateButtonsItemOTPType = "COPY_CODE"
 )
 
 // GupshupTemplatesCreateInputTemplateButtonsItemType is the type of
@@ -334,7 +334,7 @@ type GupshupTemplatesCreateInputTemplateButtonsItemType string
 const (
 	GupshupTemplatesCreateInputTemplateButtonsItemTypeQuickReply GupshupTemplatesCreateInputTemplateButtonsItemType = "QUICK_REPLY"
 	GupshupTemplatesCreateInputTemplateButtonsItemTypeURL        GupshupTemplatesCreateInputTemplateButtonsItemType = "URL"
-	GupshupTemplatesCreateInputTemplateButtonsItemTypeOtp        GupshupTemplatesCreateInputTemplateButtonsItemType = "OTP"
+	GupshupTemplatesCreateInputTemplateButtonsItemTypeOTP        GupshupTemplatesCreateInputTemplateButtonsItemType = "OTP"
 	GupshupTemplatesCreateInputTemplateButtonsItemTypeCopyCode   GupshupTemplatesCreateInputTemplateButtonsItemType = "COPY_CODE"
 )
 
@@ -458,7 +458,7 @@ type GupshupTemplatesGetOutputButtonsItemType string
 const (
 	GupshupTemplatesGetOutputButtonsItemTypeQuickReply GupshupTemplatesGetOutputButtonsItemType = "QUICK_REPLY"
 	GupshupTemplatesGetOutputButtonsItemTypeURL        GupshupTemplatesGetOutputButtonsItemType = "URL"
-	GupshupTemplatesGetOutputButtonsItemTypeOtp        GupshupTemplatesGetOutputButtonsItemType = "OTP"
+	GupshupTemplatesGetOutputButtonsItemTypeOTP        GupshupTemplatesGetOutputButtonsItemType = "OTP"
 	GupshupTemplatesGetOutputButtonsItemTypeCopyCode   GupshupTemplatesGetOutputButtonsItemType = "COPY_CODE"
 )
 
@@ -685,7 +685,7 @@ type GupshupTemplatesListOutputDataItemButtonsItemType string
 const (
 	GupshupTemplatesListOutputDataItemButtonsItemTypeQuickReply GupshupTemplatesListOutputDataItemButtonsItemType = "QUICK_REPLY"
 	GupshupTemplatesListOutputDataItemButtonsItemTypeURL        GupshupTemplatesListOutputDataItemButtonsItemType = "URL"
-	GupshupTemplatesListOutputDataItemButtonsItemTypeOtp        GupshupTemplatesListOutputDataItemButtonsItemType = "OTP"
+	GupshupTemplatesListOutputDataItemButtonsItemTypeOTP        GupshupTemplatesListOutputDataItemButtonsItemType = "OTP"
 	GupshupTemplatesListOutputDataItemButtonsItemTypeCopyCode   GupshupTemplatesListOutputDataItemButtonsItemType = "COPY_CODE"
 )
 
@@ -774,7 +774,7 @@ const (
 	GupshupTemplatesUpdateInputFileTypeJpg GupshupTemplatesUpdateInputFileType = "jpg"
 	GupshupTemplatesUpdateInputFileTypePng GupshupTemplatesUpdateInputFileType = "png"
 	GupshupTemplatesUpdateInputFileTypeGif GupshupTemplatesUpdateInputFileType = "gif"
-	GupshupTemplatesUpdateInputFileTypePdf GupshupTemplatesUpdateInputFileType = "pdf"
+	GupshupTemplatesUpdateInputFileTypePDF GupshupTemplatesUpdateInputFileType = "pdf"
 )
 
 // GupshupTemplatesUpdateInputTemplate is the type of [GupshupTemplatesUpdateInput.Template].
@@ -841,16 +841,16 @@ type GupshupTemplatesUpdateInputTemplateButtonsItem struct {
 	Suffix      *string                                            `json:"suffix,omitzero"`
 	// Required when the URL is dynamic (has a {{n}}).
 	Example []string                                               `json:"example,omitzero"`
-	OtpType *GupshupTemplatesUpdateInputTemplateButtonsItemOtpType `json:"otp_type,omitzero"`
+	OTPType *GupshupTemplatesUpdateInputTemplateButtonsItemOTPType `json:"otp_type,omitzero"`
 }
 
-// GupshupTemplatesUpdateInputTemplateButtonsItemOtpType is the type of
-// [GupshupTemplatesUpdateInputTemplateButtonsItem.OtpType].
-type GupshupTemplatesUpdateInputTemplateButtonsItemOtpType string
+// GupshupTemplatesUpdateInputTemplateButtonsItemOTPType is the type of
+// [GupshupTemplatesUpdateInputTemplateButtonsItem.OTPType].
+type GupshupTemplatesUpdateInputTemplateButtonsItemOTPType string
 
-// Values of [GupshupTemplatesUpdateInputTemplateButtonsItemOtpType].
+// Values of [GupshupTemplatesUpdateInputTemplateButtonsItemOTPType].
 const (
-	GupshupTemplatesUpdateInputTemplateButtonsItemOtpTypeCopyCode GupshupTemplatesUpdateInputTemplateButtonsItemOtpType = "COPY_CODE"
+	GupshupTemplatesUpdateInputTemplateButtonsItemOTPTypeCopyCode GupshupTemplatesUpdateInputTemplateButtonsItemOTPType = "COPY_CODE"
 )
 
 // GupshupTemplatesUpdateInputTemplateButtonsItemType is the type of
@@ -861,7 +861,7 @@ type GupshupTemplatesUpdateInputTemplateButtonsItemType string
 const (
 	GupshupTemplatesUpdateInputTemplateButtonsItemTypeQuickReply GupshupTemplatesUpdateInputTemplateButtonsItemType = "QUICK_REPLY"
 	GupshupTemplatesUpdateInputTemplateButtonsItemTypeURL        GupshupTemplatesUpdateInputTemplateButtonsItemType = "URL"
-	GupshupTemplatesUpdateInputTemplateButtonsItemTypeOtp        GupshupTemplatesUpdateInputTemplateButtonsItemType = "OTP"
+	GupshupTemplatesUpdateInputTemplateButtonsItemTypeOTP        GupshupTemplatesUpdateInputTemplateButtonsItemType = "OTP"
 	GupshupTemplatesUpdateInputTemplateButtonsItemTypeCopyCode   GupshupTemplatesUpdateInputTemplateButtonsItemType = "COPY_CODE"
 )
 

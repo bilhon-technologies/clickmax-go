@@ -2562,7 +2562,7 @@ const (
 	FunnelsSequencesCreateInputTemplateLeadMagnet     FunnelsSequencesCreateInputTemplate = "lead-magnet"
 	FunnelsSequencesCreateInputTemplateWebinar        FunnelsSequencesCreateInputTemplate = "webinar"
 	FunnelsSequencesCreateInputTemplateTripwire       FunnelsSequencesCreateInputTemplate = "tripwire"
-	FunnelsSequencesCreateInputTemplateVslAuto        FunnelsSequencesCreateInputTemplate = "vsl-auto"
+	FunnelsSequencesCreateInputTemplateVSLAuto        FunnelsSequencesCreateInputTemplate = "vsl-auto"
 	FunnelsSequencesCreateInputTemplateSales          FunnelsSequencesCreateInputTemplate = "sales"
 )
 

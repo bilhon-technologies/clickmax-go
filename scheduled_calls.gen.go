@@ -189,7 +189,7 @@ type ScheduledCallsCancelOutput struct {
 	ReminderSentAt              *time.Time                                       `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                          `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                       `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                       `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                       `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ScheduledCallsCancelOutputScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                          `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ScheduledCallsCancelOutputMeetRoomStatus        `json:"meetRoomStatus,omitzero"`
@@ -477,7 +477,7 @@ type ScheduledCallsCreateOutput struct {
 	ReminderSentAt              *time.Time                                       `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                          `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                       `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                       `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                       `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ScheduledCallsCreateOutputScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                          `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ScheduledCallsCreateOutputMeetRoomStatus        `json:"meetRoomStatus,omitzero"`
@@ -743,7 +743,7 @@ type ScheduledCallsGetOutput struct {
 	ReminderSentAt              *time.Time                                    `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                       `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                    `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                    `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                    `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ScheduledCallsGetOutputScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                       `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ScheduledCallsGetOutputMeetRoomStatus        `json:"meetRoomStatus,omitzero"`
@@ -1022,7 +1022,7 @@ type ScheduledCallsListOutputDataItem struct {
 	ReminderSentAt              *time.Time                                             `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                                `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                             `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                             `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                             `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ScheduledCallsListOutputDataItemScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                                `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ScheduledCallsListOutputDataItemMeetRoomStatus        `json:"meetRoomStatus,omitzero"`
@@ -1379,7 +1379,7 @@ type ScheduledCallsUpdateOutput struct {
 	ReminderSentAt              *time.Time                                       `json:"reminderSentAt,omitzero"`
 	ExternalEventID             *string                                          `json:"externalEventId,omitzero"`
 	LeadJoinedAt                *time.Time                                       `json:"leadJoinedAt,omitzero"`
-	OtpVerifiedAt               *time.Time                                       `json:"otpVerifiedAt,omitzero"`
+	OTPVerifiedAt               *time.Time                                       `json:"otpVerifiedAt,omitzero"`
 	ScreeningReason             *ScheduledCallsUpdateOutputScreeningReason       `json:"screeningReason,omitzero"`
 	OutcomeNote                 *string                                          `json:"outcomeNote,omitzero"`
 	MeetRoomStatus              *ScheduledCallsUpdateOutputMeetRoomStatus        `json:"meetRoomStatus,omitzero"`

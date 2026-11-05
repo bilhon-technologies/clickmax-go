@@ -818,7 +818,7 @@ type WebinarsOffersCreateInput struct {
 	OfferStartSeconds *int64          `json:"offerStartSeconds,omitzero"`
 	OfferEndSeconds   Nullable[int64] `json:"offerEndSeconds,omitzero"`
 	CountdownSeconds  *int64          `json:"countdownSeconds,omitzero"`
-	PassUtms          *bool           `json:"passUtms,omitzero"`
+	PassUTMs          *bool           `json:"passUtms,omitzero"`
 	OpenInSameWindow  *bool           `json:"openInSameWindow,omitzero"`
 	QrCodeEnabled     *bool           `json:"qrCodeEnabled,omitzero"`
 	RaffleEnabled     *bool           `json:"raffleEnabled,omitzero"`
@@ -945,7 +945,7 @@ type WebinarsOffersUpdateInput struct {
 	OfferStartSeconds *int64          `json:"offerStartSeconds,omitzero"`
 	OfferEndSeconds   Nullable[int64] `json:"offerEndSeconds,omitzero"`
 	CountdownSeconds  *int64          `json:"countdownSeconds,omitzero"`
-	PassUtms          *bool           `json:"passUtms,omitzero"`
+	PassUTMs          *bool           `json:"passUtms,omitzero"`
 	OpenInSameWindow  *bool           `json:"openInSameWindow,omitzero"`
 	QrCodeEnabled     *bool           `json:"qrCodeEnabled,omitzero"`
 	RaffleEnabled     *bool           `json:"raffleEnabled,omitzero"`

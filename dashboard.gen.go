@@ -115,11 +115,11 @@ type DashboardExternalSalesChartInputFilters struct {
 	ContactEmail        *string                                                     `json:"contactEmail,omitzero"`
 	ContactDocument     *string                                                     `json:"contactDocument,omitzero"`
 	ContactTags         []string                                                    `json:"contactTags,omitzero"`
-	UtmSource           []string                                                    `json:"utmSource,omitzero"`
-	UtmMedium           []string                                                    `json:"utmMedium,omitzero"`
-	UtmCampaign         []string                                                    `json:"utmCampaign,omitzero"`
-	UtmContent          []string                                                    `json:"utmContent,omitzero"`
-	UtmTerm             []string                                                    `json:"utmTerm,omitzero"`
+	UTMSource           []string                                                    `json:"utmSource,omitzero"`
+	UTMMedium           []string                                                    `json:"utmMedium,omitzero"`
+	UTMCampaign         []string                                                    `json:"utmCampaign,omitzero"`
+	UTMContent          []string                                                    `json:"utmContent,omitzero"`
+	UTMTerm             []string                                                    `json:"utmTerm,omitzero"`
 	Src                 []string                                                    `json:"src,omitzero"`
 	Sck                 []string                                                    `json:"sck,omitzero"`
 	ProductName         *string                                                     `json:"productName,omitzero"`
@@ -454,11 +454,11 @@ type DashboardExternalSalesInput struct {
 	ContactEmail        *string                                         `json:"contactEmail,omitzero"`
 	ContactDocument     *string                                         `json:"contactDocument,omitzero"`
 	ContactTags         []string                                        `json:"contactTags,omitzero"`
-	UtmSource           []string                                        `json:"utmSource,omitzero"`
-	UtmMedium           []string                                        `json:"utmMedium,omitzero"`
-	UtmCampaign         []string                                        `json:"utmCampaign,omitzero"`
-	UtmContent          []string                                        `json:"utmContent,omitzero"`
-	UtmTerm             []string                                        `json:"utmTerm,omitzero"`
+	UTMSource           []string                                        `json:"utmSource,omitzero"`
+	UTMMedium           []string                                        `json:"utmMedium,omitzero"`
+	UTMCampaign         []string                                        `json:"utmCampaign,omitzero"`
+	UTMContent          []string                                        `json:"utmContent,omitzero"`
+	UTMTerm             []string                                        `json:"utmTerm,omitzero"`
 	Src                 []string                                        `json:"src,omitzero"`
 	Sck                 []string                                        `json:"sck,omitzero"`
 	ProductName         *string                                         `json:"productName,omitzero"`
@@ -1462,11 +1462,11 @@ type DashboardMySalesAggregationsInput struct {
 	SaleReasons               []string                                                    `json:"saleReasons,omitzero"`
 	SearchText                *string                                                     `json:"searchText,omitzero"`
 	ExternalID                *string                                                     `json:"externalId,omitzero"`
-	UtmSource                 []string                                                    `json:"utmSource,omitzero"`
-	UtmMedium                 []string                                                    `json:"utmMedium,omitzero"`
-	UtmCampaign               []string                                                    `json:"utmCampaign,omitzero"`
-	UtmContent                []string                                                    `json:"utmContent,omitzero"`
-	UtmTerm                   []string                                                    `json:"utmTerm,omitzero"`
+	UTMSource                 []string                                                    `json:"utmSource,omitzero"`
+	UTMMedium                 []string                                                    `json:"utmMedium,omitzero"`
+	UTMCampaign               []string                                                    `json:"utmCampaign,omitzero"`
+	UTMContent                []string                                                    `json:"utmContent,omitzero"`
+	UTMTerm                   []string                                                    `json:"utmTerm,omitzero"`
 	Src                       []string                                                    `json:"src,omitzero"`
 	Sck                       []string                                                    `json:"sck,omitzero"`
 	ProjectIDs                []string                                                    `json:"projectIds,omitzero"`
@@ -1695,7 +1695,7 @@ type DashboardMySalesAggregationsOutput struct {
 	RefundedReasonBreakdown       []DashboardMySalesAggregationsOutputRefundedReasonBreakdownItem       `json:"refundedReasonBreakdown"`
 	FailedReasonBreakdown         []DashboardMySalesAggregationsOutputFailedReasonBreakdownItem         `json:"failedReasonBreakdown"`
 	CartAbandonmentStageBreakdown []DashboardMySalesAggregationsOutputCartAbandonmentStageBreakdownItem `json:"cartAbandonmentStageBreakdown"`
-	UtmSourceBreakdown            []DashboardMySalesAggregationsOutputUtmSourceBreakdownItem            `json:"utmSourceBreakdown"`
+	UTMSourceBreakdown            []DashboardMySalesAggregationsOutputUTMSourceBreakdownItem            `json:"utmSourceBreakdown"`
 	TotalNumberOfSalesDay         int64                                                                 `json:"totalNumberOfSalesDay"`
 	TotalOnSalesOfDay             float64                                                               `json:"totalOnSalesOfDay"`
 	GroupedSales                  []DashboardMySalesAggregationsOutputGroupedSalesItem                  `json:"groupedSales,omitzero"`
@@ -1838,9 +1838,9 @@ type DashboardMySalesAggregationsOutputTotalOrderBumps struct {
 	Percentage float64 `json:"percentage"`
 }
 
-// DashboardMySalesAggregationsOutputUtmSourceBreakdownItem is an element of
-// [DashboardMySalesAggregationsOutput.UtmSourceBreakdown].
-type DashboardMySalesAggregationsOutputUtmSourceBreakdownItem struct {
+// DashboardMySalesAggregationsOutputUTMSourceBreakdownItem is an element of
+// [DashboardMySalesAggregationsOutput.UTMSourceBreakdown].
+type DashboardMySalesAggregationsOutputUTMSourceBreakdownItem struct {
 	Source string `json:"source"`
 	Count  int64  `json:"count"`
 }
@@ -1873,11 +1873,11 @@ type DashboardMySalesInput struct {
 	SaleReasons               []string                                        `json:"saleReasons,omitzero"`
 	SearchText                *string                                         `json:"searchText,omitzero"`
 	ExternalID                *string                                         `json:"externalId,omitzero"`
-	UtmSource                 []string                                        `json:"utmSource,omitzero"`
-	UtmMedium                 []string                                        `json:"utmMedium,omitzero"`
-	UtmCampaign               []string                                        `json:"utmCampaign,omitzero"`
-	UtmContent                []string                                        `json:"utmContent,omitzero"`
-	UtmTerm                   []string                                        `json:"utmTerm,omitzero"`
+	UTMSource                 []string                                        `json:"utmSource,omitzero"`
+	UTMMedium                 []string                                        `json:"utmMedium,omitzero"`
+	UTMCampaign               []string                                        `json:"utmCampaign,omitzero"`
+	UTMContent                []string                                        `json:"utmContent,omitzero"`
+	UTMTerm                   []string                                        `json:"utmTerm,omitzero"`
 	Src                       []string                                        `json:"src,omitzero"`
 	Sck                       []string                                        `json:"sck,omitzero"`
 	ProjectIDs                []string                                        `json:"projectIds,omitzero"`
@@ -2127,7 +2127,7 @@ type DashboardMySalesOutputAggregations struct {
 	RefundedReasonBreakdown       []DashboardMySalesOutputAggregationsRefundedReasonBreakdownItem       `json:"refundedReasonBreakdown"`
 	FailedReasonBreakdown         []DashboardMySalesOutputAggregationsFailedReasonBreakdownItem         `json:"failedReasonBreakdown"`
 	CartAbandonmentStageBreakdown []DashboardMySalesOutputAggregationsCartAbandonmentStageBreakdownItem `json:"cartAbandonmentStageBreakdown"`
-	UtmSourceBreakdown            []DashboardMySalesOutputAggregationsUtmSourceBreakdownItem            `json:"utmSourceBreakdown"`
+	UTMSourceBreakdown            []DashboardMySalesOutputAggregationsUTMSourceBreakdownItem            `json:"utmSourceBreakdown"`
 	TotalNumberOfSalesDay         int64                                                                 `json:"totalNumberOfSalesDay"`
 	TotalOnSalesOfDay             float64                                                               `json:"totalOnSalesOfDay"`
 	GroupedSales                  []DashboardMySalesOutputAggregationsGroupedSalesItem                  `json:"groupedSales,omitzero"`
@@ -2270,9 +2270,9 @@ type DashboardMySalesOutputAggregationsTotalOrderBumps struct {
 	Percentage float64 `json:"percentage"`
 }
 
-// DashboardMySalesOutputAggregationsUtmSourceBreakdownItem is an element of
-// [DashboardMySalesOutputAggregations.UtmSourceBreakdown].
-type DashboardMySalesOutputAggregationsUtmSourceBreakdownItem struct {
+// DashboardMySalesOutputAggregationsUTMSourceBreakdownItem is an element of
+// [DashboardMySalesOutputAggregations.UTMSourceBreakdown].
+type DashboardMySalesOutputAggregationsUTMSourceBreakdownItem struct {
 	Source string `json:"source"`
 	Count  int64  `json:"count"`
 }
@@ -2313,7 +2313,7 @@ type DashboardMySalesOutputDataItem struct {
 	FailReason                    *string                                                   `json:"failReason,omitzero"`
 	CancellationReason            *DashboardMySalesOutputDataItemCancellationReason         `json:"cancellationReason,omitzero"`
 	CancellationReasonDescription *string                                                   `json:"cancellationReasonDescription,omitzero"`
-	Utms                          DashboardMySalesOutputDataItemUtms                        `json:"utms"`
+	UTMs                          DashboardMySalesOutputDataItemUTMs                        `json:"utms"`
 	Gateway                       string                                                    `json:"gateway"`
 	MatchesOfferFilter            bool                                                      `json:"matchesOfferFilter"`
 	OrderBumps                    []DashboardMySalesOutputDataItemOrderBumpsItem            `json:"orderBumps,omitzero"`
@@ -2525,13 +2525,13 @@ const (
 	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemDocument   DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "document"
 )
 
-// DashboardMySalesOutputDataItemUtms is the type of [DashboardMySalesOutputDataItem.Utms].
-type DashboardMySalesOutputDataItemUtms struct {
-	UtmSource   *string `json:"utmSource,omitzero"`
-	UtmMedium   *string `json:"utmMedium,omitzero"`
-	UtmCampaign *string `json:"utmCampaign,omitzero"`
-	UtmContent  *string `json:"utmContent,omitzero"`
-	UtmTerm     *string `json:"utmTerm,omitzero"`
+// DashboardMySalesOutputDataItemUTMs is the type of [DashboardMySalesOutputDataItem.UTMs].
+type DashboardMySalesOutputDataItemUTMs struct {
+	UTMSource   *string `json:"utmSource,omitzero"`
+	UTMMedium   *string `json:"utmMedium,omitzero"`
+	UTMCampaign *string `json:"utmCampaign,omitzero"`
+	UTMContent  *string `json:"utmContent,omitzero"`
+	UTMTerm     *string `json:"utmTerm,omitzero"`
 	Src         *string `json:"src,omitzero"`
 	Sck         *string `json:"sck,omitzero"`
 }

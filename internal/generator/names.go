@@ -15,7 +15,9 @@ var initialisms = map[string]bool{
 	"SQL": true, "SSH": true, "TCP": true, "TLS": true, "TTL": true, "UDP": true, "UI": true,
 	"UID": true, "UUID": true, "URI": true, "URL": true, "UTF8": true, "VM": true, "XML": true,
 	"XMPP": true, "XSRF": true, "XSS": true,
-	"AI": true, "CRM": true, "SMS": true,
+	"AI": true, "CRM": true, "SMS": true, "SDR": true, "UTM": true, "PDF": true, "CSV": true,
+	"OTP": true, "FAQ": true, "CTA": true, "KPI": true, "NPS": true, "LTV": true, "VSL": true,
+	"CPF": true, "CNPJ": true,
 }
 
 // constantNames names the enum constants whose default name (type + value) is already a type,

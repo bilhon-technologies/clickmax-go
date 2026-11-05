@@ -303,7 +303,7 @@ type ClassroomsDetailsOutputContentsItem struct {
 	Enabled                bool                                                   `json:"enabled"`
 	ShowCourseTitleOnCover bool                                                   `json:"showCourseTitleOnCover"`
 	ViewScenario           ClassroomsDetailsOutputContentsItemViewScenario        `json:"viewScenario"`
-	CtaText                *string                                                `json:"ctaText,omitzero"`
+	CTAText                *string                                                `json:"ctaText,omitzero"`
 	ContentStyle           *ClassroomsDetailsOutputContentsItemContentStyle       `json:"contentStyle,omitzero"`
 	ReleaseType            string                                                 `json:"releaseType"`
 	ReleaseDays            *int64                                                 `json:"releaseDays,omitzero"`

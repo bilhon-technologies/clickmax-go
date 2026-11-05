@@ -109,11 +109,11 @@ type SubscriptionsAggregationsInput struct {
 	SubscriptionPlan          []SubscriptionsAggregationsInputSubscriptionPlanItem     `json:"subscriptionPlan,omitzero"`
 	ContactStatus             []SubscriptionsAggregationsInputContactStatusItem        `json:"contactStatus,omitzero"`
 	ContactTags               []string                                                 `json:"contactTags,omitzero"`
-	UtmSource                 []string                                                 `json:"utmSource,omitzero"`
-	UtmMedium                 []string                                                 `json:"utmMedium,omitzero"`
-	UtmCampaign               []string                                                 `json:"utmCampaign,omitzero"`
-	UtmContent                []string                                                 `json:"utmContent,omitzero"`
-	UtmTerm                   []string                                                 `json:"utmTerm,omitzero"`
+	UTMSource                 []string                                                 `json:"utmSource,omitzero"`
+	UTMMedium                 []string                                                 `json:"utmMedium,omitzero"`
+	UTMCampaign               []string                                                 `json:"utmCampaign,omitzero"`
+	UTMContent                []string                                                 `json:"utmContent,omitzero"`
+	UTMTerm                   []string                                                 `json:"utmTerm,omitzero"`
 	Src                       []string                                                 `json:"src,omitzero"`
 	Sck                       []string                                                 `json:"sck,omitzero"`
 	ProjectIDs                []string                                                 `json:"projectIds,omitzero"`
@@ -367,11 +367,11 @@ type SubscriptionsChartInputFilters struct {
 	SubscriptionPlan          []SubscriptionsChartInputFiltersSubscriptionPlanItem     `json:"subscriptionPlan,omitzero"`
 	ContactStatus             []SubscriptionsChartInputFiltersContactStatusItem        `json:"contactStatus,omitzero"`
 	ContactTags               []string                                                 `json:"contactTags,omitzero"`
-	UtmSource                 []string                                                 `json:"utmSource,omitzero"`
-	UtmMedium                 []string                                                 `json:"utmMedium,omitzero"`
-	UtmCampaign               []string                                                 `json:"utmCampaign,omitzero"`
-	UtmContent                []string                                                 `json:"utmContent,omitzero"`
-	UtmTerm                   []string                                                 `json:"utmTerm,omitzero"`
+	UTMSource                 []string                                                 `json:"utmSource,omitzero"`
+	UTMMedium                 []string                                                 `json:"utmMedium,omitzero"`
+	UTMCampaign               []string                                                 `json:"utmCampaign,omitzero"`
+	UTMContent                []string                                                 `json:"utmContent,omitzero"`
+	UTMTerm                   []string                                                 `json:"utmTerm,omitzero"`
 	Src                       []string                                                 `json:"src,omitzero"`
 	Sck                       []string                                                 `json:"sck,omitzero"`
 	ProjectIDs                []string                                                 `json:"projectIds,omitzero"`
@@ -627,7 +627,7 @@ type SubscriptionsGetOutputSubscription struct {
 	Plan           string                                         `json:"plan"`
 	Price          float64                                        `json:"price"`
 	Frequency      string                                         `json:"frequency"`
-	Ltv            float64                                        `json:"ltv"`
+	LTV            float64                                        `json:"ltv"`
 	PurchasesCount float64                                        `json:"purchasesCount"`
 	Status         string                                         `json:"status"`
 	ActivationDate time.Time                                      `json:"activationDate"`
@@ -685,11 +685,11 @@ type SubscriptionsListInput struct {
 	SubscriptionPlan          []SubscriptionsListInputSubscriptionPlanItem     `json:"subscriptionPlan,omitzero"`
 	ContactStatus             []SubscriptionsListInputContactStatusItem        `json:"contactStatus,omitzero"`
 	ContactTags               []string                                         `json:"contactTags,omitzero"`
-	UtmSource                 []string                                         `json:"utmSource,omitzero"`
-	UtmMedium                 []string                                         `json:"utmMedium,omitzero"`
-	UtmCampaign               []string                                         `json:"utmCampaign,omitzero"`
-	UtmContent                []string                                         `json:"utmContent,omitzero"`
-	UtmTerm                   []string                                         `json:"utmTerm,omitzero"`
+	UTMSource                 []string                                         `json:"utmSource,omitzero"`
+	UTMMedium                 []string                                         `json:"utmMedium,omitzero"`
+	UTMCampaign               []string                                         `json:"utmCampaign,omitzero"`
+	UTMContent                []string                                         `json:"utmContent,omitzero"`
+	UTMTerm                   []string                                         `json:"utmTerm,omitzero"`
 	Src                       []string                                         `json:"src,omitzero"`
 	Sck                       []string                                         `json:"sck,omitzero"`
 	ProjectIDs                []string                                         `json:"projectIds,omitzero"`

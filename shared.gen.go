@@ -805,7 +805,7 @@ const (
 	CheckoutsGetOutputTypeDownsell     CheckoutsGetOutputType = "downsell"
 	CheckoutsGetOutputTypeTermsPrivacy CheckoutsGetOutputType = "termsPrivacy"
 	CheckoutsGetOutputTypeThankYou     CheckoutsGetOutputType = "thankYou"
-	CheckoutsGetOutputTypeVsl          CheckoutsGetOutputType = "vsl"
+	CheckoutsGetOutputTypeVSL          CheckoutsGetOutputType = "vsl"
 	CheckoutsGetOutputTypeWebinar      CheckoutsGetOutputType = "webinar"
 )
 

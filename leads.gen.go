@@ -256,8 +256,8 @@ func (s *LeadsService) Payments(ctx context.Context, params LeadsPaymentsParams,
 // Returns UTM autocomplete values derived from lead and payment data in the current workspace.
 //
 // Calls GET /leads/payments-utm-autocomplete.
-func (s *LeadsService) PaymentsUtmAutocomplete(ctx context.Context, opts ...Option) (*LeadsPaymentsUtmAutocompleteOutput, error) {
-	var out LeadsPaymentsUtmAutocompleteOutput
+func (s *LeadsService) PaymentsUTMAutocomplete(ctx context.Context, opts ...Option) (*LeadsPaymentsUTMAutocompleteOutput, error) {
+	var out LeadsPaymentsUTMAutocompleteOutput
 	if err := s.client.do(ctx, "GET", "/leads/payments-utm-autocomplete", nil, nil, &out, opts); err != nil {
 		return nil, err
 	}
@@ -532,11 +532,11 @@ const (
 	LeadsBulkMemberAccessInputFiltersItemFieldProductID                     LeadsBulkMemberAccessInputFiltersItemField = "productId"
 	LeadsBulkMemberAccessInputFiltersItemFieldProductName                   LeadsBulkMemberAccessInputFiltersItemField = "productName"
 	LeadsBulkMemberAccessInputFiltersItemFieldSearchTransactionCode         LeadsBulkMemberAccessInputFiltersItemField = "searchTransactionCode"
-	LeadsBulkMemberAccessInputFiltersItemFieldUtmCampaign                   LeadsBulkMemberAccessInputFiltersItemField = "utmCampaign"
-	LeadsBulkMemberAccessInputFiltersItemFieldUtmContent                    LeadsBulkMemberAccessInputFiltersItemField = "utmContent"
-	LeadsBulkMemberAccessInputFiltersItemFieldUtmMedium                     LeadsBulkMemberAccessInputFiltersItemField = "utmMedium"
-	LeadsBulkMemberAccessInputFiltersItemFieldUtmSource                     LeadsBulkMemberAccessInputFiltersItemField = "utmSource"
-	LeadsBulkMemberAccessInputFiltersItemFieldUtmTerm                       LeadsBulkMemberAccessInputFiltersItemField = "utmTerm"
+	LeadsBulkMemberAccessInputFiltersItemFieldUTMCampaign                   LeadsBulkMemberAccessInputFiltersItemField = "utmCampaign"
+	LeadsBulkMemberAccessInputFiltersItemFieldUTMContent                    LeadsBulkMemberAccessInputFiltersItemField = "utmContent"
+	LeadsBulkMemberAccessInputFiltersItemFieldUTMMedium                     LeadsBulkMemberAccessInputFiltersItemField = "utmMedium"
+	LeadsBulkMemberAccessInputFiltersItemFieldUTMSource                     LeadsBulkMemberAccessInputFiltersItemField = "utmSource"
+	LeadsBulkMemberAccessInputFiltersItemFieldUTMTerm                       LeadsBulkMemberAccessInputFiltersItemField = "utmTerm"
 	LeadsBulkMemberAccessInputFiltersItemFieldSrc                           LeadsBulkMemberAccessInputFiltersItemField = "src"
 	LeadsBulkMemberAccessInputFiltersItemFieldSck                           LeadsBulkMemberAccessInputFiltersItemField = "sck"
 	LeadsBulkMemberAccessInputFiltersItemFieldAverageTicket                 LeadsBulkMemberAccessInputFiltersItemField = "averageTicket"
@@ -772,11 +772,11 @@ const (
 	LeadsCommonProductsInputFilterDynamicFiltersItemFieldProductIDs                   LeadsCommonProductsInputFilterDynamicFiltersItemField = "productIds"
 	LeadsCommonProductsInputFilterDynamicFiltersItemFieldOfferIDs                     LeadsCommonProductsInputFilterDynamicFiltersItemField = "offerIds"
 	LeadsCommonProductsInputFilterDynamicFiltersItemFieldSearchTransactionCode        LeadsCommonProductsInputFilterDynamicFiltersItemField = "searchTransactionCode"
-	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUtmCampaign                  LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_campaign"
-	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUtmContent                   LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_content"
-	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUtmMedium                    LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_medium"
-	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUtmSource                    LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_source"
-	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUtmTerm                      LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_term"
+	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUTMCampaign                  LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_campaign"
+	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUTMContent                   LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_content"
+	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUTMMedium                    LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_medium"
+	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUTMSource                    LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_source"
+	LeadsCommonProductsInputFilterDynamicFiltersItemFieldUTMTerm                      LeadsCommonProductsInputFilterDynamicFiltersItemField = "utm_term"
 	LeadsCommonProductsInputFilterDynamicFiltersItemFieldSrc                          LeadsCommonProductsInputFilterDynamicFiltersItemField = "src"
 	LeadsCommonProductsInputFilterDynamicFiltersItemFieldSck                          LeadsCommonProductsInputFilterDynamicFiltersItemField = "sck"
 	LeadsCommonProductsInputFilterDynamicFiltersItemFieldMemberPortalIDs              LeadsCommonProductsInputFilterDynamicFiltersItemField = "memberPortalIds"
@@ -829,11 +829,11 @@ type LeadsCommonProductsInputFilterFilter struct {
 	Tags               Nullable[[]string]                                                    `json:"tags,omitzero"`
 	SystemTags         Nullable[[]string]                                                    `json:"systemTags,omitzero"`
 	DateRange          Nullable[LeadsCommonProductsInputFilterFilterDateRange]               `json:"dateRange,omitzero"`
-	UtmSource          Nullable[string]                                                      `json:"utm_source,omitzero"`
-	UtmMedium          Nullable[string]                                                      `json:"utm_medium,omitzero"`
-	UtmCampaign        Nullable[string]                                                      `json:"utm_campaign,omitzero"`
-	UtmTerm            Nullable[string]                                                      `json:"utm_term,omitzero"`
-	UtmContent         Nullable[string]                                                      `json:"utm_content,omitzero"`
+	UTMSource          Nullable[string]                                                      `json:"utm_source,omitzero"`
+	UTMMedium          Nullable[string]                                                      `json:"utm_medium,omitzero"`
+	UTMCampaign        Nullable[string]                                                      `json:"utm_campaign,omitzero"`
+	UTMTerm            Nullable[string]                                                      `json:"utm_term,omitzero"`
+	UTMContent         Nullable[string]                                                      `json:"utm_content,omitzero"`
 	Includes           Nullable[[]string]                                                    `json:"includes,omitzero"`
 	Excludes           Nullable[[]string]                                                    `json:"excludes,omitzero"`
 	Name               Nullable[string]                                                      `json:"name,omitzero"`
@@ -923,11 +923,11 @@ const (
 	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldProductIDs                   LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "productIds"
 	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldOfferIDs                     LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "offerIds"
 	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldSearchTransactionCode        LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "searchTransactionCode"
-	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUtmCampaign                  LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_campaign"
-	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUtmContent                   LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_content"
-	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUtmMedium                    LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_medium"
-	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUtmSource                    LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_source"
-	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUtmTerm                      LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_term"
+	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUTMCampaign                  LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_campaign"
+	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUTMContent                   LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_content"
+	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUTMMedium                    LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_medium"
+	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUTMSource                    LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_source"
+	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldUTMTerm                      LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "utm_term"
 	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldSrc                          LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "src"
 	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldSck                          LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "sck"
 	LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemFieldMemberPortalIDs              LeadsCommonProductsInputFilterFilterGroupsItemFiltersItemField = "memberPortalIds"
@@ -1107,7 +1107,7 @@ const (
 	LeadsCommonProductsInputFilterFilterSubOriginItemEconodata             LeadsCommonProductsInputFilterFilterSubOriginItem = "Econodata"
 	LeadsCommonProductsInputFilterFilterSubOriginItemSocialComment         LeadsCommonProductsInputFilterFilterSubOriginItem = "SocialComment"
 	LeadsCommonProductsInputFilterFilterSubOriginItemCxManualCreation      LeadsCommonProductsInputFilterFilterSubOriginItem = "CxManualCreation"
-	LeadsCommonProductsInputFilterFilterSubOriginItemCxManualImportCsv     LeadsCommonProductsInputFilterFilterSubOriginItem = "CxManualImportCsv"
+	LeadsCommonProductsInputFilterFilterSubOriginItemCxManualImportCSV     LeadsCommonProductsInputFilterFilterSubOriginItem = "CxManualImportCsv"
 )
 
 // LeadsCommonProductsInputFilterFilterTemperatureStatusItem is an element of
@@ -1203,11 +1203,11 @@ const (
 // LeadsCommonProductsInputFilterPaymentsFilter is the type of
 // [LeadsCommonProductsInputFilter.PaymentsFilter].
 type LeadsCommonProductsInputFilterPaymentsFilter struct {
-	UtmCampaign           []string                                                                `json:"utmCampaign,omitzero"`
-	UtmContent            []string                                                                `json:"utmContent,omitzero"`
-	UtmMedium             []string                                                                `json:"utmMedium,omitzero"`
-	UtmSource             []string                                                                `json:"utmSource,omitzero"`
-	UtmTerm               []string                                                                `json:"utmTerm,omitzero"`
+	UTMCampaign           []string                                                                `json:"utmCampaign,omitzero"`
+	UTMContent            []string                                                                `json:"utmContent,omitzero"`
+	UTMMedium             []string                                                                `json:"utmMedium,omitzero"`
+	UTMSource             []string                                                                `json:"utmSource,omitzero"`
+	UTMTerm               []string                                                                `json:"utmTerm,omitzero"`
 	ProductName           *string                                                                 `json:"productName,omitzero"`
 	SubscriptionStatus    []LeadsCommonProductsInputFilterPaymentsFilterSubscriptionStatusItem    `json:"subscriptionStatus,omitzero"`
 	SubscriptionPlan      []LeadsCommonProductsInputFilterPaymentsFilterSubscriptionPlanItem      `json:"subscriptionPlan,omitzero"`
@@ -1559,7 +1559,7 @@ type LeadsContextOutputCaptures struct {
 	Origin       *LeadsContextOutputCapturesOrigin            `json:"origin,omitzero"`
 	SubOrigin    *LeadsContextOutputCapturesSubOrigin         `json:"subOrigin,omitzero"`
 	CaptureLink  *LeadsContextOutputCapturesCaptureLink       `json:"captureLink,omitzero"`
-	UtmSources   []LeadsContextOutputCapturesUtmSourcesItem   `json:"utmSources"`
+	UTMSources   []LeadsContextOutputCapturesUTMSourcesItem   `json:"utmSources"`
 	RecentEvents []LeadsContextOutputCapturesRecentEventsItem `json:"recentEvents"`
 }
 
@@ -1622,11 +1622,11 @@ type LeadsContextOutputCapturesRecentEventsItem struct {
 	Hostname    *string   `json:"hostname,omitzero"`
 	Pathname    *string   `json:"pathname,omitzero"`
 	Referrer    *string   `json:"referrer,omitzero"`
-	UtmSource   *string   `json:"utmSource,omitzero"`
-	UtmMedium   *string   `json:"utmMedium,omitzero"`
-	UtmCampaign *string   `json:"utmCampaign,omitzero"`
-	UtmContent  *string   `json:"utmContent,omitzero"`
-	UtmTerm     *string   `json:"utmTerm,omitzero"`
+	UTMSource   *string   `json:"utmSource,omitzero"`
+	UTMMedium   *string   `json:"utmMedium,omitzero"`
+	UTMCampaign *string   `json:"utmCampaign,omitzero"`
+	UTMContent  *string   `json:"utmContent,omitzero"`
+	UTMTerm     *string   `json:"utmTerm,omitzero"`
 	OccurredAt  time.Time `json:"occurredAt"`
 }
 
@@ -1681,28 +1681,28 @@ const (
 	LeadsContextOutputCapturesSubOriginEconodata             LeadsContextOutputCapturesSubOrigin = "Econodata"
 	LeadsContextOutputCapturesSubOriginSocialComment         LeadsContextOutputCapturesSubOrigin = "SocialComment"
 	LeadsContextOutputCapturesSubOriginCxManualCreation      LeadsContextOutputCapturesSubOrigin = "CxManualCreation"
-	LeadsContextOutputCapturesSubOriginCxManualImportCsv     LeadsContextOutputCapturesSubOrigin = "CxManualImportCsv"
+	LeadsContextOutputCapturesSubOriginCxManualImportCSV     LeadsContextOutputCapturesSubOrigin = "CxManualImportCsv"
 )
 
-// LeadsContextOutputCapturesUtmSourcesItem is an element of [LeadsContextOutputCaptures.UtmSources].
-type LeadsContextOutputCapturesUtmSourcesItem struct {
-	Source      LeadsContextOutputCapturesUtmSourcesItemSource `json:"source"`
-	UtmSource   *string                                        `json:"utmSource,omitzero"`
-	UtmMedium   *string                                        `json:"utmMedium,omitzero"`
-	UtmCampaign *string                                        `json:"utmCampaign,omitzero"`
-	UtmContent  *string                                        `json:"utmContent,omitzero"`
-	UtmTerm     *string                                        `json:"utmTerm,omitzero"`
+// LeadsContextOutputCapturesUTMSourcesItem is an element of [LeadsContextOutputCaptures.UTMSources].
+type LeadsContextOutputCapturesUTMSourcesItem struct {
+	Source      LeadsContextOutputCapturesUTMSourcesItemSource `json:"source"`
+	UTMSource   *string                                        `json:"utmSource,omitzero"`
+	UTMMedium   *string                                        `json:"utmMedium,omitzero"`
+	UTMCampaign *string                                        `json:"utmCampaign,omitzero"`
+	UTMContent  *string                                        `json:"utmContent,omitzero"`
+	UTMTerm     *string                                        `json:"utmTerm,omitzero"`
 	CreatedAt   time.Time                                      `json:"createdAt"`
 }
 
-// LeadsContextOutputCapturesUtmSourcesItemSource is the type of
-// [LeadsContextOutputCapturesUtmSourcesItem.Source].
-type LeadsContextOutputCapturesUtmSourcesItemSource string
+// LeadsContextOutputCapturesUTMSourcesItemSource is the type of
+// [LeadsContextOutputCapturesUTMSourcesItem.Source].
+type LeadsContextOutputCapturesUTMSourcesItemSource string
 
-// Values of [LeadsContextOutputCapturesUtmSourcesItemSource].
+// Values of [LeadsContextOutputCapturesUTMSourcesItemSource].
 const (
-	LeadsContextOutputCapturesUtmSourcesItemSourceSubmission LeadsContextOutputCapturesUtmSourcesItemSource = "submission"
-	LeadsContextOutputCapturesUtmSourcesItemSourcePayment    LeadsContextOutputCapturesUtmSourcesItemSource = "payment"
+	LeadsContextOutputCapturesUTMSourcesItemSourceSubmission LeadsContextOutputCapturesUTMSourcesItemSource = "submission"
+	LeadsContextOutputCapturesUTMSourcesItemSourcePayment    LeadsContextOutputCapturesUTMSourcesItemSource = "payment"
 )
 
 // LeadsContextOutputCustomFieldsItem is an element of [LeadsContextOutput.CustomFields].
@@ -2042,7 +2042,7 @@ const (
 	LeadsContextOutputLeadSubOriginEconodata             LeadsContextOutputLeadSubOrigin = "Econodata"
 	LeadsContextOutputLeadSubOriginSocialComment         LeadsContextOutputLeadSubOrigin = "SocialComment"
 	LeadsContextOutputLeadSubOriginCxManualCreation      LeadsContextOutputLeadSubOrigin = "CxManualCreation"
-	LeadsContextOutputLeadSubOriginCxManualImportCsv     LeadsContextOutputLeadSubOrigin = "CxManualImportCsv"
+	LeadsContextOutputLeadSubOriginCxManualImportCSV     LeadsContextOutputLeadSubOrigin = "CxManualImportCsv"
 )
 
 // LeadsContextOutputLeadTemperatureStatus is the type of [LeadsContextOutputLead.TemperatureStatus].
@@ -2332,7 +2332,7 @@ type LeadsContextOutputPurchases struct {
 
 // LeadsContextOutputPurchasesBehavior is the type of [LeadsContextOutputPurchases.Behavior].
 type LeadsContextOutputPurchasesBehavior struct {
-	LtvCents       int64 `json:"ltvCents"`
+	LTVCents       int64 `json:"ltvCents"`
 	AvgTicketCents int64 `json:"avgTicketCents"`
 	TotalPurchases int64 `json:"totalPurchases"`
 }
@@ -2658,11 +2658,11 @@ const (
 	LeadsFilterSchemaOutputFieldsItemFieldProductIDs                   LeadsFilterSchemaOutputFieldsItemField = "productIds"
 	LeadsFilterSchemaOutputFieldsItemFieldOfferIDs                     LeadsFilterSchemaOutputFieldsItemField = "offerIds"
 	LeadsFilterSchemaOutputFieldsItemFieldSearchTransactionCode        LeadsFilterSchemaOutputFieldsItemField = "searchTransactionCode"
-	LeadsFilterSchemaOutputFieldsItemFieldUtmCampaign                  LeadsFilterSchemaOutputFieldsItemField = "utm_campaign"
-	LeadsFilterSchemaOutputFieldsItemFieldUtmContent                   LeadsFilterSchemaOutputFieldsItemField = "utm_content"
-	LeadsFilterSchemaOutputFieldsItemFieldUtmMedium                    LeadsFilterSchemaOutputFieldsItemField = "utm_medium"
-	LeadsFilterSchemaOutputFieldsItemFieldUtmSource                    LeadsFilterSchemaOutputFieldsItemField = "utm_source"
-	LeadsFilterSchemaOutputFieldsItemFieldUtmTerm                      LeadsFilterSchemaOutputFieldsItemField = "utm_term"
+	LeadsFilterSchemaOutputFieldsItemFieldUTMCampaign                  LeadsFilterSchemaOutputFieldsItemField = "utm_campaign"
+	LeadsFilterSchemaOutputFieldsItemFieldUTMContent                   LeadsFilterSchemaOutputFieldsItemField = "utm_content"
+	LeadsFilterSchemaOutputFieldsItemFieldUTMMedium                    LeadsFilterSchemaOutputFieldsItemField = "utm_medium"
+	LeadsFilterSchemaOutputFieldsItemFieldUTMSource                    LeadsFilterSchemaOutputFieldsItemField = "utm_source"
+	LeadsFilterSchemaOutputFieldsItemFieldUTMTerm                      LeadsFilterSchemaOutputFieldsItemField = "utm_term"
 	LeadsFilterSchemaOutputFieldsItemFieldSrc                          LeadsFilterSchemaOutputFieldsItemField = "src"
 	LeadsFilterSchemaOutputFieldsItemFieldSck                          LeadsFilterSchemaOutputFieldsItemField = "sck"
 	LeadsFilterSchemaOutputFieldsItemFieldMemberPortalIDs              LeadsFilterSchemaOutputFieldsItemField = "memberPortalIds"
@@ -3543,16 +3543,16 @@ const (
 	LeadsGetOutputSubOriginEconodata             LeadsGetOutputSubOrigin = "Econodata"
 	LeadsGetOutputSubOriginSocialComment         LeadsGetOutputSubOrigin = "SocialComment"
 	LeadsGetOutputSubOriginCxManualCreation      LeadsGetOutputSubOrigin = "CxManualCreation"
-	LeadsGetOutputSubOriginCxManualImportCsv     LeadsGetOutputSubOrigin = "CxManualImportCsv"
+	LeadsGetOutputSubOriginCxManualImportCSV     LeadsGetOutputSubOrigin = "CxManualImportCsv"
 )
 
 // LeadsGetOutputSubmissionsItem is an element of [LeadsGetOutput.Submissions].
 type LeadsGetOutputSubmissionsItem struct {
-	UtmCampaign *string `json:"utmCampaign,omitzero"`
-	UtmContent  *string `json:"utmContent,omitzero"`
-	UtmMedium   *string `json:"utmMedium,omitzero"`
-	UtmSource   *string `json:"utmSource,omitzero"`
-	UtmTerm     *string `json:"utmTerm,omitzero"`
+	UTMCampaign *string `json:"utmCampaign,omitzero"`
+	UTMContent  *string `json:"utmContent,omitzero"`
+	UTMMedium   *string `json:"utmMedium,omitzero"`
+	UTMSource   *string `json:"utmSource,omitzero"`
+	UTMTerm     *string `json:"utmTerm,omitzero"`
 }
 
 // LeadsGetOutputSuspectedFraudReasonsItem is an element of [LeadsGetOutput.SuspectedFraudReasons].
@@ -3586,11 +3586,11 @@ const (
 // LeadsGetOutputTrackingsItem is an element of [LeadsGetOutput.Trackings].
 type LeadsGetOutputTrackingsItem struct {
 	ID              *string                                 `json:"id,omitzero"`
-	UtmSource       *string                                 `json:"utmSource,omitzero"`
-	UtmMedium       *string                                 `json:"utmMedium,omitzero"`
-	UtmCampaign     *string                                 `json:"utmCampaign,omitzero"`
-	UtmTerm         *string                                 `json:"utmTerm,omitzero"`
-	UtmContent      *string                                 `json:"utmContent,omitzero"`
+	UTMSource       *string                                 `json:"utmSource,omitzero"`
+	UTMMedium       *string                                 `json:"utmMedium,omitzero"`
+	UTMCampaign     *string                                 `json:"utmCampaign,omitzero"`
+	UTMTerm         *string                                 `json:"utmTerm,omitzero"`
+	UTMContent      *string                                 `json:"utmContent,omitzero"`
 	Src             *string                                 `json:"src,omitzero"`
 	Sck             *string                                 `json:"sck,omitzero"`
 	AffiliationHash *string                                 `json:"affiliationHash,omitzero"`
@@ -3710,11 +3710,11 @@ const (
 	LeadsInvoicesInputFilterDynamicFiltersItemFieldProductIDs                   LeadsInvoicesInputFilterDynamicFiltersItemField = "productIds"
 	LeadsInvoicesInputFilterDynamicFiltersItemFieldOfferIDs                     LeadsInvoicesInputFilterDynamicFiltersItemField = "offerIds"
 	LeadsInvoicesInputFilterDynamicFiltersItemFieldSearchTransactionCode        LeadsInvoicesInputFilterDynamicFiltersItemField = "searchTransactionCode"
-	LeadsInvoicesInputFilterDynamicFiltersItemFieldUtmCampaign                  LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_campaign"
-	LeadsInvoicesInputFilterDynamicFiltersItemFieldUtmContent                   LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_content"
-	LeadsInvoicesInputFilterDynamicFiltersItemFieldUtmMedium                    LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_medium"
-	LeadsInvoicesInputFilterDynamicFiltersItemFieldUtmSource                    LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_source"
-	LeadsInvoicesInputFilterDynamicFiltersItemFieldUtmTerm                      LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_term"
+	LeadsInvoicesInputFilterDynamicFiltersItemFieldUTMCampaign                  LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_campaign"
+	LeadsInvoicesInputFilterDynamicFiltersItemFieldUTMContent                   LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_content"
+	LeadsInvoicesInputFilterDynamicFiltersItemFieldUTMMedium                    LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_medium"
+	LeadsInvoicesInputFilterDynamicFiltersItemFieldUTMSource                    LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_source"
+	LeadsInvoicesInputFilterDynamicFiltersItemFieldUTMTerm                      LeadsInvoicesInputFilterDynamicFiltersItemField = "utm_term"
 	LeadsInvoicesInputFilterDynamicFiltersItemFieldSrc                          LeadsInvoicesInputFilterDynamicFiltersItemField = "src"
 	LeadsInvoicesInputFilterDynamicFiltersItemFieldSck                          LeadsInvoicesInputFilterDynamicFiltersItemField = "sck"
 	LeadsInvoicesInputFilterDynamicFiltersItemFieldMemberPortalIDs              LeadsInvoicesInputFilterDynamicFiltersItemField = "memberPortalIds"
@@ -3767,11 +3767,11 @@ type LeadsInvoicesInputFilterFilter struct {
 	Tags               Nullable[[]string]                                              `json:"tags,omitzero"`
 	SystemTags         Nullable[[]string]                                              `json:"systemTags,omitzero"`
 	DateRange          Nullable[LeadsInvoicesInputFilterFilterDateRange]               `json:"dateRange,omitzero"`
-	UtmSource          Nullable[string]                                                `json:"utm_source,omitzero"`
-	UtmMedium          Nullable[string]                                                `json:"utm_medium,omitzero"`
-	UtmCampaign        Nullable[string]                                                `json:"utm_campaign,omitzero"`
-	UtmTerm            Nullable[string]                                                `json:"utm_term,omitzero"`
-	UtmContent         Nullable[string]                                                `json:"utm_content,omitzero"`
+	UTMSource          Nullable[string]                                                `json:"utm_source,omitzero"`
+	UTMMedium          Nullable[string]                                                `json:"utm_medium,omitzero"`
+	UTMCampaign        Nullable[string]                                                `json:"utm_campaign,omitzero"`
+	UTMTerm            Nullable[string]                                                `json:"utm_term,omitzero"`
+	UTMContent         Nullable[string]                                                `json:"utm_content,omitzero"`
 	Includes           Nullable[[]string]                                              `json:"includes,omitzero"`
 	Excludes           Nullable[[]string]                                              `json:"excludes,omitzero"`
 	Name               Nullable[string]                                                `json:"name,omitzero"`
@@ -3859,11 +3859,11 @@ const (
 	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldProductIDs                   LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "productIds"
 	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldOfferIDs                     LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "offerIds"
 	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldSearchTransactionCode        LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "searchTransactionCode"
-	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUtmCampaign                  LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_campaign"
-	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUtmContent                   LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_content"
-	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUtmMedium                    LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_medium"
-	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUtmSource                    LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_source"
-	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUtmTerm                      LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_term"
+	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUTMCampaign                  LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_campaign"
+	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUTMContent                   LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_content"
+	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUTMMedium                    LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_medium"
+	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUTMSource                    LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_source"
+	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldUTMTerm                      LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "utm_term"
 	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldSrc                          LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "src"
 	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldSck                          LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "sck"
 	LeadsInvoicesInputFilterFilterGroupsItemFiltersItemFieldMemberPortalIDs              LeadsInvoicesInputFilterFilterGroupsItemFiltersItemField = "memberPortalIds"
@@ -4041,7 +4041,7 @@ const (
 	LeadsInvoicesInputFilterFilterSubOriginItemEconodata             LeadsInvoicesInputFilterFilterSubOriginItem = "Econodata"
 	LeadsInvoicesInputFilterFilterSubOriginItemSocialComment         LeadsInvoicesInputFilterFilterSubOriginItem = "SocialComment"
 	LeadsInvoicesInputFilterFilterSubOriginItemCxManualCreation      LeadsInvoicesInputFilterFilterSubOriginItem = "CxManualCreation"
-	LeadsInvoicesInputFilterFilterSubOriginItemCxManualImportCsv     LeadsInvoicesInputFilterFilterSubOriginItem = "CxManualImportCsv"
+	LeadsInvoicesInputFilterFilterSubOriginItemCxManualImportCSV     LeadsInvoicesInputFilterFilterSubOriginItem = "CxManualImportCsv"
 )
 
 // LeadsInvoicesInputFilterFilterTemperatureStatusItem is an element of
@@ -4129,11 +4129,11 @@ const (
 
 // LeadsInvoicesInputFilterPaymentsFilter is the type of [LeadsInvoicesInputFilter.PaymentsFilter].
 type LeadsInvoicesInputFilterPaymentsFilter struct {
-	UtmCampaign           []string                                                          `json:"utmCampaign,omitzero"`
-	UtmContent            []string                                                          `json:"utmContent,omitzero"`
-	UtmMedium             []string                                                          `json:"utmMedium,omitzero"`
-	UtmSource             []string                                                          `json:"utmSource,omitzero"`
-	UtmTerm               []string                                                          `json:"utmTerm,omitzero"`
+	UTMCampaign           []string                                                          `json:"utmCampaign,omitzero"`
+	UTMContent            []string                                                          `json:"utmContent,omitzero"`
+	UTMMedium             []string                                                          `json:"utmMedium,omitzero"`
+	UTMSource             []string                                                          `json:"utmSource,omitzero"`
+	UTMTerm               []string                                                          `json:"utmTerm,omitzero"`
 	ProductName           *string                                                           `json:"productName,omitzero"`
 	SubscriptionStatus    []LeadsInvoicesInputFilterPaymentsFilterSubscriptionStatusItem    `json:"subscriptionStatus,omitzero"`
 	SubscriptionPlan      []LeadsInvoicesInputFilterPaymentsFilterSubscriptionPlanItem      `json:"subscriptionPlan,omitzero"`
@@ -4432,7 +4432,7 @@ const (
 	LeadsOriginsTreeOutputDataItemSubOriginsItemEconodata             LeadsOriginsTreeOutputDataItemSubOriginsItem = "Econodata"
 	LeadsOriginsTreeOutputDataItemSubOriginsItemSocialComment         LeadsOriginsTreeOutputDataItemSubOriginsItem = "SocialComment"
 	LeadsOriginsTreeOutputDataItemSubOriginsItemCxManualCreation      LeadsOriginsTreeOutputDataItemSubOriginsItem = "CxManualCreation"
-	LeadsOriginsTreeOutputDataItemSubOriginsItemCxManualImportCsv     LeadsOriginsTreeOutputDataItemSubOriginsItem = "CxManualImportCsv"
+	LeadsOriginsTreeOutputDataItemSubOriginsItemCxManualImportCSV     LeadsOriginsTreeOutputDataItemSubOriginsItem = "CxManualImportCsv"
 )
 
 // LeadsPaymentsOutput is the response of [LeadsService.Payments].
@@ -4444,11 +4444,11 @@ type LeadsPaymentsOutput struct {
 type LeadsPaymentsOutputData struct {
 	QtdProducts             float64                                              `json:"qtdProducts"`
 	QtdTransactions         float64                                              `json:"qtdTransactions"`
-	Ltv                     float64                                              `json:"LTV"`
+	LTV                     float64                                              `json:"LTV"`
 	AvgTicket               float64                                              `json:"avgTicket"`
 	Products                []LeadsPaymentsOutputDataProductsItem                `json:"products"`
 	ExternalSales           []LeadsPaymentsOutputDataExternalSalesItem           `json:"externalSales"`
-	ExternalSalesLtv        float64                                              `json:"externalSalesLTV"`
+	ExternalSalesLTV        float64                                              `json:"externalSalesLTV"`
 	ExternalSalesQtd        float64                                              `json:"externalSalesQtd"`
 	ExternalSalesAvgTicket  float64                                              `json:"externalSalesAvgTicket"`
 	ExternalSalesCurrency   *LeadsPaymentsOutputDataExternalSalesCurrency        `json:"externalSalesCurrency,omitzero"`
@@ -5043,7 +5043,7 @@ type LeadsPaymentsOutputDataProductsItemProduct struct {
 	ID                  string  `json:"id"`
 	Name                string  `json:"name"`
 	QtdPaidTransactions float64 `json:"qtdPaidTransactions"`
-	Ltv                 float64 `json:"LTV"`
+	LTV                 float64 `json:"LTV"`
 	ImageURL            string  `json:"imageUrl"`
 }
 
@@ -5091,13 +5091,13 @@ func (p LeadsPaymentsParams) values() url.Values {
 	return v
 }
 
-// LeadsPaymentsUtmAutocompleteOutput is the response of [LeadsService.PaymentsUtmAutocomplete].
-type LeadsPaymentsUtmAutocompleteOutput struct {
-	UtmSource   []string `json:"utmSource"`
-	UtmMedium   []string `json:"utmMedium"`
-	UtmCampaign []string `json:"utmCampaign"`
-	UtmContent  []string `json:"utmContent"`
-	UtmTerm     []string `json:"utmTerm"`
+// LeadsPaymentsUTMAutocompleteOutput is the response of [LeadsService.PaymentsUTMAutocomplete].
+type LeadsPaymentsUTMAutocompleteOutput struct {
+	UTMSource   []string `json:"utmSource"`
+	UTMMedium   []string `json:"utmMedium"`
+	UTMCampaign []string `json:"utmCampaign"`
+	UTMContent  []string `json:"utmContent"`
+	UTMTerm     []string `json:"utmTerm"`
 	Src         []string `json:"src"`
 	Sck         []string `json:"sck"`
 }
@@ -5171,11 +5171,11 @@ const (
 	LeadsSearchInputFiltersItemFieldProductID                     LeadsSearchInputFiltersItemField = "productId"
 	LeadsSearchInputFiltersItemFieldProductName                   LeadsSearchInputFiltersItemField = "productName"
 	LeadsSearchInputFiltersItemFieldSearchTransactionCode         LeadsSearchInputFiltersItemField = "searchTransactionCode"
-	LeadsSearchInputFiltersItemFieldUtmCampaign                   LeadsSearchInputFiltersItemField = "utmCampaign"
-	LeadsSearchInputFiltersItemFieldUtmContent                    LeadsSearchInputFiltersItemField = "utmContent"
-	LeadsSearchInputFiltersItemFieldUtmMedium                     LeadsSearchInputFiltersItemField = "utmMedium"
-	LeadsSearchInputFiltersItemFieldUtmSource                     LeadsSearchInputFiltersItemField = "utmSource"
-	LeadsSearchInputFiltersItemFieldUtmTerm                       LeadsSearchInputFiltersItemField = "utmTerm"
+	LeadsSearchInputFiltersItemFieldUTMCampaign                   LeadsSearchInputFiltersItemField = "utmCampaign"
+	LeadsSearchInputFiltersItemFieldUTMContent                    LeadsSearchInputFiltersItemField = "utmContent"
+	LeadsSearchInputFiltersItemFieldUTMMedium                     LeadsSearchInputFiltersItemField = "utmMedium"
+	LeadsSearchInputFiltersItemFieldUTMSource                     LeadsSearchInputFiltersItemField = "utmSource"
+	LeadsSearchInputFiltersItemFieldUTMTerm                       LeadsSearchInputFiltersItemField = "utmTerm"
 	LeadsSearchInputFiltersItemFieldSrc                           LeadsSearchInputFiltersItemField = "src"
 	LeadsSearchInputFiltersItemFieldSck                           LeadsSearchInputFiltersItemField = "sck"
 	LeadsSearchInputFiltersItemFieldAverageTicket                 LeadsSearchInputFiltersItemField = "averageTicket"
@@ -5512,7 +5512,7 @@ const (
 	LeadsSearchOutputDataItemSubOriginEconodata             LeadsSearchOutputDataItemSubOrigin = "Econodata"
 	LeadsSearchOutputDataItemSubOriginSocialComment         LeadsSearchOutputDataItemSubOrigin = "SocialComment"
 	LeadsSearchOutputDataItemSubOriginCxManualCreation      LeadsSearchOutputDataItemSubOrigin = "CxManualCreation"
-	LeadsSearchOutputDataItemSubOriginCxManualImportCsv     LeadsSearchOutputDataItemSubOrigin = "CxManualImportCsv"
+	LeadsSearchOutputDataItemSubOriginCxManualImportCSV     LeadsSearchOutputDataItemSubOrigin = "CxManualImportCsv"
 )
 
 // LeadsSearchOutputDataItemSuspectedFraudReasonsItem is an element of
@@ -5622,7 +5622,7 @@ const (
 	LeadsSubOriginsOutputDataItemEconodata             LeadsSubOriginsOutputDataItem = "Econodata"
 	LeadsSubOriginsOutputDataItemSocialComment         LeadsSubOriginsOutputDataItem = "SocialComment"
 	LeadsSubOriginsOutputDataItemCxManualCreation      LeadsSubOriginsOutputDataItem = "CxManualCreation"
-	LeadsSubOriginsOutputDataItemCxManualImportCsv     LeadsSubOriginsOutputDataItem = "CxManualImportCsv"
+	LeadsSubOriginsOutputDataItemCxManualImportCSV     LeadsSubOriginsOutputDataItem = "CxManualImportCsv"
 )
 
 // LeadsValidateEmailInput is the request body of [LeadsService.ValidateEmail].
@@ -5771,7 +5771,7 @@ const (
 type LeadsXrayOutputPurchases struct {
 	TotalPurchases int64                                `json:"totalPurchases"`
 	AvgTicketCents int64                                `json:"avgTicketCents"`
-	LtvCents       int64                                `json:"ltvCents"`
+	LTVCents       int64                                `json:"ltvCents"`
 	PendingCents   int64                                `json:"pendingCents"`
 	Orders         []LeadsXrayOutputPurchasesOrdersItem `json:"orders"`
 }

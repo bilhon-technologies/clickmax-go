@@ -383,7 +383,7 @@ const (
 	ListsGetLeadsOutputDataItemSubOriginEconodata             ListsGetLeadsOutputDataItemSubOrigin = "Econodata"
 	ListsGetLeadsOutputDataItemSubOriginSocialComment         ListsGetLeadsOutputDataItemSubOrigin = "SocialComment"
 	ListsGetLeadsOutputDataItemSubOriginCxManualCreation      ListsGetLeadsOutputDataItemSubOrigin = "CxManualCreation"
-	ListsGetLeadsOutputDataItemSubOriginCxManualImportCsv     ListsGetLeadsOutputDataItemSubOrigin = "CxManualImportCsv"
+	ListsGetLeadsOutputDataItemSubOriginCxManualImportCSV     ListsGetLeadsOutputDataItemSubOrigin = "CxManualImportCsv"
 )
 
 // ListsGetLeadsOutputDataItemSuspectedFraudReasonsItem is an element of

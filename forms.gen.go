@@ -182,12 +182,12 @@ type FormsAnalyticsOutput struct {
 	Period           FormsAnalyticsOutputPeriod                 `json:"period"`
 	RangeFrom        time.Time                                  `json:"rangeFrom"`
 	RangeTo          time.Time                                  `json:"rangeTo"`
-	Kpi              FormsAnalyticsOutputKpi                    `json:"kpi"`
+	KPI              FormsAnalyticsOutputKPI                    `json:"kpi"`
 	LeadsTimeseries  []FormsAnalyticsOutputLeadsTimeseriesItem  `json:"leadsTimeseries"`
 	Funnel           []FormsAnalyticsOutputFunnelItem           `json:"funnel"`
 	Results          []FormsAnalyticsOutputResultsItem          `json:"results"`
 	Devices          []FormsAnalyticsOutputDevicesItem          `json:"devices"`
-	UtmSources       []FormsAnalyticsOutputUtmSourcesItem       `json:"utmSources"`
+	UTMSources       []FormsAnalyticsOutputUTMSourcesItem       `json:"utmSources"`
 	Questions        []FormsAnalyticsOutputQuestionsItem        `json:"questions"`
 	BiggestDropoff   *FormsAnalyticsOutputBiggestDropoff        `json:"biggestDropoff,omitzero"`
 	StructuredFunnel []FormsAnalyticsOutputStructuredFunnelItem `json:"structuredFunnel"`
@@ -227,8 +227,8 @@ type FormsAnalyticsOutputFunnelItem struct {
 	Share               float64 `json:"share"`
 }
 
-// FormsAnalyticsOutputKpi is the type of [FormsAnalyticsOutput.Kpi].
-type FormsAnalyticsOutputKpi struct {
+// FormsAnalyticsOutputKPI is the type of [FormsAnalyticsOutput.KPI].
+type FormsAnalyticsOutputKPI struct {
 	Views          int64    `json:"views"`
 	Leads          int64    `json:"leads"`
 	Completed      int64    `json:"completed"`
@@ -288,8 +288,8 @@ type FormsAnalyticsOutputStructuredFunnelItem struct {
 	Reached int64  `json:"reached"`
 }
 
-// FormsAnalyticsOutputUtmSourcesItem is an element of [FormsAnalyticsOutput.UtmSources].
-type FormsAnalyticsOutputUtmSourcesItem struct {
+// FormsAnalyticsOutputUTMSourcesItem is an element of [FormsAnalyticsOutput.UTMSources].
+type FormsAnalyticsOutputUTMSourcesItem struct {
 	Source string  `json:"source"`
 	Leads  int64   `json:"leads"`
 	Share  float64 `json:"share"`
@@ -678,7 +678,7 @@ type FormsCreateInputSchemaStepsItemBlocksItem struct {
 	PriceLabel           *string                                                 `json:"priceLabel,omitzero"`
 	ImageURL             *string                                                 `json:"imageUrl,omitzero"`
 	CheckoutURL          *string                                                 `json:"checkoutUrl,omitzero"`
-	CtaLabel             *string                                                 `json:"ctaLabel,omitzero"`
+	CTALabel             *string                                                 `json:"ctaLabel,omitzero"`
 	DurationMs           *float64                                                `json:"durationMs,omitzero"`
 	Goto                 *string                                                 `json:"goto,omitzero"`
 	Items                []FormsCreateInputSchemaStepsItemBlocksItemItemsItem    `json:"items,omitzero"`
@@ -692,7 +692,7 @@ type FormsCreateInputSchemaStepsItemBlocksItem struct {
 	Badge                *string                                                 `json:"badge,omitzero"`
 	Highlight            *bool                                                   `json:"highlight,omitzero"`
 	Features             []FormsCreateInputSchemaStepsItemBlocksItemFeaturesItem `json:"features,omitzero"`
-	CtaURL               *string                                                 `json:"ctaUrl,omitzero"`
+	CTAURL               *string                                                 `json:"ctaUrl,omitzero"`
 	Caption              *string                                                 `json:"caption,omitzero"`
 	ChartType            *FormsCreateInputSchemaStepsItemBlocksItemChartType     `json:"chartType,omitzero"`
 	Points               []FormsCreateInputSchemaStepsItemBlocksItemPointsItem   `json:"points,omitzero"`
@@ -960,7 +960,7 @@ const (
 	FormsCreateInputSchemaStepsItemBlocksItemTypeResults      FormsCreateInputSchemaStepsItemBlocksItemType = "results"
 	FormsCreateInputSchemaStepsItemBlocksItemTypeTestimonials FormsCreateInputSchemaStepsItemBlocksItemType = "testimonials"
 	FormsCreateInputSchemaStepsItemBlocksItemTypeBeforeAfter  FormsCreateInputSchemaStepsItemBlocksItemType = "beforeAfter"
-	FormsCreateInputSchemaStepsItemBlocksItemTypeFaq          FormsCreateInputSchemaStepsItemBlocksItemType = "faq"
+	FormsCreateInputSchemaStepsItemBlocksItemTypeFAQ          FormsCreateInputSchemaStepsItemBlocksItemType = "faq"
 	FormsCreateInputSchemaStepsItemBlocksItemTypeChecklist    FormsCreateInputSchemaStepsItemBlocksItemType = "checklist"
 	FormsCreateInputSchemaStepsItemBlocksItemTypePricing      FormsCreateInputSchemaStepsItemBlocksItemType = "pricing"
 	FormsCreateInputSchemaStepsItemBlocksItemTypeResultChart  FormsCreateInputSchemaStepsItemBlocksItemType = "resultChart"
@@ -1439,7 +1439,7 @@ type FormsGetOutputSchemaStepsItemBlocksItem struct {
 	PriceLabel           *string                                               `json:"priceLabel,omitzero"`
 	ImageURL             *string                                               `json:"imageUrl,omitzero"`
 	CheckoutURL          *string                                               `json:"checkoutUrl,omitzero"`
-	CtaLabel             *string                                               `json:"ctaLabel,omitzero"`
+	CTALabel             *string                                               `json:"ctaLabel,omitzero"`
 	DurationMs           *float64                                              `json:"durationMs,omitzero"`
 	Goto                 *string                                               `json:"goto,omitzero"`
 	Items                []FormsGetOutputSchemaStepsItemBlocksItemItemsItem    `json:"items,omitzero"`
@@ -1453,7 +1453,7 @@ type FormsGetOutputSchemaStepsItemBlocksItem struct {
 	Badge                *string                                               `json:"badge,omitzero"`
 	Highlight            *bool                                                 `json:"highlight,omitzero"`
 	Features             []FormsGetOutputSchemaStepsItemBlocksItemFeaturesItem `json:"features,omitzero"`
-	CtaURL               *string                                               `json:"ctaUrl,omitzero"`
+	CTAURL               *string                                               `json:"ctaUrl,omitzero"`
 	Caption              *string                                               `json:"caption,omitzero"`
 	ChartType            *FormsGetOutputSchemaStepsItemBlocksItemChartType     `json:"chartType,omitzero"`
 	Points               []FormsGetOutputSchemaStepsItemBlocksItemPointsItem   `json:"points,omitzero"`
@@ -1721,7 +1721,7 @@ const (
 	FormsGetOutputSchemaStepsItemBlocksItemTypeResults      FormsGetOutputSchemaStepsItemBlocksItemType = "results"
 	FormsGetOutputSchemaStepsItemBlocksItemTypeTestimonials FormsGetOutputSchemaStepsItemBlocksItemType = "testimonials"
 	FormsGetOutputSchemaStepsItemBlocksItemTypeBeforeAfter  FormsGetOutputSchemaStepsItemBlocksItemType = "beforeAfter"
-	FormsGetOutputSchemaStepsItemBlocksItemTypeFaq          FormsGetOutputSchemaStepsItemBlocksItemType = "faq"
+	FormsGetOutputSchemaStepsItemBlocksItemTypeFAQ          FormsGetOutputSchemaStepsItemBlocksItemType = "faq"
 	FormsGetOutputSchemaStepsItemBlocksItemTypeChecklist    FormsGetOutputSchemaStepsItemBlocksItemType = "checklist"
 	FormsGetOutputSchemaStepsItemBlocksItemTypePricing      FormsGetOutputSchemaStepsItemBlocksItemType = "pricing"
 	FormsGetOutputSchemaStepsItemBlocksItemTypeResultChart  FormsGetOutputSchemaStepsItemBlocksItemType = "resultChart"
@@ -2238,7 +2238,7 @@ type FormsListOutputDataItemSchemaStepsItemBlocksItem struct {
 	PriceLabel           *string                                                        `json:"priceLabel,omitzero"`
 	ImageURL             *string                                                        `json:"imageUrl,omitzero"`
 	CheckoutURL          *string                                                        `json:"checkoutUrl,omitzero"`
-	CtaLabel             *string                                                        `json:"ctaLabel,omitzero"`
+	CTALabel             *string                                                        `json:"ctaLabel,omitzero"`
 	DurationMs           *float64                                                       `json:"durationMs,omitzero"`
 	Goto                 *string                                                        `json:"goto,omitzero"`
 	Items                []FormsListOutputDataItemSchemaStepsItemBlocksItemItemsItem    `json:"items,omitzero"`
@@ -2252,7 +2252,7 @@ type FormsListOutputDataItemSchemaStepsItemBlocksItem struct {
 	Badge                *string                                                        `json:"badge,omitzero"`
 	Highlight            *bool                                                          `json:"highlight,omitzero"`
 	Features             []FormsListOutputDataItemSchemaStepsItemBlocksItemFeaturesItem `json:"features,omitzero"`
-	CtaURL               *string                                                        `json:"ctaUrl,omitzero"`
+	CTAURL               *string                                                        `json:"ctaUrl,omitzero"`
 	Caption              *string                                                        `json:"caption,omitzero"`
 	ChartType            *FormsListOutputDataItemSchemaStepsItemBlocksItemChartType     `json:"chartType,omitzero"`
 	Points               []FormsListOutputDataItemSchemaStepsItemBlocksItemPointsItem   `json:"points,omitzero"`
@@ -2520,7 +2520,7 @@ const (
 	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeResults      FormsListOutputDataItemSchemaStepsItemBlocksItemType = "results"
 	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeTestimonials FormsListOutputDataItemSchemaStepsItemBlocksItemType = "testimonials"
 	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeBeforeAfter  FormsListOutputDataItemSchemaStepsItemBlocksItemType = "beforeAfter"
-	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeFaq          FormsListOutputDataItemSchemaStepsItemBlocksItemType = "faq"
+	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeFAQ          FormsListOutputDataItemSchemaStepsItemBlocksItemType = "faq"
 	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeChecklist    FormsListOutputDataItemSchemaStepsItemBlocksItemType = "checklist"
 	FormsListOutputDataItemSchemaStepsItemBlocksItemTypePricing      FormsListOutputDataItemSchemaStepsItemBlocksItemType = "pricing"
 	FormsListOutputDataItemSchemaStepsItemBlocksItemTypeResultChart  FormsListOutputDataItemSchemaStepsItemBlocksItemType = "resultChart"
@@ -3022,7 +3022,7 @@ type FormsReplaceSchemaInputSchemaStepsItemBlocksItem struct {
 	PriceLabel           *string                                                        `json:"priceLabel,omitzero"`
 	ImageURL             *string                                                        `json:"imageUrl,omitzero"`
 	CheckoutURL          *string                                                        `json:"checkoutUrl,omitzero"`
-	CtaLabel             *string                                                        `json:"ctaLabel,omitzero"`
+	CTALabel             *string                                                        `json:"ctaLabel,omitzero"`
 	DurationMs           *float64                                                       `json:"durationMs,omitzero"`
 	Goto                 *string                                                        `json:"goto,omitzero"`
 	Items                []FormsReplaceSchemaInputSchemaStepsItemBlocksItemItemsItem    `json:"items,omitzero"`
@@ -3036,7 +3036,7 @@ type FormsReplaceSchemaInputSchemaStepsItemBlocksItem struct {
 	Badge                *string                                                        `json:"badge,omitzero"`
 	Highlight            *bool                                                          `json:"highlight,omitzero"`
 	Features             []FormsReplaceSchemaInputSchemaStepsItemBlocksItemFeaturesItem `json:"features,omitzero"`
-	CtaURL               *string                                                        `json:"ctaUrl,omitzero"`
+	CTAURL               *string                                                        `json:"ctaUrl,omitzero"`
 	Caption              *string                                                        `json:"caption,omitzero"`
 	ChartType            *FormsReplaceSchemaInputSchemaStepsItemBlocksItemChartType     `json:"chartType,omitzero"`
 	Points               []FormsReplaceSchemaInputSchemaStepsItemBlocksItemPointsItem   `json:"points,omitzero"`
@@ -3304,7 +3304,7 @@ const (
 	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeResults      FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "results"
 	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeTestimonials FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "testimonials"
 	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeBeforeAfter  FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "beforeAfter"
-	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeFaq          FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "faq"
+	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeFAQ          FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "faq"
 	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeChecklist    FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "checklist"
 	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypePricing      FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "pricing"
 	FormsReplaceSchemaInputSchemaStepsItemBlocksItemTypeResultChart  FormsReplaceSchemaInputSchemaStepsItemBlocksItemType = "resultChart"
@@ -3467,7 +3467,7 @@ type FormsStepsUpsertInputBlocksItem struct {
 	PriceLabel           *string                                       `json:"priceLabel,omitzero"`
 	ImageURL             *string                                       `json:"imageUrl,omitzero"`
 	CheckoutURL          *string                                       `json:"checkoutUrl,omitzero"`
-	CtaLabel             *string                                       `json:"ctaLabel,omitzero"`
+	CTALabel             *string                                       `json:"ctaLabel,omitzero"`
 	DurationMs           *float64                                      `json:"durationMs,omitzero"`
 	Goto                 *string                                       `json:"goto,omitzero"`
 	Items                []FormsStepsUpsertInputBlocksItemItemsItem    `json:"items,omitzero"`
@@ -3481,7 +3481,7 @@ type FormsStepsUpsertInputBlocksItem struct {
 	Badge                *string                                       `json:"badge,omitzero"`
 	Highlight            *bool                                         `json:"highlight,omitzero"`
 	Features             []FormsStepsUpsertInputBlocksItemFeaturesItem `json:"features,omitzero"`
-	CtaURL               *string                                       `json:"ctaUrl,omitzero"`
+	CTAURL               *string                                       `json:"ctaUrl,omitzero"`
 	Caption              *string                                       `json:"caption,omitzero"`
 	ChartType            *FormsStepsUpsertInputBlocksItemChartType     `json:"chartType,omitzero"`
 	Points               []FormsStepsUpsertInputBlocksItemPointsItem   `json:"points,omitzero"`
@@ -3737,7 +3737,7 @@ const (
 	FormsStepsUpsertInputBlocksItemTypeResults      FormsStepsUpsertInputBlocksItemType = "results"
 	FormsStepsUpsertInputBlocksItemTypeTestimonials FormsStepsUpsertInputBlocksItemType = "testimonials"
 	FormsStepsUpsertInputBlocksItemTypeBeforeAfter  FormsStepsUpsertInputBlocksItemType = "beforeAfter"
-	FormsStepsUpsertInputBlocksItemTypeFaq          FormsStepsUpsertInputBlocksItemType = "faq"
+	FormsStepsUpsertInputBlocksItemTypeFAQ          FormsStepsUpsertInputBlocksItemType = "faq"
 	FormsStepsUpsertInputBlocksItemTypeChecklist    FormsStepsUpsertInputBlocksItemType = "checklist"
 	FormsStepsUpsertInputBlocksItemTypePricing      FormsStepsUpsertInputBlocksItemType = "pricing"
 	FormsStepsUpsertInputBlocksItemTypeResultChart  FormsStepsUpsertInputBlocksItemType = "resultChart"
@@ -3783,11 +3783,11 @@ type FormsSubmissionsListOutputDataItem struct {
 	IP           *string                                  `json:"ip,omitzero"`
 	UserAgent    *string                                  `json:"userAgent,omitzero"`
 	Referer      *string                                  `json:"referer,omitzero"`
-	UtmSource    *string                                  `json:"utmSource,omitzero"`
-	UtmMedium    *string                                  `json:"utmMedium,omitzero"`
-	UtmCampaign  *string                                  `json:"utmCampaign,omitzero"`
-	UtmTerm      *string                                  `json:"utmTerm,omitzero"`
-	UtmContent   *string                                  `json:"utmContent,omitzero"`
+	UTMSource    *string                                  `json:"utmSource,omitzero"`
+	UTMMedium    *string                                  `json:"utmMedium,omitzero"`
+	UTMCampaign  *string                                  `json:"utmCampaign,omitzero"`
+	UTMTerm      *string                                  `json:"utmTerm,omitzero"`
+	UTMContent   *string                                  `json:"utmContent,omitzero"`
 	CreatedAt    time.Time                                `json:"createdAt"`
 	Lead         *FormsSubmissionsListOutputDataItemLead  `json:"lead,omitzero"`
 }

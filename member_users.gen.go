@@ -543,7 +543,7 @@ type MemberUsersCreateOutputPortalsItem struct {
 	UseVideoLogin               bool                                                  `json:"useVideoLogin"`
 	RemoveVideoOverlay          bool                                                  `json:"removeVideoOverlay"`
 	ShowFullscreenButton        bool                                                  `json:"showFullscreenButton"`
-	UseCtaLogin                 bool                                                  `json:"useCtaLogin"`
+	UseCTALogin                 bool                                                  `json:"useCtaLogin"`
 	Name                        string                                                `json:"name"`
 	Description                 string                                                `json:"description"`
 	SupportEmail                *string                                               `json:"supportEmail,omitzero"`
@@ -562,8 +562,8 @@ type MemberUsersCreateOutputPortalsItem struct {
 	TwoFaEnabled                bool                                                  `json:"twoFaEnabled"`
 	FirstAccessWithoutPass      bool                                                  `json:"firstAccessWithoutPass"`
 	AllowSimplePass             bool                                                  `json:"allowSimplePass"`
-	OtpWhatsappEnabled          bool                                                  `json:"otpWhatsappEnabled"`
-	OtpWhatsappTemplateID       *string                                               `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          bool                                                  `json:"otpWhatsappEnabled"`
+	OTPWhatsappTemplateID       *string                                               `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    string                                                `json:"timezone"`
 	NavConfig                   *MemberUsersCreateOutputPortalsItemNavConfig          `json:"navConfig,omitzero"`
 	CalendarTitle               *string                                               `json:"calendarTitle,omitzero"`
@@ -918,7 +918,7 @@ type MemberUsersGetOutputPortalsItem struct {
 	UseVideoLogin               bool                                               `json:"useVideoLogin"`
 	RemoveVideoOverlay          bool                                               `json:"removeVideoOverlay"`
 	ShowFullscreenButton        bool                                               `json:"showFullscreenButton"`
-	UseCtaLogin                 bool                                               `json:"useCtaLogin"`
+	UseCTALogin                 bool                                               `json:"useCtaLogin"`
 	Name                        string                                             `json:"name"`
 	Description                 string                                             `json:"description"`
 	SupportEmail                *string                                            `json:"supportEmail,omitzero"`
@@ -937,8 +937,8 @@ type MemberUsersGetOutputPortalsItem struct {
 	TwoFaEnabled                bool                                               `json:"twoFaEnabled"`
 	FirstAccessWithoutPass      bool                                               `json:"firstAccessWithoutPass"`
 	AllowSimplePass             bool                                               `json:"allowSimplePass"`
-	OtpWhatsappEnabled          bool                                               `json:"otpWhatsappEnabled"`
-	OtpWhatsappTemplateID       *string                                            `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          bool                                               `json:"otpWhatsappEnabled"`
+	OTPWhatsappTemplateID       *string                                            `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    string                                             `json:"timezone"`
 	NavConfig                   *MemberUsersGetOutputPortalsItemNavConfig          `json:"navConfig,omitzero"`
 	CalendarTitle               *string                                            `json:"calendarTitle,omitzero"`
@@ -1305,7 +1305,7 @@ type MemberUsersListOutputDataItemPortalsItem struct {
 	UseVideoLogin               bool                                                        `json:"useVideoLogin"`
 	RemoveVideoOverlay          bool                                                        `json:"removeVideoOverlay"`
 	ShowFullscreenButton        bool                                                        `json:"showFullscreenButton"`
-	UseCtaLogin                 bool                                                        `json:"useCtaLogin"`
+	UseCTALogin                 bool                                                        `json:"useCtaLogin"`
 	Name                        string                                                      `json:"name"`
 	Description                 string                                                      `json:"description"`
 	SupportEmail                *string                                                     `json:"supportEmail,omitzero"`
@@ -1324,8 +1324,8 @@ type MemberUsersListOutputDataItemPortalsItem struct {
 	TwoFaEnabled                bool                                                        `json:"twoFaEnabled"`
 	FirstAccessWithoutPass      bool                                                        `json:"firstAccessWithoutPass"`
 	AllowSimplePass             bool                                                        `json:"allowSimplePass"`
-	OtpWhatsappEnabled          bool                                                        `json:"otpWhatsappEnabled"`
-	OtpWhatsappTemplateID       *string                                                     `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          bool                                                        `json:"otpWhatsappEnabled"`
+	OTPWhatsappTemplateID       *string                                                     `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    string                                                      `json:"timezone"`
 	NavConfig                   *MemberUsersListOutputDataItemPortalsItemNavConfig          `json:"navConfig,omitzero"`
 	CalendarTitle               *string                                                     `json:"calendarTitle,omitzero"`
@@ -1542,7 +1542,7 @@ type MemberUsersUpdateOutputPortalsItem struct {
 	UseVideoLogin               bool                                                  `json:"useVideoLogin"`
 	RemoveVideoOverlay          bool                                                  `json:"removeVideoOverlay"`
 	ShowFullscreenButton        bool                                                  `json:"showFullscreenButton"`
-	UseCtaLogin                 bool                                                  `json:"useCtaLogin"`
+	UseCTALogin                 bool                                                  `json:"useCtaLogin"`
 	Name                        string                                                `json:"name"`
 	Description                 string                                                `json:"description"`
 	SupportEmail                *string                                               `json:"supportEmail,omitzero"`
@@ -1561,8 +1561,8 @@ type MemberUsersUpdateOutputPortalsItem struct {
 	TwoFaEnabled                bool                                                  `json:"twoFaEnabled"`
 	FirstAccessWithoutPass      bool                                                  `json:"firstAccessWithoutPass"`
 	AllowSimplePass             bool                                                  `json:"allowSimplePass"`
-	OtpWhatsappEnabled          bool                                                  `json:"otpWhatsappEnabled"`
-	OtpWhatsappTemplateID       *string                                               `json:"otpWhatsappTemplateId,omitzero"`
+	OTPWhatsappEnabled          bool                                                  `json:"otpWhatsappEnabled"`
+	OTPWhatsappTemplateID       *string                                               `json:"otpWhatsappTemplateId,omitzero"`
 	Timezone                    string                                                `json:"timezone"`
 	NavConfig                   *MemberUsersUpdateOutputPortalsItemNavConfig          `json:"navConfig,omitzero"`
 	CalendarTitle               *string                                               `json:"calendarTitle,omitzero"`

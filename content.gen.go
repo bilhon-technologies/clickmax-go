@@ -113,7 +113,7 @@ type ContentCreateInput struct {
 	AvailableForSale       bool                                     `json:"availableForSale"`
 	ShowCourseTitleOnCover *bool                                    `json:"showCourseTitleOnCover,omitzero"`
 	ViewScenario           *ContentCreateInputViewScenario          `json:"viewScenario,omitzero"`
-	CtaText                Nullable[string]                         `json:"ctaText,omitzero"`
+	CTAText                Nullable[string]                         `json:"ctaText,omitzero"`
 	ContentStyle           Nullable[ContentCreateInputContentStyle] `json:"contentStyle,omitzero"`
 	ReleaseType            *ContentCreateInputReleaseType           `json:"releaseType,omitzero"`
 	ReleaseDays            Nullable[int64]                          `json:"releaseDays,omitzero"`
@@ -206,7 +206,7 @@ type ContentCreateOutput struct {
 	Enabled                bool                                  `json:"enabled"`
 	ShowCourseTitleOnCover bool                                  `json:"showCourseTitleOnCover"`
 	ViewScenario           ContentCreateOutputViewScenario       `json:"viewScenario"`
-	CtaText                *string                               `json:"ctaText,omitzero"`
+	CTAText                *string                               `json:"ctaText,omitzero"`
 	ContentStyle           *ContentCreateOutputContentStyle      `json:"contentStyle,omitzero"`
 	ReleaseType            string                                `json:"releaseType"`
 	ReleaseDays            *int64                                `json:"releaseDays,omitzero"`
@@ -299,7 +299,7 @@ type ContentGetOutput struct {
 	Enabled                bool                               `json:"enabled"`
 	ShowCourseTitleOnCover bool                               `json:"showCourseTitleOnCover"`
 	ViewScenario           ContentGetOutputViewScenario       `json:"viewScenario"`
-	CtaText                *string                            `json:"ctaText,omitzero"`
+	CTAText                *string                            `json:"ctaText,omitzero"`
 	ContentStyle           *ContentGetOutputContentStyle      `json:"contentStyle,omitzero"`
 	ReleaseType            string                             `json:"releaseType"`
 	ReleaseDays            *int64                             `json:"releaseDays,omitzero"`
@@ -602,7 +602,7 @@ type ContentListOutputDataItem struct {
 	Enabled                bool                                        `json:"enabled"`
 	ShowCourseTitleOnCover bool                                        `json:"showCourseTitleOnCover"`
 	ViewScenario           ContentListOutputDataItemViewScenario       `json:"viewScenario"`
-	CtaText                *string                                     `json:"ctaText,omitzero"`
+	CTAText                *string                                     `json:"ctaText,omitzero"`
 	ContentStyle           *ContentListOutputDataItemContentStyle      `json:"contentStyle,omitzero"`
 	ReleaseType            string                                      `json:"releaseType"`
 	ReleaseDays            *int64                                      `json:"releaseDays,omitzero"`
@@ -931,7 +931,7 @@ type ContentToggleEnabledOutputDataItem struct {
 	Enabled                bool                                                 `json:"enabled"`
 	ShowCourseTitleOnCover bool                                                 `json:"showCourseTitleOnCover"`
 	ViewScenario           ContentToggleEnabledOutputDataItemViewScenario       `json:"viewScenario"`
-	CtaText                *string                                              `json:"ctaText,omitzero"`
+	CTAText                *string                                              `json:"ctaText,omitzero"`
 	ContentStyle           *ContentToggleEnabledOutputDataItemContentStyle      `json:"contentStyle,omitzero"`
 	ReleaseType            string                                               `json:"releaseType"`
 	ReleaseDays            *int64                                               `json:"releaseDays,omitzero"`
@@ -1017,7 +1017,7 @@ type ContentUpdateInput struct {
 	Enabled                *bool                                    `json:"enabled,omitzero"`
 	ShowCourseTitleOnCover *bool                                    `json:"showCourseTitleOnCover,omitzero"`
 	ViewScenario           *ContentUpdateInputViewScenario          `json:"viewScenario,omitzero"`
-	CtaText                Nullable[string]                         `json:"ctaText,omitzero"`
+	CTAText                Nullable[string]                         `json:"ctaText,omitzero"`
 	ContentStyle           Nullable[ContentUpdateInputContentStyle] `json:"contentStyle,omitzero"`
 	ReleaseType            *ContentUpdateInputReleaseType           `json:"releaseType,omitzero"`
 	ReleaseDays            Nullable[int64]                          `json:"releaseDays,omitzero"`
@@ -1110,7 +1110,7 @@ type ContentUpdateOutput struct {
 	Enabled                bool                                  `json:"enabled"`
 	ShowCourseTitleOnCover bool                                  `json:"showCourseTitleOnCover"`
 	ViewScenario           ContentUpdateOutputViewScenario       `json:"viewScenario"`
-	CtaText                *string                               `json:"ctaText,omitzero"`
+	CTAText                *string                               `json:"ctaText,omitzero"`
 	ContentStyle           *ContentUpdateOutputContentStyle      `json:"contentStyle,omitzero"`
 	ReleaseType            string                                `json:"releaseType"`
 	ReleaseDays            *int64                                `json:"releaseDays,omitzero"`

@@ -492,11 +492,11 @@ const (
 	SegmentsCategoriesMetricsInputFiltersItemFieldProductID                     SegmentsCategoriesMetricsInputFiltersItemField = "productId"
 	SegmentsCategoriesMetricsInputFiltersItemFieldProductName                   SegmentsCategoriesMetricsInputFiltersItemField = "productName"
 	SegmentsCategoriesMetricsInputFiltersItemFieldSearchTransactionCode         SegmentsCategoriesMetricsInputFiltersItemField = "searchTransactionCode"
-	SegmentsCategoriesMetricsInputFiltersItemFieldUtmCampaign                   SegmentsCategoriesMetricsInputFiltersItemField = "utmCampaign"
-	SegmentsCategoriesMetricsInputFiltersItemFieldUtmContent                    SegmentsCategoriesMetricsInputFiltersItemField = "utmContent"
-	SegmentsCategoriesMetricsInputFiltersItemFieldUtmMedium                     SegmentsCategoriesMetricsInputFiltersItemField = "utmMedium"
-	SegmentsCategoriesMetricsInputFiltersItemFieldUtmSource                     SegmentsCategoriesMetricsInputFiltersItemField = "utmSource"
-	SegmentsCategoriesMetricsInputFiltersItemFieldUtmTerm                       SegmentsCategoriesMetricsInputFiltersItemField = "utmTerm"
+	SegmentsCategoriesMetricsInputFiltersItemFieldUTMCampaign                   SegmentsCategoriesMetricsInputFiltersItemField = "utmCampaign"
+	SegmentsCategoriesMetricsInputFiltersItemFieldUTMContent                    SegmentsCategoriesMetricsInputFiltersItemField = "utmContent"
+	SegmentsCategoriesMetricsInputFiltersItemFieldUTMMedium                     SegmentsCategoriesMetricsInputFiltersItemField = "utmMedium"
+	SegmentsCategoriesMetricsInputFiltersItemFieldUTMSource                     SegmentsCategoriesMetricsInputFiltersItemField = "utmSource"
+	SegmentsCategoriesMetricsInputFiltersItemFieldUTMTerm                       SegmentsCategoriesMetricsInputFiltersItemField = "utmTerm"
 	SegmentsCategoriesMetricsInputFiltersItemFieldSrc                           SegmentsCategoriesMetricsInputFiltersItemField = "src"
 	SegmentsCategoriesMetricsInputFiltersItemFieldSck                           SegmentsCategoriesMetricsInputFiltersItemField = "sck"
 	SegmentsCategoriesMetricsInputFiltersItemFieldAverageTicket                 SegmentsCategoriesMetricsInputFiltersItemField = "averageTicket"
@@ -626,7 +626,7 @@ type SegmentsCategoriesMetricsOutputVisitorJourney struct {
 	IdentifiedContacts int64                                                           `json:"identifiedContacts"`
 	Sessions           int64                                                           `json:"sessions"`
 	Channels           []SegmentsCategoriesMetricsOutputVisitorJourneyChannelsItem     `json:"channels"`
-	UtmSources         []SegmentsCategoriesMetricsOutputVisitorJourneyUtmSourcesItem   `json:"utmSources"`
+	UTMSources         []SegmentsCategoriesMetricsOutputVisitorJourneyUTMSourcesItem   `json:"utmSources"`
 	Referrers          []SegmentsCategoriesMetricsOutputVisitorJourneyReferrersItem    `json:"referrers"`
 	LandingPages       []SegmentsCategoriesMetricsOutputVisitorJourneyLandingPagesItem `json:"landingPages"`
 	Devices            []SegmentsCategoriesMetricsOutputVisitorJourneyDevicesItem      `json:"devices"`
@@ -698,9 +698,9 @@ type SegmentsCategoriesMetricsOutputVisitorJourneyReferrersItem struct {
 	Contacts int64  `json:"contacts"`
 }
 
-// SegmentsCategoriesMetricsOutputVisitorJourneyUtmSourcesItem is an element of
-// [SegmentsCategoriesMetricsOutputVisitorJourney.UtmSources].
-type SegmentsCategoriesMetricsOutputVisitorJourneyUtmSourcesItem struct {
+// SegmentsCategoriesMetricsOutputVisitorJourneyUTMSourcesItem is an element of
+// [SegmentsCategoriesMetricsOutputVisitorJourney.UTMSources].
+type SegmentsCategoriesMetricsOutputVisitorJourneyUTMSourcesItem struct {
 	Key      string `json:"key"`
 	Sessions int64  `json:"sessions"`
 	Contacts int64  `json:"contacts"`
@@ -823,11 +823,11 @@ const (
 	SegmentsGetFiltersOutputDataItemFieldProductID                     SegmentsGetFiltersOutputDataItemField = "productId"
 	SegmentsGetFiltersOutputDataItemFieldProductName                   SegmentsGetFiltersOutputDataItemField = "productName"
 	SegmentsGetFiltersOutputDataItemFieldSearchTransactionCode         SegmentsGetFiltersOutputDataItemField = "searchTransactionCode"
-	SegmentsGetFiltersOutputDataItemFieldUtmCampaign                   SegmentsGetFiltersOutputDataItemField = "utmCampaign"
-	SegmentsGetFiltersOutputDataItemFieldUtmContent                    SegmentsGetFiltersOutputDataItemField = "utmContent"
-	SegmentsGetFiltersOutputDataItemFieldUtmMedium                     SegmentsGetFiltersOutputDataItemField = "utmMedium"
-	SegmentsGetFiltersOutputDataItemFieldUtmSource                     SegmentsGetFiltersOutputDataItemField = "utmSource"
-	SegmentsGetFiltersOutputDataItemFieldUtmTerm                       SegmentsGetFiltersOutputDataItemField = "utmTerm"
+	SegmentsGetFiltersOutputDataItemFieldUTMCampaign                   SegmentsGetFiltersOutputDataItemField = "utmCampaign"
+	SegmentsGetFiltersOutputDataItemFieldUTMContent                    SegmentsGetFiltersOutputDataItemField = "utmContent"
+	SegmentsGetFiltersOutputDataItemFieldUTMMedium                     SegmentsGetFiltersOutputDataItemField = "utmMedium"
+	SegmentsGetFiltersOutputDataItemFieldUTMSource                     SegmentsGetFiltersOutputDataItemField = "utmSource"
+	SegmentsGetFiltersOutputDataItemFieldUTMTerm                       SegmentsGetFiltersOutputDataItemField = "utmTerm"
 	SegmentsGetFiltersOutputDataItemFieldSrc                           SegmentsGetFiltersOutputDataItemField = "src"
 	SegmentsGetFiltersOutputDataItemFieldSck                           SegmentsGetFiltersOutputDataItemField = "sck"
 	SegmentsGetFiltersOutputDataItemFieldAverageTicket                 SegmentsGetFiltersOutputDataItemField = "averageTicket"
@@ -1139,7 +1139,7 @@ const (
 	SegmentsGetLeadsOutputDataItemSubOriginEconodata             SegmentsGetLeadsOutputDataItemSubOrigin = "Econodata"
 	SegmentsGetLeadsOutputDataItemSubOriginSocialComment         SegmentsGetLeadsOutputDataItemSubOrigin = "SocialComment"
 	SegmentsGetLeadsOutputDataItemSubOriginCxManualCreation      SegmentsGetLeadsOutputDataItemSubOrigin = "CxManualCreation"
-	SegmentsGetLeadsOutputDataItemSubOriginCxManualImportCsv     SegmentsGetLeadsOutputDataItemSubOrigin = "CxManualImportCsv"
+	SegmentsGetLeadsOutputDataItemSubOriginCxManualImportCSV     SegmentsGetLeadsOutputDataItemSubOrigin = "CxManualImportCsv"
 )
 
 // SegmentsGetLeadsOutputDataItemSuspectedFraudReasonsItem is an element of
@@ -1456,11 +1456,11 @@ const (
 	SegmentsPreviewCountInputFiltersItemFieldProductID                     SegmentsPreviewCountInputFiltersItemField = "productId"
 	SegmentsPreviewCountInputFiltersItemFieldProductName                   SegmentsPreviewCountInputFiltersItemField = "productName"
 	SegmentsPreviewCountInputFiltersItemFieldSearchTransactionCode         SegmentsPreviewCountInputFiltersItemField = "searchTransactionCode"
-	SegmentsPreviewCountInputFiltersItemFieldUtmCampaign                   SegmentsPreviewCountInputFiltersItemField = "utmCampaign"
-	SegmentsPreviewCountInputFiltersItemFieldUtmContent                    SegmentsPreviewCountInputFiltersItemField = "utmContent"
-	SegmentsPreviewCountInputFiltersItemFieldUtmMedium                     SegmentsPreviewCountInputFiltersItemField = "utmMedium"
-	SegmentsPreviewCountInputFiltersItemFieldUtmSource                     SegmentsPreviewCountInputFiltersItemField = "utmSource"
-	SegmentsPreviewCountInputFiltersItemFieldUtmTerm                       SegmentsPreviewCountInputFiltersItemField = "utmTerm"
+	SegmentsPreviewCountInputFiltersItemFieldUTMCampaign                   SegmentsPreviewCountInputFiltersItemField = "utmCampaign"
+	SegmentsPreviewCountInputFiltersItemFieldUTMContent                    SegmentsPreviewCountInputFiltersItemField = "utmContent"
+	SegmentsPreviewCountInputFiltersItemFieldUTMMedium                     SegmentsPreviewCountInputFiltersItemField = "utmMedium"
+	SegmentsPreviewCountInputFiltersItemFieldUTMSource                     SegmentsPreviewCountInputFiltersItemField = "utmSource"
+	SegmentsPreviewCountInputFiltersItemFieldUTMTerm                       SegmentsPreviewCountInputFiltersItemField = "utmTerm"
 	SegmentsPreviewCountInputFiltersItemFieldSrc                           SegmentsPreviewCountInputFiltersItemField = "src"
 	SegmentsPreviewCountInputFiltersItemFieldSck                           SegmentsPreviewCountInputFiltersItemField = "sck"
 	SegmentsPreviewCountInputFiltersItemFieldAverageTicket                 SegmentsPreviewCountInputFiltersItemField = "averageTicket"
@@ -1624,11 +1624,11 @@ const (
 	SegmentsTimeseriesInputFiltersItemFieldProductID                     SegmentsTimeseriesInputFiltersItemField = "productId"
 	SegmentsTimeseriesInputFiltersItemFieldProductName                   SegmentsTimeseriesInputFiltersItemField = "productName"
 	SegmentsTimeseriesInputFiltersItemFieldSearchTransactionCode         SegmentsTimeseriesInputFiltersItemField = "searchTransactionCode"
-	SegmentsTimeseriesInputFiltersItemFieldUtmCampaign                   SegmentsTimeseriesInputFiltersItemField = "utmCampaign"
-	SegmentsTimeseriesInputFiltersItemFieldUtmContent                    SegmentsTimeseriesInputFiltersItemField = "utmContent"
-	SegmentsTimeseriesInputFiltersItemFieldUtmMedium                     SegmentsTimeseriesInputFiltersItemField = "utmMedium"
-	SegmentsTimeseriesInputFiltersItemFieldUtmSource                     SegmentsTimeseriesInputFiltersItemField = "utmSource"
-	SegmentsTimeseriesInputFiltersItemFieldUtmTerm                       SegmentsTimeseriesInputFiltersItemField = "utmTerm"
+	SegmentsTimeseriesInputFiltersItemFieldUTMCampaign                   SegmentsTimeseriesInputFiltersItemField = "utmCampaign"
+	SegmentsTimeseriesInputFiltersItemFieldUTMContent                    SegmentsTimeseriesInputFiltersItemField = "utmContent"
+	SegmentsTimeseriesInputFiltersItemFieldUTMMedium                     SegmentsTimeseriesInputFiltersItemField = "utmMedium"
+	SegmentsTimeseriesInputFiltersItemFieldUTMSource                     SegmentsTimeseriesInputFiltersItemField = "utmSource"
+	SegmentsTimeseriesInputFiltersItemFieldUTMTerm                       SegmentsTimeseriesInputFiltersItemField = "utmTerm"
 	SegmentsTimeseriesInputFiltersItemFieldSrc                           SegmentsTimeseriesInputFiltersItemField = "src"
 	SegmentsTimeseriesInputFiltersItemFieldSck                           SegmentsTimeseriesInputFiltersItemField = "sck"
 	SegmentsTimeseriesInputFiltersItemFieldAverageTicket                 SegmentsTimeseriesInputFiltersItemField = "averageTicket"
@@ -1881,11 +1881,11 @@ const (
 	SegmentsUpsertFiltersInputFiltersItemFieldProductID                     SegmentsUpsertFiltersInputFiltersItemField = "productId"
 	SegmentsUpsertFiltersInputFiltersItemFieldProductName                   SegmentsUpsertFiltersInputFiltersItemField = "productName"
 	SegmentsUpsertFiltersInputFiltersItemFieldSearchTransactionCode         SegmentsUpsertFiltersInputFiltersItemField = "searchTransactionCode"
-	SegmentsUpsertFiltersInputFiltersItemFieldUtmCampaign                   SegmentsUpsertFiltersInputFiltersItemField = "utmCampaign"
-	SegmentsUpsertFiltersInputFiltersItemFieldUtmContent                    SegmentsUpsertFiltersInputFiltersItemField = "utmContent"
-	SegmentsUpsertFiltersInputFiltersItemFieldUtmMedium                     SegmentsUpsertFiltersInputFiltersItemField = "utmMedium"
-	SegmentsUpsertFiltersInputFiltersItemFieldUtmSource                     SegmentsUpsertFiltersInputFiltersItemField = "utmSource"
-	SegmentsUpsertFiltersInputFiltersItemFieldUtmTerm                       SegmentsUpsertFiltersInputFiltersItemField = "utmTerm"
+	SegmentsUpsertFiltersInputFiltersItemFieldUTMCampaign                   SegmentsUpsertFiltersInputFiltersItemField = "utmCampaign"
+	SegmentsUpsertFiltersInputFiltersItemFieldUTMContent                    SegmentsUpsertFiltersInputFiltersItemField = "utmContent"
+	SegmentsUpsertFiltersInputFiltersItemFieldUTMMedium                     SegmentsUpsertFiltersInputFiltersItemField = "utmMedium"
+	SegmentsUpsertFiltersInputFiltersItemFieldUTMSource                     SegmentsUpsertFiltersInputFiltersItemField = "utmSource"
+	SegmentsUpsertFiltersInputFiltersItemFieldUTMTerm                       SegmentsUpsertFiltersInputFiltersItemField = "utmTerm"
 	SegmentsUpsertFiltersInputFiltersItemFieldSrc                           SegmentsUpsertFiltersInputFiltersItemField = "src"
 	SegmentsUpsertFiltersInputFiltersItemFieldSck                           SegmentsUpsertFiltersInputFiltersItemField = "sck"
 	SegmentsUpsertFiltersInputFiltersItemFieldAverageTicket                 SegmentsUpsertFiltersInputFiltersItemField = "averageTicket"
