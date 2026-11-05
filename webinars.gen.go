@@ -690,9 +690,9 @@ type WebinarsHostsListOutputDataItem struct {
 
 // WebinarsHostsListOutputMeta is the type of [WebinarsHostsListOutput.Meta].
 type WebinarsHostsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // WebinarsHostsListParams holds the query parameters of [WebinarsService.HostsList].
@@ -763,9 +763,9 @@ type WebinarsListOutputDataItem struct {
 
 // WebinarsListOutputMeta is the type of [WebinarsListOutput.Meta].
 type WebinarsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // WebinarsListParams holds the query parameters of [WebinarsService.List].

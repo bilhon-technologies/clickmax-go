@@ -514,9 +514,9 @@ const (
 
 // PortalsListOutputMeta is the type of [PortalsListOutput.Meta].
 type PortalsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PortalsUpdateInput is the request body of [PortalsService.Update].

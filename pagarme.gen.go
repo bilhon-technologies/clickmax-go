@@ -59,9 +59,9 @@ const (
 
 // PagarmePlansListOutputMeta is the type of [PagarmePlansListOutput.Meta].
 type PagarmePlansListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PagarmePlansListParams holds the query parameters of [PagarmeService.PlansList].

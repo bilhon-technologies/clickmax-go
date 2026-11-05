@@ -827,9 +827,9 @@ const (
 
 // LeadActivitiesListByLeadOutputMeta is the type of [LeadActivitiesListByLeadOutput.Meta].
 type LeadActivitiesListByLeadOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // LeadActivitiesListOutput is the response of [LeadActivitiesService.List].
@@ -896,9 +896,9 @@ const (
 
 // LeadActivitiesListOutputMeta is the type of [LeadActivitiesListOutput.Meta].
 type LeadActivitiesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // LeadActivitiesMetricsByLeadOutput is the response of [LeadActivitiesService.MetricsByLead].
@@ -1073,9 +1073,9 @@ const (
 
 // LeadActivitiesOpportunityListOutputMeta is the type of [LeadActivitiesOpportunityListOutput.Meta].
 type LeadActivitiesOpportunityListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // LeadActivitiesOwnerCountOutput is the response of [LeadActivitiesService.OwnerCount].
@@ -1583,9 +1583,9 @@ type LeadActivitiesSystemByLeadOutputDataItem struct {
 
 // LeadActivitiesSystemByLeadOutputMeta is the type of [LeadActivitiesSystemByLeadOutput.Meta].
 type LeadActivitiesSystemByLeadOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // LeadActivitiesSystemListOutput is the response of [LeadActivitiesService.SystemList].
@@ -1605,7 +1605,7 @@ type LeadActivitiesSystemListOutputDataItem struct {
 
 // LeadActivitiesSystemListOutputMeta is the type of [LeadActivitiesSystemListOutput.Meta].
 type LeadActivitiesSystemListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }

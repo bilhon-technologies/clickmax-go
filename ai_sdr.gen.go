@@ -97,9 +97,9 @@ const (
 
 // AISDRDecisionsListOutputMeta is the type of [AISDRDecisionsListOutput.Meta].
 type AISDRDecisionsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // AISDRDecisionsListParams holds the query parameters of [AISDRService.DecisionsList].

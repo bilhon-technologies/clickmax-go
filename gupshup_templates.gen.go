@@ -600,9 +600,9 @@ const (
 // GupshupTemplatesListInput is the request body of [GupshupTemplatesService.List].
 type GupshupTemplatesListInput struct {
 	// 1-based page number. Defaults to 1.
-	Page *float64 `json:"page,omitzero"`
+	Page *int64 `json:"page,omitzero"`
 	// Items per page, max 2000. Defaults to 10.
-	PerPage *float64 `json:"perPage,omitzero"`
+	PerPage *int64 `json:"perPage,omitzero"`
 	// Substring filter on `elementName`.
 	Name *string `json:"name,omitzero"`
 	// Filter by approval status: one status or a list of statuses.
@@ -717,9 +717,9 @@ const (
 
 // GupshupTemplatesListOutputMeta is the type of [GupshupTemplatesListOutput.Meta].
 type GupshupTemplatesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // GupshupTemplatesListOutputStatusCounts is the type of [GupshupTemplatesListOutput.StatusCounts].

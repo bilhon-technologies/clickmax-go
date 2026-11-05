@@ -489,9 +489,9 @@ const (
 
 // AIAgentsDeploymentsListOutputMeta is the type of [AIAgentsDeploymentsListOutput.Meta].
 type AIAgentsDeploymentsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // AIAgentsDeploymentsListParams holds the query parameters of [AIAgentsService.DeploymentsList].
@@ -752,9 +752,9 @@ type AIAgentsListOutputDataItem struct {
 
 // AIAgentsListOutputMeta is the type of [AIAgentsListOutput.Meta].
 type AIAgentsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // AIAgentsListParams holds the query parameters of [AIAgentsService.List].

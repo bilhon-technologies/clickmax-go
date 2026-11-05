@@ -1082,9 +1082,9 @@ const (
 
 // TasksListOutputMeta is the type of [TasksListOutput.Meta].
 type TasksListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // TasksSummaryInput is the request body of [TasksService.Summary].

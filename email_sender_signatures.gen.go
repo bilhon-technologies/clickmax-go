@@ -32,9 +32,9 @@ func (s *EmailSenderSignaturesService) List(ctx context.Context, body EmailSende
 // EmailSenderSignaturesListInput is the request body of [EmailSenderSignaturesService.List].
 type EmailSenderSignaturesListInput struct {
 	// 1-based page number. Defaults to 1.
-	Page *float64 `json:"page,omitzero"`
+	Page *int64 `json:"page,omitzero"`
 	// Items per page, max 2000. Defaults to 10.
-	PerPage *float64 `json:"perPage,omitzero"`
+	PerPage *int64 `json:"perPage,omitzero"`
 	// Filter to only verified (true) or only unverified (false) signatures.
 	Confirmed *bool `json:"confirmed,omitzero"`
 	// Filter to signatures on these sending domains.
@@ -62,7 +62,7 @@ type EmailSenderSignaturesListOutputDataItem struct {
 
 // EmailSenderSignaturesListOutputMeta is the type of [EmailSenderSignaturesListOutput.Meta].
 type EmailSenderSignaturesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }

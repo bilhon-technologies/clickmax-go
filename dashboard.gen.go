@@ -1433,9 +1433,9 @@ const (
 
 // DashboardExternalSalesOutputMeta is the type of [DashboardExternalSalesOutput.Meta].
 type DashboardExternalSalesOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // DashboardMySalesAggregationsInput is the request body of [DashboardService.MySalesAggregations].
@@ -2538,7 +2538,7 @@ type DashboardMySalesOutputDataItemUTMs struct {
 
 // DashboardMySalesOutputMeta is the type of [DashboardMySalesOutput.Meta].
 type DashboardMySalesOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }

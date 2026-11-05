@@ -380,9 +380,9 @@ type ProposalTemplatesDocumentVersionsListOutputDataItem struct {
 // ProposalTemplatesDocumentVersionsListOutputMeta is the type of
 // [ProposalTemplatesDocumentVersionsListOutput.Meta].
 type ProposalTemplatesDocumentVersionsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // ProposalTemplatesDocumentVersionsListParams holds the query parameters of
@@ -753,9 +753,9 @@ const (
 
 // ProposalTemplatesListOutputMeta is the type of [ProposalTemplatesListOutput.Meta].
 type ProposalTemplatesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // ProposalTemplatesListParams holds the query parameters of [ProposalTemplatesService.List].

@@ -410,9 +410,9 @@ const (
 
 // ListsGetLeadsOutputMeta is the type of [ListsGetLeadsOutput.Meta].
 type ListsGetLeadsOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // ListsGetLeadsParams holds the query parameters of [ListsService.GetLeads].
@@ -604,9 +604,9 @@ const (
 
 // ListsListOutputMeta is the type of [ListsListOutput.Meta].
 type ListsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // ListsListParams holds the query parameters of [ListsService.List].

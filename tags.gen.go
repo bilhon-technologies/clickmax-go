@@ -531,9 +531,9 @@ type TagsManualLeadsTimelineOutputDataItem struct {
 
 // TagsManualLeadsTimelineOutputMeta is the type of [TagsManualLeadsTimelineOutput.Meta].
 type TagsManualLeadsTimelineOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // TagsManualLeadsTimelineParams holds the query parameters of [TagsService.ManualLeadsTimeline].
@@ -622,9 +622,9 @@ const (
 
 // TagsManualListOutputMeta is the type of [TagsManualListOutput.Meta].
 type TagsManualListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // TagsManualListParams holds the query parameters of [TagsService.ManualList].
@@ -700,9 +700,9 @@ type TagsSystemActivitiesOutputDataItem struct {
 
 // TagsSystemActivitiesOutputMeta is the type of [TagsSystemActivitiesOutput.Meta].
 type TagsSystemActivitiesOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // TagsSystemActivitiesParams holds the query parameters of [TagsService.SystemActivities].
@@ -813,9 +813,9 @@ type TagsSystemListOutputDataItem struct {
 
 // TagsSystemListOutputMeta is the type of [TagsSystemListOutput.Meta].
 type TagsSystemListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // TagsSystemListParams holds the query parameters of [TagsService.SystemList].

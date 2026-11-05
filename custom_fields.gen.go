@@ -715,9 +715,9 @@ type CustomFieldsManagedListOutputDataItemUsageByKind struct {
 
 // CustomFieldsManagedListOutputMeta is the type of [CustomFieldsManagedListOutput.Meta].
 type CustomFieldsManagedListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // CustomFieldsManagedListParams holds the query parameters of [CustomFieldsService.ManagedList].

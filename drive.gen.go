@@ -702,9 +702,9 @@ const (
 
 // DriveFavoritesListOutputMeta is the type of [DriveFavoritesListOutput.Meta].
 type DriveFavoritesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // DriveFavoritesListParams holds the query parameters of [DriveService.FavoritesList].
@@ -1886,9 +1886,9 @@ const (
 
 // DriveSearchOutputMeta is the type of [DriveSearchOutput.Meta].
 type DriveSearchOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // DriveSearchParams holds the query parameters of [DriveService.Search].
@@ -2305,9 +2305,9 @@ type DriveSharesWithMeOutputDataItemSharedBy struct {
 
 // DriveSharesWithMeOutputMeta is the type of [DriveSharesWithMeOutput.Meta].
 type DriveSharesWithMeOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // DriveSharesWithMeParams holds the query parameters of [DriveService.SharesWithMe].

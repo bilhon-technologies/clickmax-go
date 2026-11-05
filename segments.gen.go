@@ -1166,9 +1166,9 @@ const (
 
 // SegmentsGetLeadsOutputMeta is the type of [SegmentsGetLeadsOutput.Meta].
 type SegmentsGetLeadsOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // SegmentsGetLeadsParams holds the query parameters of [SegmentsService.GetLeads].
@@ -1371,9 +1371,9 @@ const (
 
 // SegmentsListOutputMeta is the type of [SegmentsListOutput.Meta].
 type SegmentsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // SegmentsListParams holds the query parameters of [SegmentsService.List].

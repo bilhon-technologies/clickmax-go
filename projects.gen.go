@@ -359,9 +359,9 @@ const (
 
 // ProjectsListOutputMeta is the type of [ProjectsListOutput.Meta].
 type ProjectsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // ProjectsListParams holds the query parameters of [ProjectsService.List].

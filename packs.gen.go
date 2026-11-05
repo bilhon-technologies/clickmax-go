@@ -983,9 +983,9 @@ type PacksImportedListOutputDataItemUser struct {
 
 // PacksImportedListOutputMeta is the type of [PacksImportedListOutput.Meta].
 type PacksImportedListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PacksImportedListParams holds the query parameters of [PacksService.ImportedList].
@@ -1067,9 +1067,9 @@ const (
 
 // PacksListOutputMeta is the type of [PacksListOutput.Meta].
 type PacksListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PacksListParams holds the query parameters of [PacksService.List].

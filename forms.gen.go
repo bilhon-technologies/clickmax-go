@@ -2636,9 +2636,9 @@ const (
 
 // FormsListOutputMeta is the type of [FormsListOutput.Meta].
 type FormsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // FormsListParams holds the query parameters of [FormsService.List].
@@ -3810,9 +3810,9 @@ const (
 
 // FormsSubmissionsListOutputMeta is the type of [FormsSubmissionsListOutput.Meta].
 type FormsSubmissionsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // FormsSubmissionsListParams holds the query parameters of [FormsService.SubmissionsList].

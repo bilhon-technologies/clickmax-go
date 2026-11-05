@@ -2043,9 +2043,9 @@ const (
 
 // PagesListOutputMeta is the type of [PagesListOutput.Meta].
 type PagesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PagesListParams holds the query parameters of [PagesService.List].
@@ -2360,9 +2360,9 @@ const (
 
 // PagesTemplatesListOutputMeta is the type of [PagesTemplatesListOutput.Meta].
 type PagesTemplatesListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PagesUpdateConfigInput is the request body of [PagesService.UpdateConfig].

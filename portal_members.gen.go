@@ -125,9 +125,9 @@ type PortalMembersListOutputDataItem struct {
 
 // PortalMembersListOutputMeta is the type of [PortalMembersListOutput.Meta].
 type PortalMembersListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // PortalMembersListParams holds the query parameters of [PortalMembersService.List].

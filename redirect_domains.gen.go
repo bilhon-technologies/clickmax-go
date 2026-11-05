@@ -138,9 +138,9 @@ const (
 
 // RedirectDomainsListOutputMeta is the type of [RedirectDomainsListOutput.Meta].
 type RedirectDomainsListOutputMeta struct {
-	CountItens float64 `json:"countItens"`
-	CountPages float64 `json:"countPages"`
-	PerPage    float64 `json:"perPage"`
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
 }
 
 // RedirectDomainsListParams holds the query parameters of [RedirectDomainsService.List].
