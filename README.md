@@ -51,9 +51,11 @@ c.Tags.Create(ctx, clickmax.TagsCreateInput{Name: "VIP", Color: clickmax.Ptr("ff
 
 ## Optional and null fields
 
-Optional fields are pointers, and `clickmax.Ptr` builds one from a value. A nil pointer leaves an optional field out of the request. Required fields that accept `null` are pointers too, and nil sends `null`. A required list left nil is also sent as `null`, which the API rejects, so pass an empty slice when there are no items.
+Optional fields are pointers, and `clickmax.Ptr` builds one from a value. A nil pointer leaves an optional field out of the request. Required fields that accept `null` are pointers too, and nil sends `null`.
 
-Fields that accept `null` as well as a value, usually to clear something, have the type `clickmax.Nullable[T]`. Its zero value leaves the field out, `clickmax.Null[T]()` sends `null` and `clickmax.NewNullable(v)` sends `v`. In responses, optional and null fields are nil pointers.
+Lists and maps are not pointers. An optional list left nil is left out, and an empty slice sends `[]`. A required list left nil is sent as `null`, which the API rejects, so pass an empty slice when there are no items.
+
+Fields that accept `null` as well as a value, usually to clear something, have the type `clickmax.Nullable[T]`. Its zero value leaves the field out, `clickmax.Null[T]()` sends `null` and `clickmax.NewNullable(v)` sends `v`. In responses, optional and null fields are nil pointers, slices or maps.
 
 ## Errors
 
