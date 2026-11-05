@@ -187,12 +187,14 @@ func stringField(fields map[string]json.RawMessage, key string) string {
 	return s
 }
 
+// intField accepts any whole JSON number, such as 503.0, which JSON.parse
+// reads as the integer 503 but encoding/json refuses to decode into an int.
 func intField(fields map[string]json.RawMessage, key string) int {
-	var n int
-	if json.Unmarshal(fields[key], &n) != nil {
+	var f float64
+	if json.Unmarshal(fields[key], &f) != nil || f != math.Trunc(f) || math.Abs(f) >= 1<<53 {
 		return 0
 	}
-	return n
+	return int(f)
 }
 
 // issuesField skips entries that are not JSON objects, which would otherwise

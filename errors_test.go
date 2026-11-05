@@ -43,7 +43,7 @@ func TestErrorFromResponse(t *testing.T) {
 			name:   "upstream status",
 			status: 502,
 			header: jsonType,
-			body:   `{"error":"Upstream failed","type":"api","code":"upstream_error","upstreamStatus":503}`,
+			body:   `{"error":"Upstream failed","type":"api","code":"upstream_error","upstreamStatus":503.0}`,
 			want:   Error{Type: ErrorTypeAPI, Code: "upstream_error", Status: 502, Message: "Upstream failed", UpstreamStatus: 503},
 		},
 		{
@@ -52,6 +52,13 @@ func TestErrorFromResponse(t *testing.T) {
 			header: jsonType,
 			body:   `{"error":"Unauthorized"}`,
 			want:   Error{Type: ErrorTypeAuthentication, Code: "authentication", Status: 401, Message: "Unauthorized"},
+		},
+		{
+			name:   "fields of the wrong type read as absent",
+			status: 409,
+			header: http.Header{"Content-Type": {"application/json"}, "Cf-Ray": {"ray-3"}},
+			body:   `{"error":42,"message":"m","type":["x"],"requestId":7,"code":false}`,
+			want:   Error{Type: ErrorTypeConflict, Code: "conflict", Status: 409, Message: "m", RequestID: "ray-3"},
 		},
 		{
 			name:   "keys match case-sensitively",
