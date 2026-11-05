@@ -2303,6 +2303,7 @@ type DashboardMySalesOutputDataItem struct {
 	MainOfferPrice                int64                                                     `json:"mainOfferPrice"`
 	Commission                    int64                                                     `json:"commission"`
 	Role                          *DashboardMySalesOutputDataItemRole                       `json:"role,omitzero"`
+	AffiliateClickRole            *DashboardMySalesOutputDataItemAffiliateClickRole         `json:"affiliateClickRole,omitzero"`
 	LinkedBuyerEmail              *string                                                   `json:"linkedBuyerEmail,omitzero"`
 	PaymentMethod                 DashboardMySalesOutputDataItemPaymentMethod               `json:"paymentMethod"`
 	PassPlatformFee               bool                                                      `json:"passPlatformFee"`
@@ -2320,6 +2321,16 @@ type DashboardMySalesOutputDataItem struct {
 	SuspectedFraud                bool                                                      `json:"suspectedFraud"`
 	SuspectedFraudReasons         []DashboardMySalesOutputDataItemSuspectedFraudReasonsItem `json:"suspectedFraudReasons"`
 }
+
+// DashboardMySalesOutputDataItemAffiliateClickRole is the type of
+// [DashboardMySalesOutputDataItem.AffiliateClickRole].
+type DashboardMySalesOutputDataItemAffiliateClickRole string
+
+// Values of [DashboardMySalesOutputDataItemAffiliateClickRole].
+const (
+	DashboardMySalesOutputDataItemAffiliateClickRoleFirstClick DashboardMySalesOutputDataItemAffiliateClickRole = "first_click"
+	DashboardMySalesOutputDataItemAffiliateClickRoleLastClick  DashboardMySalesOutputDataItemAffiliateClickRole = "last_click"
+)
 
 // DashboardMySalesOutputDataItemBuyer is the type of [DashboardMySalesOutputDataItem.Buyer].
 type DashboardMySalesOutputDataItemBuyer struct {
@@ -2508,9 +2519,10 @@ type DashboardMySalesOutputDataItemSuspectedFraudReasonsItem string
 
 // Values of [DashboardMySalesOutputDataItemSuspectedFraudReasonsItem].
 const (
-	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemVelocity DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "velocity"
-	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemEmail    DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "email"
-	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemDocument DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "document"
+	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemVelocity   DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "velocity"
+	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemBuyerCards DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "buyerCards"
+	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemEmail      DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "email"
+	DashboardMySalesOutputDataItemSuspectedFraudReasonsItemDocument   DashboardMySalesOutputDataItemSuspectedFraudReasonsItem = "document"
 )
 
 // DashboardMySalesOutputDataItemUtms is the type of [DashboardMySalesOutputDataItem.Utms].

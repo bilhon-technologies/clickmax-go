@@ -4,11 +4,39 @@ package clickmax
 
 import (
 	"context"
+	"net/url"
 )
 
 // CheckoutsService groups the /checkouts/* operations. Reach it through [Client.Checkouts].
 type CheckoutsService struct {
 	client *Client
+}
+
+// Get page checkout offer.
+//
+// Returns the offer currently associated with this page's checkout (null if none).
+//
+// Calls GET /checkouts/get.
+func (s *CheckoutsService) Get(ctx context.Context, params CheckoutsGetParams, opts ...Option) (*CheckoutsGetOutput, error) {
+	var out CheckoutsGetOutput
+	if err := s.client.do(ctx, "GET", "/checkouts/get", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Associate page checkout offer.
+//
+// Associates this page's checkout with an offer (offerId=null clears it). The offer must be in this
+// workspace; pick it with the offers/products tools. Seeds a default checkout config.
+//
+// Calls POST /checkouts/set.
+func (s *CheckoutsService) Set(ctx context.Context, body CheckoutsSetInput, opts ...Option) (*CheckoutsSetOutput, error) {
+	var out CheckoutsSetOutput
+	if err := s.client.do(ctx, "POST", "/checkouts/set", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // Set order bumps on a checkout page.
@@ -31,6 +59,23 @@ func (s *CheckoutsService) SetOrderBump(ctx context.Context, body CheckoutsSetOr
 	return &out, nil
 }
 
+// CheckoutsGetParams holds the query parameters of [CheckoutsService.Get].
+type CheckoutsGetParams struct {
+	PageID string
+}
+
+func (p CheckoutsGetParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "pageId", &p.PageID)
+	return v
+}
+
+// CheckoutsSetInput is the request body of [CheckoutsService.Set].
+type CheckoutsSetInput struct {
+	PageID  string  `json:"pageId"`
+	OfferID *string `json:"offerId"`
+}
+
 // CheckoutsSetOrderBumpInput is the request body of [CheckoutsService.SetOrderBump].
 type CheckoutsSetOrderBumpInput struct {
 	PageID       string           `json:"pageId"`
@@ -40,5 +85,10 @@ type CheckoutsSetOrderBumpInput struct {
 
 // CheckoutsSetOrderBumpOutput is the response of [CheckoutsService.SetOrderBump].
 type CheckoutsSetOrderBumpOutput struct {
+	Success bool `json:"success"`
+}
+
+// CheckoutsSetOutput is the response of [CheckoutsService.Set].
+type CheckoutsSetOutput struct {
 	Success bool `json:"success"`
 }

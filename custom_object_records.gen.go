@@ -21,8 +21,8 @@ type CustomObjectRecordsService struct {
 // `custom_object_records_query` (re-evaluated when the action runs; `allMatching` with no filters =
 // EVERY record the user can reach). Zero matches is 400. Up to 200 records it runs now and returns `{
 // mode: "sync", affected }`; above that it returns `{ mode: "async", jobId }` — poll
-// `custom_object_records_bulk_job_status`. Always show the user how many records (and which, when few)
-// will go before calling.
+// `custom_object_records_bulk_jobs_status`. Always show the user how many records (and which, when
+// few) will go before calling.
 //
 // Calls DELETE /custom-object-records/bulk-delete.
 func (s *CustomObjectRecordsService) BulkDelete(ctx context.Context, body CustomObjectRecordsBulkDeleteInput, opts ...Option) (*CustomObjectRecordsBulkDeleteOutput, error) {
@@ -39,10 +39,10 @@ func (s *CustomObjectRecordsService) BulkDelete(ctx context.Context, body Custom
 // `active`, `completed`, `failed`, …), `progress` 0-100, `affected` when done, `failedReason` when
 // failed. 404 when the job belongs to another workspace or already expired.
 //
-// Calls GET /custom-object-records/bulk-job-status.
-func (s *CustomObjectRecordsService) BulkJobStatus(ctx context.Context, params CustomObjectRecordsBulkJobStatusParams, opts ...Option) (*CustomObjectRecordsBulkJobStatusOutput, error) {
-	var out CustomObjectRecordsBulkJobStatusOutput
-	if err := s.client.do(ctx, "GET", "/custom-object-records/bulk-job-status", params.values(), nil, &out, opts); err != nil {
+// Calls GET /custom-object-records/bulk-jobs-status.
+func (s *CustomObjectRecordsService) BulkJobsStatus(ctx context.Context, params CustomObjectRecordsBulkJobsStatusParams, opts ...Option) (*CustomObjectRecordsBulkJobsStatusOutput, error) {
+	var out CustomObjectRecordsBulkJobsStatusOutput
+	if err := s.client.do(ctx, "GET", "/custom-object-records/bulk-jobs-status", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -59,7 +59,7 @@ func (s *CustomObjectRecordsService) BulkJobStatus(ctx context.Context, params C
 // `custom_object_records_query` (re-evaluated when the action runs; `allMatching` with no filters =
 // EVERY record the user can reach). Zero matches is 400. Up to 200 records it runs now and returns `{
 // mode: "sync", affected }`; above that it returns `{ mode: "async", jobId }` — poll
-// `custom_object_records_bulk_job_status`. Confirm the count with `custom_object_records_query` (same
+// `custom_object_records_bulk_jobs_status`. Confirm the count with `custom_object_records_query` (same
 // filters) before running it.
 //
 // Calls POST /custom-object-records/bulk-update.
@@ -108,63 +108,6 @@ func (s *CustomObjectRecordsService) ClearValue(ctx context.Context, body Custom
 func (s *CustomObjectRecordsService) Create(ctx context.Context, body CustomObjectRecordsCreateInput, opts ...Option) (*CustomObjectRecordsCreateOutput, error) {
 	var out CustomObjectRecordsCreateOutput
 	if err := s.client.do(ctx, "POST", "/custom-object-records/create", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// Link custom-object records.
-//
-// Links records through one relation (`relationId`): `links` = 1-50 pairs `{ recordId, targetId }`
-// where `recordId` is ALWAYS a record of the relation's SOURCE object and `targetId` the other side
-// (contact, opportunity, company or record id, per the relation `targetType`). Needs
-// `custom-objects:update` and the source record in the user's scope (for object↔object, either
-// side). Cardinality applies on write and can silently undo older links: `many_to_one` — linking a
-// new target to a source REPLACES its previous target ("Trocar"); `one_to_many` — linking a target
-// that already belongs to another source MOVES it to this one; `many_to_many` — just adds. Read the
-// relation `cardinality` first and tell the user when a link will be replaced or moved. A repeated
-// pair is ignored; inside one batch the last pair per source wins. A record linked to itself or an
-// archived object is 400. Both sides get a history line. Returns the links created.
-//
-// Calls POST /custom-object-records/custom-object-links-create.
-func (s *CustomObjectRecordsService) CustomObjectLinksCreate(ctx context.Context, body CustomObjectLinksCreateInput, opts ...Option) (*CustomObjectLinksCreateOutput, error) {
-	var out CustomObjectLinksCreateOutput
-	if err := s.client.do(ctx, "POST", "/custom-object-records/custom-object-links-create", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// Unlink custom-object records.
-//
-// Removes ONE link (`linkId`, from `custom_object_records_get` → `relations[].items[].linkId` or
-// `custom_object_links_list`). Both records stay; only the connection goes (re-linking is another
-// `custom_object_links_create`). Both sides get a history line. Needs `custom-objects:update`; without
-// `:all` the user must be responsible for one of the two records (404 otherwise).
-//
-// Calls POST /custom-object-records/custom-object-links-delete.
-func (s *CustomObjectRecordsService) CustomObjectLinksDelete(ctx context.Context, body CustomObjectLinksDeleteInput, opts ...Option) (*CustomObjectRelationsDeleteOutput, error) {
-	var out CustomObjectRelationsDeleteOutput
-	if err := s.client.do(ctx, "POST", "/custom-object-records/custom-object-links-delete", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// List custom-object records linked to a contact, opportunity, company or record.
-//
-// Shows the custom-object records linked to ONE entity, grouped as that entity's page shows them:
-// `targetType` (`leads` = contact, `opportunities`, `companies`, `objects`) + `targetId`. Each group:
-// the `relation`, the `label` seen from this entity (e.g. "Imóveis de interesse"), and `items`
-// (`linkId`, record `id`, `label`). Empty groups are included, so it also tells WHICH objects could be
-// linked here. For `targetType: "objects"` it lists only the links where that record is the TARGET of
-// an object↔object relation; the links where it is the source are in `custom_object_records_get` →
-// `relations`.
-//
-// Calls GET /custom-object-records/custom-object-links-list.
-func (s *CustomObjectRecordsService) CustomObjectLinksList(ctx context.Context, params CustomObjectLinksListParams, opts ...Option) (*CustomObjectLinksListOutput, error) {
-	var out CustomObjectLinksListOutput
-	if err := s.client.do(ctx, "GET", "/custom-object-records/custom-object-links-list", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -363,199 +306,6 @@ func (s *CustomObjectRecordsService) SetValues(ctx context.Context, body CustomO
 	return &out, nil
 }
 
-// CustomObjectLinksCreateInput is the request body of
-// [CustomObjectRecordsService.CustomObjectLinksCreate].
-type CustomObjectLinksCreateInput struct {
-	RelationID string                                  `json:"relationId"`
-	Links      []CustomObjectLinksCreateInputLinksItem `json:"links"`
-}
-
-// CustomObjectLinksCreateInputLinksItem is an element of [CustomObjectLinksCreateInput.Links].
-type CustomObjectLinksCreateInputLinksItem struct {
-	RecordID string `json:"recordId"`
-	TargetID string `json:"targetId"`
-}
-
-// CustomObjectLinksCreateOutput is the response of
-// [CustomObjectRecordsService.CustomObjectLinksCreate].
-type CustomObjectLinksCreateOutput struct {
-	Data []CustomObjectLinksCreateOutputDataItem `json:"data"`
-}
-
-// CustomObjectLinksCreateOutputDataItem is an element of [CustomObjectLinksCreateOutput.Data].
-type CustomObjectLinksCreateOutputDataItem struct {
-	ID             string    `json:"id"`
-	OwnerID        string    `json:"ownerId"`
-	RelationID     string    `json:"relationId"`
-	RecordID       string    `json:"recordId"`
-	LeadID         *string   `json:"leadId,omitzero"`
-	OpportunityID  *string   `json:"opportunityId,omitzero"`
-	CompanyID      *string   `json:"companyId,omitzero"`
-	TargetRecordID *string   `json:"targetRecordId,omitzero"`
-	CreatedAt      time.Time `json:"createdAt"`
-}
-
-// CustomObjectLinksDeleteInput is the request body of
-// [CustomObjectRecordsService.CustomObjectLinksDelete].
-type CustomObjectLinksDeleteInput struct {
-	LinkID string `json:"linkId"`
-}
-
-// CustomObjectLinksListOutput is the response of [CustomObjectRecordsService.CustomObjectLinksList].
-type CustomObjectLinksListOutput struct {
-	Data []CustomObjectLinksListOutputDataItem `json:"data"`
-}
-
-// CustomObjectLinksListOutputDataItem is an element of [CustomObjectLinksListOutput.Data].
-type CustomObjectLinksListOutputDataItem struct {
-	Relation CustomObjectLinksListOutputDataItemRelation    `json:"relation"`
-	Side     CustomObjectLinksListOutputDataItemSide        `json:"side"`
-	Label    string                                         `json:"label"`
-	Items    []CustomObjectLinksListOutputDataItemItemsItem `json:"items"`
-}
-
-// CustomObjectLinksListOutputDataItemItemsItem is an element of
-// [CustomObjectLinksListOutputDataItem.Items].
-type CustomObjectLinksListOutputDataItemItemsItem struct {
-	LinkID   string                                           `json:"linkId"`
-	ID       string                                           `json:"id"`
-	Label    string                                           `json:"label"`
-	Subtitle *string                                          `json:"subtitle,omitzero"`
-	ObjectID *string                                          `json:"objectId,omitzero"`
-	Type     CustomObjectLinksListOutputDataItemItemsItemType `json:"type"`
-}
-
-// CustomObjectLinksListOutputDataItemItemsItemType is the type of
-// [CustomObjectLinksListOutputDataItemItemsItem.Type].
-type CustomObjectLinksListOutputDataItemItemsItemType string
-
-// Values of [CustomObjectLinksListOutputDataItemItemsItemType].
-const (
-	CustomObjectLinksListOutputDataItemItemsItemTypeLeads         CustomObjectLinksListOutputDataItemItemsItemType = "leads"
-	CustomObjectLinksListOutputDataItemItemsItemTypeOpportunities CustomObjectLinksListOutputDataItemItemsItemType = "opportunities"
-	CustomObjectLinksListOutputDataItemItemsItemTypeCompanies     CustomObjectLinksListOutputDataItemItemsItemType = "companies"
-	CustomObjectLinksListOutputDataItemItemsItemTypeObjects       CustomObjectLinksListOutputDataItemItemsItemType = "objects"
-)
-
-// CustomObjectLinksListOutputDataItemRelation is the type of
-// [CustomObjectLinksListOutputDataItem.Relation].
-type CustomObjectLinksListOutputDataItemRelation struct {
-	ID             string                                                   `json:"id"`
-	OwnerID        string                                                   `json:"ownerId"`
-	ObjectID       string                                                   `json:"objectId"`
-	TargetType     CustomObjectLinksListOutputDataItemRelationTargetType    `json:"targetType"`
-	TargetObjectID *string                                                  `json:"targetObjectId,omitzero"`
-	Cardinality    CustomObjectLinksListOutputDataItemRelationCardinality   `json:"cardinality"`
-	SourceLabel    string                                                   `json:"sourceLabel"`
-	TargetLabel    string                                                   `json:"targetLabel"`
-	ShowOnCard     bool                                                     `json:"showOnCard"`
-	Order          int64                                                    `json:"order"`
-	CreatedAt      time.Time                                                `json:"createdAt"`
-	UpdatedAt      time.Time                                                `json:"updatedAt"`
-	LinkCount      int64                                                    `json:"linkCount"`
-	SourceObject   CustomObjectLinksListOutputDataItemRelationSourceObject  `json:"sourceObject"`
-	TargetObject   *CustomObjectLinksListOutputDataItemRelationTargetObject `json:"targetObject,omitzero"`
-}
-
-// CustomObjectLinksListOutputDataItemRelationCardinality is the type of
-// [CustomObjectLinksListOutputDataItemRelation.Cardinality].
-type CustomObjectLinksListOutputDataItemRelationCardinality string
-
-// Values of [CustomObjectLinksListOutputDataItemRelationCardinality].
-const (
-	CustomObjectLinksListOutputDataItemRelationCardinalityManyToOne  CustomObjectLinksListOutputDataItemRelationCardinality = "many_to_one"
-	CustomObjectLinksListOutputDataItemRelationCardinalityOneToMany  CustomObjectLinksListOutputDataItemRelationCardinality = "one_to_many"
-	CustomObjectLinksListOutputDataItemRelationCardinalityManyToMany CustomObjectLinksListOutputDataItemRelationCardinality = "many_to_many"
-)
-
-// CustomObjectLinksListOutputDataItemRelationSourceObject is the type of
-// [CustomObjectLinksListOutputDataItemRelation.SourceObject].
-type CustomObjectLinksListOutputDataItemRelationSourceObject struct {
-	ID           string                                                        `json:"id"`
-	SingularName string                                                        `json:"singularName"`
-	PluralName   string                                                        `json:"pluralName"`
-	Icon         string                                                        `json:"icon"`
-	Color        string                                                        `json:"color"`
-	Gender       CustomObjectLinksListOutputDataItemRelationSourceObjectGender `json:"gender"`
-}
-
-// CustomObjectLinksListOutputDataItemRelationSourceObjectGender is the type of
-// [CustomObjectLinksListOutputDataItemRelationSourceObject.Gender].
-type CustomObjectLinksListOutputDataItemRelationSourceObjectGender string
-
-// Values of [CustomObjectLinksListOutputDataItemRelationSourceObjectGender].
-const (
-	CustomObjectLinksListOutputDataItemRelationSourceObjectGenderMasculine CustomObjectLinksListOutputDataItemRelationSourceObjectGender = "masculine"
-	CustomObjectLinksListOutputDataItemRelationSourceObjectGenderFeminine  CustomObjectLinksListOutputDataItemRelationSourceObjectGender = "feminine"
-)
-
-// CustomObjectLinksListOutputDataItemRelationTargetObject is the type of
-// [CustomObjectLinksListOutputDataItemRelation.TargetObject].
-type CustomObjectLinksListOutputDataItemRelationTargetObject struct {
-	ID           string                                                        `json:"id"`
-	SingularName string                                                        `json:"singularName"`
-	PluralName   string                                                        `json:"pluralName"`
-	Icon         string                                                        `json:"icon"`
-	Color        string                                                        `json:"color"`
-	Gender       CustomObjectLinksListOutputDataItemRelationTargetObjectGender `json:"gender"`
-}
-
-// CustomObjectLinksListOutputDataItemRelationTargetObjectGender is the type of
-// [CustomObjectLinksListOutputDataItemRelationTargetObject.Gender].
-type CustomObjectLinksListOutputDataItemRelationTargetObjectGender string
-
-// Values of [CustomObjectLinksListOutputDataItemRelationTargetObjectGender].
-const (
-	CustomObjectLinksListOutputDataItemRelationTargetObjectGenderMasculine CustomObjectLinksListOutputDataItemRelationTargetObjectGender = "masculine"
-	CustomObjectLinksListOutputDataItemRelationTargetObjectGenderFeminine  CustomObjectLinksListOutputDataItemRelationTargetObjectGender = "feminine"
-)
-
-// CustomObjectLinksListOutputDataItemRelationTargetType is the type of
-// [CustomObjectLinksListOutputDataItemRelation.TargetType].
-type CustomObjectLinksListOutputDataItemRelationTargetType string
-
-// Values of [CustomObjectLinksListOutputDataItemRelationTargetType].
-const (
-	CustomObjectLinksListOutputDataItemRelationTargetTypeLeads         CustomObjectLinksListOutputDataItemRelationTargetType = "leads"
-	CustomObjectLinksListOutputDataItemRelationTargetTypeOpportunities CustomObjectLinksListOutputDataItemRelationTargetType = "opportunities"
-	CustomObjectLinksListOutputDataItemRelationTargetTypeCompanies     CustomObjectLinksListOutputDataItemRelationTargetType = "companies"
-	CustomObjectLinksListOutputDataItemRelationTargetTypeObjects       CustomObjectLinksListOutputDataItemRelationTargetType = "objects"
-)
-
-// CustomObjectLinksListOutputDataItemSide is the type of [CustomObjectLinksListOutputDataItem.Side].
-type CustomObjectLinksListOutputDataItemSide string
-
-// Values of [CustomObjectLinksListOutputDataItemSide].
-const (
-	CustomObjectLinksListOutputDataItemSideSource CustomObjectLinksListOutputDataItemSide = "source"
-	CustomObjectLinksListOutputDataItemSideTarget CustomObjectLinksListOutputDataItemSide = "target"
-)
-
-// CustomObjectLinksListParams holds the query parameters of
-// [CustomObjectRecordsService.CustomObjectLinksList].
-type CustomObjectLinksListParams struct {
-	TargetType CustomObjectLinksListParamsTargetType
-	TargetID   string
-}
-
-func (p CustomObjectLinksListParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "targetType", (*string)(&p.TargetType))
-	addString(v, "targetId", &p.TargetID)
-	return v
-}
-
-// CustomObjectLinksListParamsTargetType is the type of [CustomObjectLinksListParams.TargetType].
-type CustomObjectLinksListParamsTargetType string
-
-// Values of [CustomObjectLinksListParamsTargetType].
-const (
-	CustomObjectLinksListParamsTargetTypeLeads         CustomObjectLinksListParamsTargetType = "leads"
-	CustomObjectLinksListParamsTargetTypeOpportunities CustomObjectLinksListParamsTargetType = "opportunities"
-	CustomObjectLinksListParamsTargetTypeCompanies     CustomObjectLinksListParamsTargetType = "companies"
-	CustomObjectLinksListParamsTargetTypeObjects       CustomObjectLinksListParamsTargetType = "objects"
-)
-
 // CustomObjectRecordsBulkDeleteInput is the request body of [CustomObjectRecordsService.BulkDelete].
 type CustomObjectRecordsBulkDeleteInput struct {
 	ObjectID    string                                          `json:"objectId"`
@@ -641,40 +391,40 @@ const (
 	CustomObjectRecordsBulkDeleteOutputModeAsync CustomObjectRecordsBulkDeleteOutputMode = "async"
 )
 
-// CustomObjectRecordsBulkJobStatusOutput is the response of
-// [CustomObjectRecordsService.BulkJobStatus].
-type CustomObjectRecordsBulkJobStatusOutput struct {
-	JobID        string                                      `json:"jobId"`
-	State        CustomObjectRecordsBulkJobStatusOutputState `json:"state"`
-	Progress     float64                                     `json:"progress"`
-	Affected     *int64                                      `json:"affected,omitzero"`
-	FailedReason *string                                     `json:"failedReason,omitzero"`
-	Meta         map[string]any                              `json:"meta,omitzero"`
+// CustomObjectRecordsBulkJobsStatusOutput is the response of
+// [CustomObjectRecordsService.BulkJobsStatus].
+type CustomObjectRecordsBulkJobsStatusOutput struct {
+	JobID        string                                       `json:"jobId"`
+	State        CustomObjectRecordsBulkJobsStatusOutputState `json:"state"`
+	Progress     float64                                      `json:"progress"`
+	Affected     *int64                                       `json:"affected,omitzero"`
+	FailedReason *string                                      `json:"failedReason,omitzero"`
+	Meta         map[string]any                               `json:"meta,omitzero"`
 }
 
-// CustomObjectRecordsBulkJobStatusOutputState is the type of
-// [CustomObjectRecordsBulkJobStatusOutput.State].
-type CustomObjectRecordsBulkJobStatusOutputState string
+// CustomObjectRecordsBulkJobsStatusOutputState is the type of
+// [CustomObjectRecordsBulkJobsStatusOutput.State].
+type CustomObjectRecordsBulkJobsStatusOutputState string
 
-// Values of [CustomObjectRecordsBulkJobStatusOutputState].
+// Values of [CustomObjectRecordsBulkJobsStatusOutputState].
 const (
-	CustomObjectRecordsBulkJobStatusOutputStateWaiting         CustomObjectRecordsBulkJobStatusOutputState = "waiting"
-	CustomObjectRecordsBulkJobStatusOutputStateWaitingChildren CustomObjectRecordsBulkJobStatusOutputState = "waiting-children"
-	CustomObjectRecordsBulkJobStatusOutputStateActive          CustomObjectRecordsBulkJobStatusOutputState = "active"
-	CustomObjectRecordsBulkJobStatusOutputStateCompleted       CustomObjectRecordsBulkJobStatusOutputState = "completed"
-	CustomObjectRecordsBulkJobStatusOutputStateFailed          CustomObjectRecordsBulkJobStatusOutputState = "failed"
-	CustomObjectRecordsBulkJobStatusOutputStateDelayed         CustomObjectRecordsBulkJobStatusOutputState = "delayed"
-	CustomObjectRecordsBulkJobStatusOutputStatePrioritized     CustomObjectRecordsBulkJobStatusOutputState = "prioritized"
-	CustomObjectRecordsBulkJobStatusOutputStateUnknown         CustomObjectRecordsBulkJobStatusOutputState = "unknown"
+	CustomObjectRecordsBulkJobsStatusOutputStateWaiting         CustomObjectRecordsBulkJobsStatusOutputState = "waiting"
+	CustomObjectRecordsBulkJobsStatusOutputStateWaitingChildren CustomObjectRecordsBulkJobsStatusOutputState = "waiting-children"
+	CustomObjectRecordsBulkJobsStatusOutputStateActive          CustomObjectRecordsBulkJobsStatusOutputState = "active"
+	CustomObjectRecordsBulkJobsStatusOutputStateCompleted       CustomObjectRecordsBulkJobsStatusOutputState = "completed"
+	CustomObjectRecordsBulkJobsStatusOutputStateFailed          CustomObjectRecordsBulkJobsStatusOutputState = "failed"
+	CustomObjectRecordsBulkJobsStatusOutputStateDelayed         CustomObjectRecordsBulkJobsStatusOutputState = "delayed"
+	CustomObjectRecordsBulkJobsStatusOutputStatePrioritized     CustomObjectRecordsBulkJobsStatusOutputState = "prioritized"
+	CustomObjectRecordsBulkJobsStatusOutputStateUnknown         CustomObjectRecordsBulkJobsStatusOutputState = "unknown"
 )
 
-// CustomObjectRecordsBulkJobStatusParams holds the query parameters of
-// [CustomObjectRecordsService.BulkJobStatus].
-type CustomObjectRecordsBulkJobStatusParams struct {
+// CustomObjectRecordsBulkJobsStatusParams holds the query parameters of
+// [CustomObjectRecordsService.BulkJobsStatus].
+type CustomObjectRecordsBulkJobsStatusParams struct {
 	JobID string
 }
 
-func (p CustomObjectRecordsBulkJobStatusParams) values() url.Values {
+func (p CustomObjectRecordsBulkJobsStatusParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "jobId", &p.JobID)
 	return v
@@ -1129,6 +879,7 @@ type CustomObjectRecordsGetOutputValuesItem struct {
 	DateValue     *time.Time                                       `json:"dateValue"`
 	BooleanValue  *bool                                            `json:"booleanValue"`
 	JSONValue     any                                              `json:"jsonValue"`
+	Source        CustomObjectRecordsGetOutputValuesItemSource     `json:"source"`
 }
 
 // CustomObjectRecordsGetOutputValuesItemFieldType is the type of
@@ -1153,6 +904,24 @@ const (
 	CustomObjectRecordsGetOutputValuesItemFieldTypeRating      CustomObjectRecordsGetOutputValuesItemFieldType = "rating"
 	CustomObjectRecordsGetOutputValuesItemFieldTypeTextarea    CustomObjectRecordsGetOutputValuesItemFieldType = "textarea"
 	CustomObjectRecordsGetOutputValuesItemFieldTypeImage       CustomObjectRecordsGetOutputValuesItemFieldType = "image"
+)
+
+// CustomObjectRecordsGetOutputValuesItemSource is the type of
+// [CustomObjectRecordsGetOutputValuesItem.Source].
+type CustomObjectRecordsGetOutputValuesItemSource string
+
+// Values of [CustomObjectRecordsGetOutputValuesItemSource].
+const (
+	CustomObjectRecordsGetOutputValuesItemSourceManual  CustomObjectRecordsGetOutputValuesItemSource = "manual"
+	CustomObjectRecordsGetOutputValuesItemSourceImport  CustomObjectRecordsGetOutputValuesItemSource = "import"
+	CustomObjectRecordsGetOutputValuesItemSourceForm    CustomObjectRecordsGetOutputValuesItemSource = "form"
+	CustomObjectRecordsGetOutputValuesItemSourceBooking CustomObjectRecordsGetOutputValuesItemSource = "booking"
+	CustomObjectRecordsGetOutputValuesItemSourceWebchat CustomObjectRecordsGetOutputValuesItemSource = "webchat"
+	CustomObjectRecordsGetOutputValuesItemSourceFlow    CustomObjectRecordsGetOutputValuesItemSource = "flow"
+	CustomObjectRecordsGetOutputValuesItemSourceAPI     CustomObjectRecordsGetOutputValuesItemSource = "api"
+	CustomObjectRecordsGetOutputValuesItemSourceSystem  CustomObjectRecordsGetOutputValuesItemSource = "system"
+	CustomObjectRecordsGetOutputValuesItemSourceAI      CustomObjectRecordsGetOutputValuesItemSource = "ai"
+	CustomObjectRecordsGetOutputValuesItemSourceUnknown CustomObjectRecordsGetOutputValuesItemSource = "unknown"
 )
 
 // CustomObjectRecordsGetParams holds the query parameters of [CustomObjectRecordsService.Get].

@@ -2,59 +2,71 @@
 
 package clickmax
 
+import (
+	"context"
+)
+
 // Client calls the Clickmax API. Create one with [New]. Each field groups the operations of
 // one resource.
+//
+// The methods of Client are the operations outside any resource.
 type Client struct {
-	// AccountSnapshot groups the /account_snapshot/* operations.
-	AccountSnapshot *AccountSnapshotService
+	// Account groups the /account/* operations.
+	Account *AccountService
 	// Activities groups the /activities/* operations.
 	Activities *ActivitiesService
-	// AIAgentsConfig groups the /ai-agents-config/* operations.
-	AIAgentsConfig *AIAgentsConfigService
-	// AIAgentsObservability groups the /ai-agents-observability/* operations.
-	AIAgentsObservability *AIAgentsObservabilityService
+	// AIAgents groups the /ai-agents/* operations.
+	AIAgents *AIAgentsService
+	// AISdr groups the /ai-sdr/* operations.
+	AISdr *AISdrService
 	// Analytics groups the /analytics/* operations.
 	Analytics *AnalyticsService
 	// AnalyticsDashboards groups the /analytics-dashboards/* operations.
 	AnalyticsDashboards *AnalyticsDashboardsService
+	// AttendantTypes groups the /attendant-types/* operations.
+	AttendantTypes *AttendantTypesService
 	// Attendants groups the /attendants/* operations.
 	Attendants *AttendantsService
-	// Brands groups the /brands/* operations.
-	Brands *BrandsService
+	// Brand groups the /brand/* operations.
+	Brand *BrandService
 	// Broadcasts groups the /broadcasts/* operations.
 	Broadcasts *BroadcastsService
 	// Buyers groups the /buyers/* operations.
 	Buyers *BuyersService
+	// Cards groups the /cards/* operations.
+	Cards *CardsService
 	// ChannelInstances groups the /channel-instances/* operations.
 	ChannelInstances *ChannelInstancesService
-	// Checkout groups the /checkout/* operations.
-	Checkout *CheckoutService
 	// Checkouts groups the /checkouts/* operations.
 	Checkouts *CheckoutsService
-	// Classroom groups the /classroom/* operations.
-	Classroom *ClassroomService
+	// Classrooms groups the /classrooms/* operations.
+	Classrooms *ClassroomsService
 	// Communities groups the /communities/* operations.
 	Communities *CommunitiesService
 	// Content groups the /content/* operations.
 	Content *ContentService
 	// CustomFields groups the /custom-fields/* operations.
 	CustomFields *CustomFieldsService
+	// CustomObjectLinks groups the /custom-object-links/* operations.
+	CustomObjectLinks *CustomObjectLinksService
 	// CustomObjectRecords groups the /custom-object-records/* operations.
 	CustomObjectRecords *CustomObjectRecordsService
+	// CustomObjectRelations groups the /custom-object-relations/* operations.
+	CustomObjectRelations *CustomObjectRelationsService
+	// CustomObjectViews groups the /custom-object-views/* operations.
+	CustomObjectViews *CustomObjectViewsService
 	// CustomObjects groups the /custom-objects/* operations.
 	CustomObjects *CustomObjectsService
 	// Dashboard groups the /dashboard/* operations.
 	Dashboard *DashboardService
-	// Deliverables groups the /deliverables/* operations.
-	Deliverables *DeliverablesService
 	// Docs groups the /docs/* operations.
 	Docs *DocsService
 	// Drive groups the /drive/* operations.
 	Drive *DriveService
-	// DriveCollaboration groups the /drive-collaboration/* operations.
-	DriveCollaboration *DriveCollaborationService
 	// DriveFiles groups the /drive-files/* operations.
 	DriveFiles *DriveFilesService
+	// DriveFolders groups the /drive-folders/* operations.
+	DriveFolders *DriveFoldersService
 	// DriveSpaces groups the /drive-spaces/* operations.
 	DriveSpaces *DriveSpacesService
 	// DriveTrash groups the /drive-trash/* operations.
@@ -65,58 +77,58 @@ type Client struct {
 	EmailSenderSignatures *EmailSenderSignaturesService
 	// EmailTemplates groups the /email-templates/* operations.
 	EmailTemplates *EmailTemplatesService
-	// ExternalCheckouts groups the /external-checkouts/* operations.
-	ExternalCheckouts *ExternalCheckoutsService
-	// FlowExecutions groups the /flow-executions/* operations.
-	FlowExecutions *FlowExecutionsService
-	// FlowLinks groups the /flow-links/* operations.
-	FlowLinks *FlowLinksService
-	// FlowRuns groups the /flow-runs/* operations.
-	FlowRuns *FlowRunsService
+	// ExternalCheckoutAccounts groups the /external-checkout-accounts/* operations.
+	ExternalCheckoutAccounts *ExternalCheckoutAccountsService
+	// ExternalProducts groups the /external-products/* operations.
+	ExternalProducts *ExternalProductsService
 	// Flows groups the /flows/* operations.
 	Flows *FlowsService
 	// Forms groups the /forms/* operations.
 	Forms *FormsService
-	// Funnels4 groups the /funnels4/* operations.
-	Funnels4 *Funnels4Service
+	// Funnels groups the /funnels/* operations.
+	Funnels *FunnelsService
 	// GupshupTemplates groups the /gupshup-templates/* operations.
 	GupshupTemplates *GupshupTemplatesService
+	// Helpdesk groups the /helpdesk/* operations.
+	Helpdesk *HelpdeskService
+	// Hotmart groups the /hotmart/* operations.
+	Hotmart *HotmartService
 	// Insights groups the /insights/* operations.
 	Insights *InsightsService
+	// InstagramPosts groups the /instagram-posts/* operations.
+	InstagramPosts *InstagramPostsService
 	// LeadActivities groups the /lead-activities/* operations.
 	LeadActivities *LeadActivitiesService
-	// LeadBulkActions groups the /lead-bulk-actions/* operations.
-	LeadBulkActions *LeadBulkActionsService
 	// LeadIndicators groups the /lead-indicators/* operations.
 	LeadIndicators *LeadIndicatorsService
 	// LeadScore groups the /lead-score/* operations.
 	LeadScore *LeadScoreService
 	// Leads groups the /leads/* operations.
 	Leads *LeadsService
-	// Lesson groups the /lesson/* operations.
-	Lesson *LessonService
-	// ListsSegments groups the /lists-segments/* operations.
-	ListsSegments *ListsSegmentsService
-	// MaxSuggestions groups the /max_suggestions/* operations.
-	MaxSuggestions *MaxSuggestionsService
+	// Lessons groups the /lessons/* operations.
+	Lessons *LessonsService
+	// Lists groups the /lists/* operations.
+	Lists *ListsService
+	// ManagedFlows groups the /managed-flows/* operations.
+	ManagedFlows *ManagedFlowsService
 	// MemberUsers groups the /member-users/* operations.
 	MemberUsers *MemberUsersService
-	// MessagingPerformance groups the /messaging_performance/* operations.
-	MessagingPerformance *MessagingPerformanceService
-	// Module groups the /module/* operations.
-	Module *ModuleService
+	// Messages groups the /messages/* operations.
+	Messages *MessagesService
+	// Modules groups the /modules/* operations.
+	Modules *ModulesService
 	// Offers groups the /offers/* operations.
 	Offers *OffersService
 	// Onboarding groups the /onboarding/* operations.
 	Onboarding *OnboardingService
-	// OpportunityAutomations groups the /opportunity-automations/* operations.
-	OpportunityAutomations *OpportunityAutomationsService
-	// OpportunityBulkActions groups the /opportunity-bulk-actions/* operations.
-	OpportunityBulkActions *OpportunityBulkActionsService
-	// OpportunityTasks groups the /opportunity-tasks/* operations.
-	OpportunityTasks *OpportunityTasksService
+	// Opportunities groups the /opportunities/* operations.
+	Opportunities *OpportunitiesService
 	// Packs groups the /packs/* operations.
 	Packs *PacksService
+	// Pagarme groups the /pagarme/* operations.
+	Pagarme *PagarmeService
+	// PageDesigns groups the /page-designs/* operations.
+	PageDesigns *PageDesignsService
 	// Pages groups the /pages/* operations.
 	Pages *PagesService
 	// Pipelines groups the /pipelines/* operations.
@@ -133,26 +145,50 @@ type Client struct {
 	Products *ProductsService
 	// Projects groups the /projects/* operations.
 	Projects *ProjectsService
+	// ProposalTemplates groups the /proposal-templates/* operations.
+	ProposalTemplates *ProposalTemplatesService
 	// Proposals groups the /proposals/* operations.
 	Proposals *ProposalsService
 	// Recovery groups the /recovery/* operations.
 	Recovery *RecoveryService
+	// RedirectDomains groups the /redirect-domains/* operations.
+	RedirectDomains *RedirectDomainsService
 	// RedirectLinks groups the /redirect-links/* operations.
 	RedirectLinks *RedirectLinksService
 	// Reports groups the /reports/* operations.
 	Reports *ReportsService
+	// Sales groups the /sales/* operations.
+	Sales *SalesService
 	// ScheduledCalls groups the /scheduled-calls/* operations.
 	ScheduledCalls *ScheduledCallsService
+	// Segments groups the /segments/* operations.
+	Segments *SegmentsService
+	// Sellers groups the /sellers/* operations.
+	Sellers *SellersService
+	// Social groups the /social/* operations.
+	Social *SocialService
 	// SocialAccounts groups the /social-accounts/* operations.
 	SocialAccounts *SocialAccountsService
-	// SocialInsights groups the /social-insights/* operations.
-	SocialInsights *SocialInsightsService
 	// SocialPosts groups the /social-posts/* operations.
 	SocialPosts *SocialPostsService
-	// Subscription groups the /subscription/* operations.
-	Subscription *SubscriptionService
+	// StageAutomations groups the /stage-automations/* operations.
+	StageAutomations *StageAutomationsService
+	// StageRules groups the /stage-rules/* operations.
+	StageRules *StageRulesService
+	// Stages groups the /stages/* operations.
+	Stages *StagesService
+	// Stripe groups the /stripe/* operations.
+	Stripe *StripeService
+	// Subscriptions groups the /subscriptions/* operations.
+	Subscriptions *SubscriptionsService
+	// Suggestions groups the /suggestions/* operations.
+	Suggestions *SuggestionsService
 	// Tags groups the /tags/* operations.
 	Tags *TagsService
+	// Tasks groups the /tasks/* operations.
+	Tasks *TasksService
+	// Teams groups the /teams/* operations.
+	Teams *TeamsService
 	// Temperature groups the /temperature/* operations.
 	Temperature *TemperatureService
 	// Transactions groups the /transactions/* operations.
@@ -163,12 +199,12 @@ type Client struct {
 	Vturb *VturbService
 	// Wallet groups the /wallet/* operations.
 	Wallet *WalletService
-	// Webchat groups the /webchat/* operations.
-	Webchat *WebchatService
+	// WebchatChannels groups the /webchat-channels/* operations.
+	WebchatChannels *WebchatChannelsService
 	// Webinars groups the /webinars/* operations.
 	Webinars *WebinarsService
-	// Whoami groups the /whoami/* operations.
-	Whoami *WhoamiService
+	// Whop groups the /whop/* operations.
+	Whop *WhopService
 	// WorkspaceMembers groups the /workspace-members/* operations.
 	WorkspaceMembers *WorkspaceMembersService
 
@@ -177,62 +213,65 @@ type Client struct {
 
 func newClient(cfg settings) *Client {
 	c := &Client{cfg: cfg}
-	c.AccountSnapshot = &AccountSnapshotService{client: c}
+	c.Account = &AccountService{client: c}
 	c.Activities = &ActivitiesService{client: c}
-	c.AIAgentsConfig = &AIAgentsConfigService{client: c}
-	c.AIAgentsObservability = &AIAgentsObservabilityService{client: c}
+	c.AIAgents = &AIAgentsService{client: c}
+	c.AISdr = &AISdrService{client: c}
 	c.Analytics = &AnalyticsService{client: c}
 	c.AnalyticsDashboards = &AnalyticsDashboardsService{client: c}
+	c.AttendantTypes = &AttendantTypesService{client: c}
 	c.Attendants = &AttendantsService{client: c}
-	c.Brands = &BrandsService{client: c}
+	c.Brand = &BrandService{client: c}
 	c.Broadcasts = &BroadcastsService{client: c}
 	c.Buyers = &BuyersService{client: c}
+	c.Cards = &CardsService{client: c}
 	c.ChannelInstances = &ChannelInstancesService{client: c}
-	c.Checkout = &CheckoutService{client: c}
 	c.Checkouts = &CheckoutsService{client: c}
-	c.Classroom = &ClassroomService{client: c}
+	c.Classrooms = &ClassroomsService{client: c}
 	c.Communities = &CommunitiesService{client: c}
 	c.Content = &ContentService{client: c}
 	c.CustomFields = &CustomFieldsService{client: c}
+	c.CustomObjectLinks = &CustomObjectLinksService{client: c}
 	c.CustomObjectRecords = &CustomObjectRecordsService{client: c}
+	c.CustomObjectRelations = &CustomObjectRelationsService{client: c}
+	c.CustomObjectViews = &CustomObjectViewsService{client: c}
 	c.CustomObjects = &CustomObjectsService{client: c}
 	c.Dashboard = &DashboardService{client: c}
-	c.Deliverables = &DeliverablesService{client: c}
 	c.Docs = &DocsService{client: c}
 	c.Drive = &DriveService{client: c}
-	c.DriveCollaboration = &DriveCollaborationService{client: c}
 	c.DriveFiles = &DriveFilesService{client: c}
+	c.DriveFolders = &DriveFoldersService{client: c}
 	c.DriveSpaces = &DriveSpacesService{client: c}
 	c.DriveTrash = &DriveTrashService{client: c}
 	c.EmailMailboxes = &EmailMailboxesService{client: c}
 	c.EmailSenderSignatures = &EmailSenderSignaturesService{client: c}
 	c.EmailTemplates = &EmailTemplatesService{client: c}
-	c.ExternalCheckouts = &ExternalCheckoutsService{client: c}
-	c.FlowExecutions = &FlowExecutionsService{client: c}
-	c.FlowLinks = &FlowLinksService{client: c}
-	c.FlowRuns = &FlowRunsService{client: c}
+	c.ExternalCheckoutAccounts = &ExternalCheckoutAccountsService{client: c}
+	c.ExternalProducts = &ExternalProductsService{client: c}
 	c.Flows = &FlowsService{client: c}
 	c.Forms = &FormsService{client: c}
-	c.Funnels4 = &Funnels4Service{client: c}
+	c.Funnels = &FunnelsService{client: c}
 	c.GupshupTemplates = &GupshupTemplatesService{client: c}
+	c.Helpdesk = &HelpdeskService{client: c}
+	c.Hotmart = &HotmartService{client: c}
 	c.Insights = &InsightsService{client: c}
+	c.InstagramPosts = &InstagramPostsService{client: c}
 	c.LeadActivities = &LeadActivitiesService{client: c}
-	c.LeadBulkActions = &LeadBulkActionsService{client: c}
 	c.LeadIndicators = &LeadIndicatorsService{client: c}
 	c.LeadScore = &LeadScoreService{client: c}
 	c.Leads = &LeadsService{client: c}
-	c.Lesson = &LessonService{client: c}
-	c.ListsSegments = &ListsSegmentsService{client: c}
-	c.MaxSuggestions = &MaxSuggestionsService{client: c}
+	c.Lessons = &LessonsService{client: c}
+	c.Lists = &ListsService{client: c}
+	c.ManagedFlows = &ManagedFlowsService{client: c}
 	c.MemberUsers = &MemberUsersService{client: c}
-	c.MessagingPerformance = &MessagingPerformanceService{client: c}
-	c.Module = &ModuleService{client: c}
+	c.Messages = &MessagesService{client: c}
+	c.Modules = &ModulesService{client: c}
 	c.Offers = &OffersService{client: c}
 	c.Onboarding = &OnboardingService{client: c}
-	c.OpportunityAutomations = &OpportunityAutomationsService{client: c}
-	c.OpportunityBulkActions = &OpportunityBulkActionsService{client: c}
-	c.OpportunityTasks = &OpportunityTasksService{client: c}
+	c.Opportunities = &OpportunitiesService{client: c}
 	c.Packs = &PacksService{client: c}
+	c.Pagarme = &PagarmeService{client: c}
+	c.PageDesigns = &PageDesignsService{client: c}
 	c.Pages = &PagesService{client: c}
 	c.Pipelines = &PipelinesService{client: c}
 	c.Plans = &PlansService{client: c}
@@ -241,24 +280,85 @@ func newClient(cfg settings) *Client {
 	c.Portals = &PortalsService{client: c}
 	c.Products = &ProductsService{client: c}
 	c.Projects = &ProjectsService{client: c}
+	c.ProposalTemplates = &ProposalTemplatesService{client: c}
 	c.Proposals = &ProposalsService{client: c}
 	c.Recovery = &RecoveryService{client: c}
+	c.RedirectDomains = &RedirectDomainsService{client: c}
 	c.RedirectLinks = &RedirectLinksService{client: c}
 	c.Reports = &ReportsService{client: c}
+	c.Sales = &SalesService{client: c}
 	c.ScheduledCalls = &ScheduledCallsService{client: c}
+	c.Segments = &SegmentsService{client: c}
+	c.Sellers = &SellersService{client: c}
+	c.Social = &SocialService{client: c}
 	c.SocialAccounts = &SocialAccountsService{client: c}
-	c.SocialInsights = &SocialInsightsService{client: c}
 	c.SocialPosts = &SocialPostsService{client: c}
-	c.Subscription = &SubscriptionService{client: c}
+	c.StageAutomations = &StageAutomationsService{client: c}
+	c.StageRules = &StageRulesService{client: c}
+	c.Stages = &StagesService{client: c}
+	c.Stripe = &StripeService{client: c}
+	c.Subscriptions = &SubscriptionsService{client: c}
+	c.Suggestions = &SuggestionsService{client: c}
 	c.Tags = &TagsService{client: c}
+	c.Tasks = &TasksService{client: c}
+	c.Teams = &TeamsService{client: c}
 	c.Temperature = &TemperatureService{client: c}
 	c.Transactions = &TransactionsService{client: c}
 	c.Visitors = &VisitorsService{client: c}
 	c.Vturb = &VturbService{client: c}
 	c.Wallet = &WalletService{client: c}
-	c.Webchat = &WebchatService{client: c}
+	c.WebchatChannels = &WebchatChannelsService{client: c}
 	c.Webinars = &WebinarsService{client: c}
-	c.Whoami = &WhoamiService{client: c}
+	c.Whop = &WhopService{client: c}
 	c.WorkspaceMembers = &WorkspaceMembersService{client: c}
 	return c
+}
+
+// Get current Clickmax identity.
+//
+// Returns a compact snapshot of the authenticated Clickmax user and the current workspace context for
+// this MCP session, plus `sender` — the identity to use whenever THIS USER is the sender of
+// something a lead/customer sees (email logo and footer address, page/proposal branding):
+// `sender.logoUrl` (workspace brand logo, else profile photo), `sender.name` (business name, else the
+// person's name) and `sender.addressLine` (business name + registered address). Use these instead of
+// any Clickmax logo/address; a null field means the account has not set it — say so instead of
+// inventing one.
+//
+// Calls GET /whoami.
+func (c *Client) Whoami(ctx context.Context, opts ...Option) (*WhoamiOutput, error) {
+	var out WhoamiOutput
+	if err := c.do(ctx, "GET", "/whoami", nil, nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// WhoamiOutput is the response of [Client.Whoami].
+type WhoamiOutput struct {
+	User      WhoamiOutputUser      `json:"user"`
+	Workspace WhoamiOutputWorkspace `json:"workspace"`
+	Sender    WhoamiOutputSender    `json:"sender"`
+}
+
+// WhoamiOutputSender is the type of [WhoamiOutput.Sender].
+type WhoamiOutputSender struct {
+	Name        *string `json:"name,omitzero"`
+	LogoURL     *string `json:"logoUrl,omitzero"`
+	AddressLine *string `json:"addressLine,omitzero"`
+}
+
+// WhoamiOutputUser is the type of [WhoamiOutput.User].
+type WhoamiOutputUser struct {
+	CreatedAt *string `json:"createdAt,omitzero"`
+	Email     *string `json:"email,omitzero"`
+	FirstName *string `json:"firstName,omitzero"`
+	ID        string  `json:"id"`
+	LastName  *string `json:"lastName,omitzero"`
+	LastSeen  *string `json:"lastSeen,omitzero"`
+}
+
+// WhoamiOutputWorkspace is the type of [WhoamiOutput.Workspace].
+type WhoamiOutputWorkspace struct {
+	WorkspaceID   string `json:"workspaceId"`
+	WorkspaceRole string `json:"workspaceRole"`
 }

@@ -13,6 +13,80 @@ type LeadsService struct {
 	client *Client
 }
 
+// List recent bulk jobs, imports and exports.
+//
+// The "Ações em massa" history of the workspace, newest first: contact bulk actions, contact CSV
+// IMPORTS and exports, and the CSV exports of opportunities, activities, visitors, message sends,
+// automation executions and form/quiz submissions, plus custom-object record bulk actions. Use it to
+// answer "did my import/export finish?", "how many contacts did the import create?" or to find the
+// file of a finished export. Input: `limit` (1-100, default 20 most recent) or `jobIds` (1-50 exact
+// job ids, e.g. a `jobId` an async action returned — then `limit` is ignored). Each row: `jobName`
+// (e.g. `crm.leads.import-csv`, `crm.leads.export-csv`, `crm.leads.bulk-action`), `status` (`pending` |
+// `active` | `completed` | `failed`), `progress` 0-100, `metadata` (what was requested), `result`
+// (`affected` = rows touched; a contact import adds `result.meta.details` `{ created, updated,
+// duplicated }`; an export puts the file in `result.meta.output` with its `url`), `error` and the
+// `createdAt`/`startedAt`/`completedAt` times. Exports of message sends and of contact activities are
+// restricted per connected account: for a user with restricted channel access they are listed only
+// when that user requested them. Read-only. This tool cannot start an import (that needs a file upload
+// in the app) — it only reports on jobs.
+//
+// Calls POST /leads/bulk-jobs-history.
+func (s *LeadsService) BulkJobsHistory(ctx context.Context, body LeadsBulkJobsHistoryInput, opts ...Option) (*LeadsBulkJobsHistoryOutput, error) {
+	var out LeadsBulkJobsHistoryOutput
+	if err := s.client.do(ctx, "POST", "/leads/bulk-jobs-history", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Get the status of a bulk contact job.
+//
+// Polls the background job returned as `jobId` by a contact bulk action that answered `mode: "async"`
+// (today `leads_bulk_member_access`), reporting `state`, `progress` (0-100), `affected` and
+// `failedReason`. A `jobId` from another workspace, or one that already expired from the queue,
+// returns not-found.
+//
+// Calls GET /leads/bulk-jobs-status.
+func (s *LeadsService) BulkJobsStatus(ctx context.Context, params LeadsBulkJobsStatusParams, opts ...Option) (*LeadsBulkJobsStatusOutput, error) {
+	var out LeadsBulkJobsStatusOutput
+	if err := s.client.do(ctx, "GET", "/leads/bulk-jobs-status", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Give many contacts access to the members area.
+//
+// Enrolls a selection of CONTACTS in the members area in one call: in one or more classrooms
+// (`classroomIds`, max 50 — the area of each classroom comes along and the course access of the
+// classroom is unlocked) and/or in a community with a role (`communityId` + `communityRole`: `member`,
+// `moderator`, `mentor`, `instructor`, or `owner` = the "Administrador" role). At least one
+// destination is required and `communityRole` is mandatory with `communityId`, otherwise 400;
+// classroom ids come from `classrooms_list`, community ids from `communities_list`. Contacts:
+// `leadIds` (non-empty) OR `allMatching: true` with a `listId` (a manual list, or the synced list of a
+// segment) or `filters` (the segment filter tree of `segments_preview_count`, ids may be short
+// labels); one of the two is required. Per contact: the e-mail is the member login, so a contact
+// WITHOUT e-mail is skipped and counted in `skippedWithoutEmail`; a new member is created (or a
+// disabled one reactivated); access time per course follows the classroom setting (a course with none
+// is lifetime), and courses locked for sale inside the classroom are NOT unlocked — they still
+// depend on the purchase. In the community, a new member gets the chosen role, an existing member is
+// moved to it EXCEPT administrators, who are never demoted, and blocked or muted members stay that
+// way. It never sends the access e-mail — use `member_users_bulk_send_access_link` for that — and
+// it never revokes access (removing is `member_users_remove_from_classroom`, per member). Running it
+// again for the same contacts and destinations duplicates nothing and does not restart access windows.
+// Answers `{ mode: "sync", affected, skippedWithoutEmail }` up to 200 contacts (`affected` counts
+// contacts left with the requested access, including those who already had it), or `{ mode: "async",
+// jobId }` above that — nothing has been granted until `leads_bulk_jobs_status` reports it finished.
+//
+// Calls POST /leads/bulk-member-access.
+func (s *LeadsService) BulkMemberAccess(ctx context.Context, body LeadsBulkMemberAccessInput, opts ...Option) (*LeadsBulkMemberAccessOutput, error) {
+	var out LeadsBulkMemberAccessOutput
+	if err := s.client.do(ctx, "POST", "/leads/bulk-member-access", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Check whether a contact already exists.
 //
 // Before creating a contact, finds who already has the same e-mail, phone or Instagram in this
@@ -290,6 +364,273 @@ func (s *LeadsService) Xray(ctx context.Context, params LeadsXrayParams, opts ..
 	}
 	return &out, nil
 }
+
+// LeadsBulkJobsHistoryInput is the request body of [LeadsService.BulkJobsHistory].
+type LeadsBulkJobsHistoryInput struct {
+	Limit  *int64   `json:"limit,omitzero"`
+	JobIDs []string `json:"jobIds,omitzero"`
+}
+
+// LeadsBulkJobsHistoryOutput is the response of [LeadsService.BulkJobsHistory].
+type LeadsBulkJobsHistoryOutput struct {
+	Data []LeadsBulkJobsHistoryOutputDataItem `json:"data"`
+}
+
+// LeadsBulkJobsHistoryOutputDataItem is an element of [LeadsBulkJobsHistoryOutput.Data].
+type LeadsBulkJobsHistoryOutputDataItem struct {
+	ID          string                                    `json:"id"`
+	JobID       string                                    `json:"jobId"`
+	JobName     string                                    `json:"jobName"`
+	OwnerID     string                                    `json:"ownerId"`
+	Status      LeadsBulkJobsHistoryOutputDataItemStatus  `json:"status"`
+	Progress    float64                                   `json:"progress"`
+	Metadata    map[string]any                            `json:"metadata,omitzero"`
+	Result      *LeadsBulkJobsHistoryOutputDataItemResult `json:"result,omitzero"`
+	Error       *string                                   `json:"error,omitzero"`
+	CreatedAt   time.Time                                 `json:"createdAt"`
+	StartedAt   *time.Time                                `json:"startedAt,omitzero"`
+	UpdatedAt   time.Time                                 `json:"updatedAt"`
+	CompletedAt *time.Time                                `json:"completedAt,omitzero"`
+}
+
+// LeadsBulkJobsHistoryOutputDataItemResult is the type of [LeadsBulkJobsHistoryOutputDataItem.Result].
+type LeadsBulkJobsHistoryOutputDataItemResult struct {
+	Affected *int64         `json:"affected,omitzero"`
+	Meta     map[string]any `json:"meta,omitzero"`
+}
+
+// LeadsBulkJobsHistoryOutputDataItemStatus is the type of [LeadsBulkJobsHistoryOutputDataItem.Status].
+type LeadsBulkJobsHistoryOutputDataItemStatus string
+
+// Values of [LeadsBulkJobsHistoryOutputDataItemStatus].
+const (
+	LeadsBulkJobsHistoryOutputDataItemStatusPending   LeadsBulkJobsHistoryOutputDataItemStatus = "pending"
+	LeadsBulkJobsHistoryOutputDataItemStatusActive    LeadsBulkJobsHistoryOutputDataItemStatus = "active"
+	LeadsBulkJobsHistoryOutputDataItemStatusCompleted LeadsBulkJobsHistoryOutputDataItemStatus = "completed"
+	LeadsBulkJobsHistoryOutputDataItemStatusFailed    LeadsBulkJobsHistoryOutputDataItemStatus = "failed"
+)
+
+// LeadsBulkJobsStatusOutput is the response of [LeadsService.BulkJobsStatus].
+type LeadsBulkJobsStatusOutput struct {
+	JobID        string                         `json:"jobId"`
+	State        LeadsBulkJobsStatusOutputState `json:"state"`
+	Progress     float64                        `json:"progress"`
+	Affected     *int64                         `json:"affected,omitzero"`
+	FailedReason *string                        `json:"failedReason,omitzero"`
+	Meta         map[string]any                 `json:"meta,omitzero"`
+}
+
+// LeadsBulkJobsStatusOutputState is the type of [LeadsBulkJobsStatusOutput.State].
+type LeadsBulkJobsStatusOutputState string
+
+// Values of [LeadsBulkJobsStatusOutputState].
+const (
+	LeadsBulkJobsStatusOutputStateWaiting         LeadsBulkJobsStatusOutputState = "waiting"
+	LeadsBulkJobsStatusOutputStateWaitingChildren LeadsBulkJobsStatusOutputState = "waiting-children"
+	LeadsBulkJobsStatusOutputStateActive          LeadsBulkJobsStatusOutputState = "active"
+	LeadsBulkJobsStatusOutputStateCompleted       LeadsBulkJobsStatusOutputState = "completed"
+	LeadsBulkJobsStatusOutputStateFailed          LeadsBulkJobsStatusOutputState = "failed"
+	LeadsBulkJobsStatusOutputStateDelayed         LeadsBulkJobsStatusOutputState = "delayed"
+	LeadsBulkJobsStatusOutputStatePrioritized     LeadsBulkJobsStatusOutputState = "prioritized"
+	LeadsBulkJobsStatusOutputStateUnknown         LeadsBulkJobsStatusOutputState = "unknown"
+)
+
+// LeadsBulkJobsStatusParams holds the query parameters of [LeadsService.BulkJobsStatus].
+type LeadsBulkJobsStatusParams struct {
+	JobID string
+}
+
+func (p LeadsBulkJobsStatusParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "jobId", &p.JobID)
+	return v
+}
+
+// LeadsBulkMemberAccessInput is the request body of [LeadsService.BulkMemberAccess].
+type LeadsBulkMemberAccessInput struct {
+	LeadIDs         []string                                 `json:"leadIds,omitzero"`
+	AllMatching     *bool                                    `json:"allMatching,omitzero"`
+	Filters         []LeadsBulkMemberAccessInputFiltersItem  `json:"filters,omitzero"`
+	ListID          *string                                  `json:"listId,omitzero"`
+	ClassroomIDs    []string                                 `json:"classroomIds,omitzero"`
+	CommunityID     *string                                  `json:"communityId,omitzero"`
+	CommunityRole   *LeadsBulkMemberAccessInputCommunityRole `json:"communityRole,omitzero"`
+	SendAccessEmail *bool                                    `json:"sendAccessEmail,omitzero"`
+}
+
+// LeadsBulkMemberAccessInputCommunityRole is the type of [LeadsBulkMemberAccessInput.CommunityRole].
+type LeadsBulkMemberAccessInputCommunityRole string
+
+// Values of [LeadsBulkMemberAccessInputCommunityRole].
+const (
+	LeadsBulkMemberAccessInputCommunityRoleOwner      LeadsBulkMemberAccessInputCommunityRole = "owner"
+	LeadsBulkMemberAccessInputCommunityRoleInstructor LeadsBulkMemberAccessInputCommunityRole = "instructor"
+	LeadsBulkMemberAccessInputCommunityRoleMentor     LeadsBulkMemberAccessInputCommunityRole = "mentor"
+	LeadsBulkMemberAccessInputCommunityRoleModerator  LeadsBulkMemberAccessInputCommunityRole = "moderator"
+	LeadsBulkMemberAccessInputCommunityRoleMember     LeadsBulkMemberAccessInputCommunityRole = "member"
+)
+
+// LeadsBulkMemberAccessInputFiltersItem is an element of [LeadsBulkMemberAccessInput.Filters].
+type LeadsBulkMemberAccessInputFiltersItem struct {
+	ID            string                                        `json:"id"`
+	Order         int64                                         `json:"order"`
+	Operator      LeadsBulkMemberAccessInputFiltersItemOperator `json:"operator"`
+	Field         LeadsBulkMemberAccessInputFiltersItemField    `json:"field"`
+	Negation      bool                                          `json:"negation"`
+	ValueBool     Nullable[bool]                                `json:"valueBool,omitzero"`
+	ValueDate     Nullable[time.Time]                           `json:"valueDate,omitzero"`
+	ValueNumber   Nullable[float64]                             `json:"valueNumber,omitzero"`
+	ValueString   Nullable[string]                              `json:"valueString,omitzero"`
+	ValueUUID     Nullable[string]                              `json:"valueUuid,omitzero"`
+	CustomFieldID Nullable[string]                              `json:"customFieldId,omitzero"`
+	FormID        Nullable[string]                              `json:"formId,omitzero"`
+	QuestionKey   Nullable[string]                              `json:"questionKey,omitzero"`
+	ParentID      Nullable[string]                              `json:"parentId,omitzero"`
+}
+
+// LeadsBulkMemberAccessInputFiltersItemField is the type of
+// [LeadsBulkMemberAccessInputFiltersItem.Field].
+type LeadsBulkMemberAccessInputFiltersItemField string
+
+// Values of [LeadsBulkMemberAccessInputFiltersItemField].
+const (
+	LeadsBulkMemberAccessInputFiltersItemFieldChildren                      LeadsBulkMemberAccessInputFiltersItemField = "children"
+	LeadsBulkMemberAccessInputFiltersItemFieldAddress                       LeadsBulkMemberAccessInputFiltersItemField = "address"
+	LeadsBulkMemberAccessInputFiltersItemFieldBirthday                      LeadsBulkMemberAccessInputFiltersItemField = "birthday"
+	LeadsBulkMemberAccessInputFiltersItemFieldCity                          LeadsBulkMemberAccessInputFiltersItemField = "city"
+	LeadsBulkMemberAccessInputFiltersItemFieldClient                        LeadsBulkMemberAccessInputFiltersItemField = "client"
+	LeadsBulkMemberAccessInputFiltersItemFieldCreatedAt                     LeadsBulkMemberAccessInputFiltersItemField = "createdAt"
+	LeadsBulkMemberAccessInputFiltersItemFieldDocument                      LeadsBulkMemberAccessInputFiltersItemField = "document"
+	LeadsBulkMemberAccessInputFiltersItemFieldEmail                         LeadsBulkMemberAccessInputFiltersItemField = "email"
+	LeadsBulkMemberAccessInputFiltersItemFieldEmailStatus                   LeadsBulkMemberAccessInputFiltersItemField = "emailStatus"
+	LeadsBulkMemberAccessInputFiltersItemFieldEmailValidatedAt              LeadsBulkMemberAccessInputFiltersItemField = "emailValidatedAt"
+	LeadsBulkMemberAccessInputFiltersItemFieldGenderIdentity                LeadsBulkMemberAccessInputFiltersItemField = "genderIdentity"
+	LeadsBulkMemberAccessInputFiltersItemFieldLgpdApproved                  LeadsBulkMemberAccessInputFiltersItemField = "lgpdApproved"
+	LeadsBulkMemberAccessInputFiltersItemFieldName                          LeadsBulkMemberAccessInputFiltersItemField = "name"
+	LeadsBulkMemberAccessInputFiltersItemFieldOrigin                        LeadsBulkMemberAccessInputFiltersItemField = "origin"
+	LeadsBulkMemberAccessInputFiltersItemFieldOriginOrSubOrigin             LeadsBulkMemberAccessInputFiltersItemField = "originOrSubOrigin"
+	LeadsBulkMemberAccessInputFiltersItemFieldProfession                    LeadsBulkMemberAccessInputFiltersItemField = "profession"
+	LeadsBulkMemberAccessInputFiltersItemFieldScore                         LeadsBulkMemberAccessInputFiltersItemField = "score"
+	LeadsBulkMemberAccessInputFiltersItemFieldState                         LeadsBulkMemberAccessInputFiltersItemField = "state"
+	LeadsBulkMemberAccessInputFiltersItemFieldStatus                        LeadsBulkMemberAccessInputFiltersItemField = "status"
+	LeadsBulkMemberAccessInputFiltersItemFieldSubOrigin                     LeadsBulkMemberAccessInputFiltersItemField = "subOrigin"
+	LeadsBulkMemberAccessInputFiltersItemFieldTagID                         LeadsBulkMemberAccessInputFiltersItemField = "tagId"
+	LeadsBulkMemberAccessInputFiltersItemFieldTelephone                     LeadsBulkMemberAccessInputFiltersItemField = "telephone"
+	LeadsBulkMemberAccessInputFiltersItemFieldTemperatureStatus             LeadsBulkMemberAccessInputFiltersItemField = "temperatureStatus"
+	LeadsBulkMemberAccessInputFiltersItemFieldTemperatureScore              LeadsBulkMemberAccessInputFiltersItemField = "temperatureScore"
+	LeadsBulkMemberAccessInputFiltersItemFieldLeadScore                     LeadsBulkMemberAccessInputFiltersItemField = "leadScore"
+	LeadsBulkMemberAccessInputFiltersItemFieldSuspectedFraud                LeadsBulkMemberAccessInputFiltersItemField = "suspectedFraud"
+	LeadsBulkMemberAccessInputFiltersItemFieldFunnelID                      LeadsBulkMemberAccessInputFiltersItemField = "funnelId"
+	LeadsBulkMemberAccessInputFiltersItemFieldListID                        LeadsBulkMemberAccessInputFiltersItemField = "listId"
+	LeadsBulkMemberAccessInputFiltersItemFieldMessagePreferencesAuthorized  LeadsBulkMemberAccessInputFiltersItemField = "messagePreferencesAuthorized"
+	LeadsBulkMemberAccessInputFiltersItemFieldMessagePreferencesCanceled    LeadsBulkMemberAccessInputFiltersItemField = "messagePreferencesCanceled"
+	LeadsBulkMemberAccessInputFiltersItemFieldPageID                        LeadsBulkMemberAccessInputFiltersItemField = "pageId"
+	LeadsBulkMemberAccessInputFiltersItemFieldProjectID                     LeadsBulkMemberAccessInputFiltersItemField = "projectId"
+	LeadsBulkMemberAccessInputFiltersItemFieldOfferID                       LeadsBulkMemberAccessInputFiltersItemField = "offerId"
+	LeadsBulkMemberAccessInputFiltersItemFieldProductID                     LeadsBulkMemberAccessInputFiltersItemField = "productId"
+	LeadsBulkMemberAccessInputFiltersItemFieldProductName                   LeadsBulkMemberAccessInputFiltersItemField = "productName"
+	LeadsBulkMemberAccessInputFiltersItemFieldSearchTransactionCode         LeadsBulkMemberAccessInputFiltersItemField = "searchTransactionCode"
+	LeadsBulkMemberAccessInputFiltersItemFieldUtmCampaign                   LeadsBulkMemberAccessInputFiltersItemField = "utmCampaign"
+	LeadsBulkMemberAccessInputFiltersItemFieldUtmContent                    LeadsBulkMemberAccessInputFiltersItemField = "utmContent"
+	LeadsBulkMemberAccessInputFiltersItemFieldUtmMedium                     LeadsBulkMemberAccessInputFiltersItemField = "utmMedium"
+	LeadsBulkMemberAccessInputFiltersItemFieldUtmSource                     LeadsBulkMemberAccessInputFiltersItemField = "utmSource"
+	LeadsBulkMemberAccessInputFiltersItemFieldUtmTerm                       LeadsBulkMemberAccessInputFiltersItemField = "utmTerm"
+	LeadsBulkMemberAccessInputFiltersItemFieldSrc                           LeadsBulkMemberAccessInputFiltersItemField = "src"
+	LeadsBulkMemberAccessInputFiltersItemFieldSck                           LeadsBulkMemberAccessInputFiltersItemField = "sck"
+	LeadsBulkMemberAccessInputFiltersItemFieldAverageTicket                 LeadsBulkMemberAccessInputFiltersItemField = "averageTicket"
+	LeadsBulkMemberAccessInputFiltersItemFieldLastPurchaseDate              LeadsBulkMemberAccessInputFiltersItemField = "lastPurchaseDate"
+	LeadsBulkMemberAccessInputFiltersItemFieldLastPurchaseValue             LeadsBulkMemberAccessInputFiltersItemField = "lastPurchaseValue"
+	LeadsBulkMemberAccessInputFiltersItemFieldLifeTimeValue                 LeadsBulkMemberAccessInputFiltersItemField = "lifeTimeValue"
+	LeadsBulkMemberAccessInputFiltersItemFieldNumberOfPurchases             LeadsBulkMemberAccessInputFiltersItemField = "numberOfPurchases"
+	LeadsBulkMemberAccessInputFiltersItemFieldOfferCurrency                 LeadsBulkMemberAccessInputFiltersItemField = "offerCurrency"
+	LeadsBulkMemberAccessInputFiltersItemFieldOfferType                     LeadsBulkMemberAccessInputFiltersItemField = "offerType"
+	LeadsBulkMemberAccessInputFiltersItemFieldRecurrenceFrequency           LeadsBulkMemberAccessInputFiltersItemField = "recurrenceFrequency"
+	LeadsBulkMemberAccessInputFiltersItemFieldSubscriptionCreatedAt         LeadsBulkMemberAccessInputFiltersItemField = "subscriptionCreatedAt"
+	LeadsBulkMemberAccessInputFiltersItemFieldSubscriptionPlan              LeadsBulkMemberAccessInputFiltersItemField = "subscriptionPlan"
+	LeadsBulkMemberAccessInputFiltersItemFieldSubscriptionStatus            LeadsBulkMemberAccessInputFiltersItemField = "subscriptionStatus"
+	LeadsBulkMemberAccessInputFiltersItemFieldTransactionCancellationReason LeadsBulkMemberAccessInputFiltersItemField = "transactionCancellationReason"
+	LeadsBulkMemberAccessInputFiltersItemFieldTransactionCreatedAt          LeadsBulkMemberAccessInputFiltersItemField = "transactionCreatedAt"
+	LeadsBulkMemberAccessInputFiltersItemFieldTransactionFailReason         LeadsBulkMemberAccessInputFiltersItemField = "transactionFailReason"
+	LeadsBulkMemberAccessInputFiltersItemFieldTransactionRecurrence         LeadsBulkMemberAccessInputFiltersItemField = "transactionRecurrence"
+	LeadsBulkMemberAccessInputFiltersItemFieldTransactionStatus             LeadsBulkMemberAccessInputFiltersItemField = "transactionStatus"
+	LeadsBulkMemberAccessInputFiltersItemFieldTransactionType               LeadsBulkMemberAccessInputFiltersItemField = "transactionType"
+	LeadsBulkMemberAccessInputFiltersItemFieldExternalSaleStatus            LeadsBulkMemberAccessInputFiltersItemField = "externalSaleStatus"
+	LeadsBulkMemberAccessInputFiltersItemFieldExternalCartAbandoned         LeadsBulkMemberAccessInputFiltersItemField = "externalCartAbandoned"
+	LeadsBulkMemberAccessInputFiltersItemFieldCustomFieldText               LeadsBulkMemberAccessInputFiltersItemField = "customFieldText"
+	LeadsBulkMemberAccessInputFiltersItemFieldCustomFieldNumber             LeadsBulkMemberAccessInputFiltersItemField = "customFieldNumber"
+	LeadsBulkMemberAccessInputFiltersItemFieldCustomFieldDate               LeadsBulkMemberAccessInputFiltersItemField = "customFieldDate"
+	LeadsBulkMemberAccessInputFiltersItemFieldCustomFieldBoolean            LeadsBulkMemberAccessInputFiltersItemField = "customFieldBoolean"
+	LeadsBulkMemberAccessInputFiltersItemFieldCustomFieldSelect             LeadsBulkMemberAccessInputFiltersItemField = "customFieldSelect"
+	LeadsBulkMemberAccessInputFiltersItemFieldQuizSubmission                LeadsBulkMemberAccessInputFiltersItemField = "quizSubmission"
+	LeadsBulkMemberAccessInputFiltersItemFieldQuizAnswerSelect              LeadsBulkMemberAccessInputFiltersItemField = "quizAnswerSelect"
+	LeadsBulkMemberAccessInputFiltersItemFieldQuizAnswerNumber              LeadsBulkMemberAccessInputFiltersItemField = "quizAnswerNumber"
+	LeadsBulkMemberAccessInputFiltersItemFieldQuizAnswerText                LeadsBulkMemberAccessInputFiltersItemField = "quizAnswerText"
+	LeadsBulkMemberAccessInputFiltersItemFieldInstagram                     LeadsBulkMemberAccessInputFiltersItemField = "instagram"
+	LeadsBulkMemberAccessInputFiltersItemFieldLinkedin                      LeadsBulkMemberAccessInputFiltersItemField = "linkedin"
+	LeadsBulkMemberAccessInputFiltersItemFieldTwitterX                      LeadsBulkMemberAccessInputFiltersItemField = "twitterX"
+	LeadsBulkMemberAccessInputFiltersItemFieldTiktok                        LeadsBulkMemberAccessInputFiltersItemField = "tiktok"
+	LeadsBulkMemberAccessInputFiltersItemFieldYoutube                       LeadsBulkMemberAccessInputFiltersItemField = "youtube"
+	LeadsBulkMemberAccessInputFiltersItemFieldTelegramUsername              LeadsBulkMemberAccessInputFiltersItemField = "telegramUsername"
+	LeadsBulkMemberAccessInputFiltersItemFieldFacebook                      LeadsBulkMemberAccessInputFiltersItemField = "facebook"
+	LeadsBulkMemberAccessInputFiltersItemFieldThreadsUsername               LeadsBulkMemberAccessInputFiltersItemField = "threadsUsername"
+	LeadsBulkMemberAccessInputFiltersItemFieldBluesky                       LeadsBulkMemberAccessInputFiltersItemField = "bluesky"
+	LeadsBulkMemberAccessInputFiltersItemFieldReddit                        LeadsBulkMemberAccessInputFiltersItemField = "reddit"
+	LeadsBulkMemberAccessInputFiltersItemFieldFormSubmission                LeadsBulkMemberAccessInputFiltersItemField = "formSubmission"
+	LeadsBulkMemberAccessInputFiltersItemFieldCaptureLinkID                 LeadsBulkMemberAccessInputFiltersItemField = "captureLinkId"
+	LeadsBulkMemberAccessInputFiltersItemFieldActivityPageID                LeadsBulkMemberAccessInputFiltersItemField = "activityPageId"
+	LeadsBulkMemberAccessInputFiltersItemFieldActivityFunnelID              LeadsBulkMemberAccessInputFiltersItemField = "activityFunnelId"
+	LeadsBulkMemberAccessInputFiltersItemFieldOpportunity                   LeadsBulkMemberAccessInputFiltersItemField = "opportunity"
+	LeadsBulkMemberAccessInputFiltersItemFieldCustomObject                  LeadsBulkMemberAccessInputFiltersItemField = "customObject"
+	LeadsBulkMemberAccessInputFiltersItemFieldWebinar                       LeadsBulkMemberAccessInputFiltersItemField = "webinar"
+	LeadsBulkMemberAccessInputFiltersItemFieldConversationIntent            LeadsBulkMemberAccessInputFiltersItemField = "conversationIntent"
+	LeadsBulkMemberAccessInputFiltersItemFieldConversationSentiment         LeadsBulkMemberAccessInputFiltersItemField = "conversationSentiment"
+	LeadsBulkMemberAccessInputFiltersItemFieldConversationUrgency           LeadsBulkMemberAccessInputFiltersItemField = "conversationUrgency"
+	LeadsBulkMemberAccessInputFiltersItemFieldEmailConsentConfirmed         LeadsBulkMemberAccessInputFiltersItemField = "emailConsentConfirmed"
+	LeadsBulkMemberAccessInputFiltersItemFieldEmailEngagement               LeadsBulkMemberAccessInputFiltersItemField = "emailEngagement"
+	LeadsBulkMemberAccessInputFiltersItemFieldSystemTag                     LeadsBulkMemberAccessInputFiltersItemField = "systemTag"
+	LeadsBulkMemberAccessInputFiltersItemFieldBroadcastAudience             LeadsBulkMemberAccessInputFiltersItemField = "broadcastAudience"
+)
+
+// LeadsBulkMemberAccessInputFiltersItemOperator is the type of
+// [LeadsBulkMemberAccessInputFiltersItem.Operator].
+type LeadsBulkMemberAccessInputFiltersItemOperator string
+
+// Values of [LeadsBulkMemberAccessInputFiltersItemOperator].
+const (
+	LeadsBulkMemberAccessInputFiltersItemOperatorChildrenAnd        LeadsBulkMemberAccessInputFiltersItemOperator = "childrenAnd"
+	LeadsBulkMemberAccessInputFiltersItemOperatorChildrenOr         LeadsBulkMemberAccessInputFiltersItemOperator = "childrenOr"
+	LeadsBulkMemberAccessInputFiltersItemOperatorEquals             LeadsBulkMemberAccessInputFiltersItemOperator = "equals"
+	LeadsBulkMemberAccessInputFiltersItemOperatorContains           LeadsBulkMemberAccessInputFiltersItemOperator = "contains"
+	LeadsBulkMemberAccessInputFiltersItemOperatorStartsWith         LeadsBulkMemberAccessInputFiltersItemOperator = "startsWith"
+	LeadsBulkMemberAccessInputFiltersItemOperatorEndsWith           LeadsBulkMemberAccessInputFiltersItemOperator = "endsWith"
+	LeadsBulkMemberAccessInputFiltersItemOperatorGreaterThan        LeadsBulkMemberAccessInputFiltersItemOperator = "greaterThan"
+	LeadsBulkMemberAccessInputFiltersItemOperatorGreaterThanOrEqual LeadsBulkMemberAccessInputFiltersItemOperator = "greaterThanOrEqual"
+	LeadsBulkMemberAccessInputFiltersItemOperatorLessThan           LeadsBulkMemberAccessInputFiltersItemOperator = "lessThan"
+	LeadsBulkMemberAccessInputFiltersItemOperatorLessThanOrEqual    LeadsBulkMemberAccessInputFiltersItemOperator = "lessThanOrEqual"
+	LeadsBulkMemberAccessInputFiltersItemOperatorIn                 LeadsBulkMemberAccessInputFiltersItemOperator = "in"
+	LeadsBulkMemberAccessInputFiltersItemOperatorIsNotEmpty         LeadsBulkMemberAccessInputFiltersItemOperator = "isNotEmpty"
+)
+
+// LeadsBulkMemberAccessOutput is the response of [LeadsService.BulkMemberAccess].
+//
+// A value has one of these property sets:
+//   - mode, affected, skippedWithoutEmail
+//   - mode, jobId
+type LeadsBulkMemberAccessOutput struct {
+	Mode                LeadsBulkMemberAccessOutputMode `json:"mode"`
+	Affected            *int64                          `json:"affected,omitzero"`
+	SkippedWithoutEmail *int64                          `json:"skippedWithoutEmail,omitzero"`
+	JobID               *string                         `json:"jobId,omitzero"`
+}
+
+// LeadsBulkMemberAccessOutputMode is the type of [LeadsBulkMemberAccessOutput.Mode].
+type LeadsBulkMemberAccessOutputMode string
+
+// Values of [LeadsBulkMemberAccessOutputMode].
+const (
+	LeadsBulkMemberAccessOutputModeSync  LeadsBulkMemberAccessOutputMode = "sync"
+	LeadsBulkMemberAccessOutputModeAsync LeadsBulkMemberAccessOutputMode = "async"
+)
 
 // LeadsCheckDuplicatesOutput is the response of [LeadsService.CheckDuplicates].
 type LeadsCheckDuplicatesOutput struct {
@@ -1816,6 +2157,7 @@ const (
 	LeadsContextOutputMessagingBroadcastsByChannelItemChannelWebchat   LeadsContextOutputMessagingBroadcastsByChannelItemChannel = "webchat"
 	LeadsContextOutputMessagingBroadcastsByChannelItemChannelInstagram LeadsContextOutputMessagingBroadcastsByChannelItemChannel = "instagram"
 	LeadsContextOutputMessagingBroadcastsByChannelItemChannelEvolution LeadsContextOutputMessagingBroadcastsByChannelItemChannel = "evolution"
+	LeadsContextOutputMessagingBroadcastsByChannelItemChannelWaha      LeadsContextOutputMessagingBroadcastsByChannelItemChannel = "waha"
 )
 
 // LeadsContextOutputMessagingCounters is the type of [LeadsContextOutputMessaging.Counters].
@@ -4706,23 +5048,35 @@ type LeadsPaymentsOutputDataProductsItemProduct struct {
 // LeadsPaymentsOutputDataProductsItemTransactionsItem is an element of
 // [LeadsPaymentsOutputDataProductsItem.Transactions].
 type LeadsPaymentsOutputDataProductsItemTransactionsItem struct {
-	Code              string    `json:"code"`
-	ShortenCode       string    `json:"shortenCode"`
-	CreatedAt         time.Time `json:"createdAt"`
-	Offer             string    `json:"offer"`
-	OfferName         string    `json:"offerName"`
-	OfferHash         string    `json:"offerHash"`
-	OfferPrice        float64   `json:"offerPrice"`
-	OwnerID           string    `json:"ownerId"`
-	IsRecurrent       bool      `json:"isRecurrent"`
-	Recurrence        *string   `json:"recurrence,omitzero"`
-	Value             float64   `json:"value"`
-	Type              string    `json:"type"`
-	Status            string    `json:"status"`
-	Commission        float64   `json:"commission"`
-	StatusLabel       string    `json:"statusLabel"`
-	PaymentMethodIcon string    `json:"paymentMethodIcon"`
+	Code              string                                                  `json:"code"`
+	ShortenCode       string                                                  `json:"shortenCode"`
+	CreatedAt         time.Time                                               `json:"createdAt"`
+	Offer             string                                                  `json:"offer"`
+	OfferName         string                                                  `json:"offerName"`
+	OfferHash         string                                                  `json:"offerHash"`
+	OfferPrice        float64                                                 `json:"offerPrice"`
+	OwnerID           string                                                  `json:"ownerId"`
+	IsRecurrent       bool                                                    `json:"isRecurrent"`
+	Recurrence        *string                                                 `json:"recurrence,omitzero"`
+	Value             float64                                                 `json:"value"`
+	Type              string                                                  `json:"type"`
+	Status            string                                                  `json:"status"`
+	Commission        float64                                                 `json:"commission"`
+	Role              LeadsPaymentsOutputDataProductsItemTransactionsItemRole `json:"role"`
+	StatusLabel       string                                                  `json:"statusLabel"`
+	PaymentMethodIcon string                                                  `json:"paymentMethodIcon"`
 }
+
+// LeadsPaymentsOutputDataProductsItemTransactionsItemRole is the type of
+// [LeadsPaymentsOutputDataProductsItemTransactionsItem.Role].
+type LeadsPaymentsOutputDataProductsItemTransactionsItemRole string
+
+// Values of [LeadsPaymentsOutputDataProductsItemTransactionsItemRole].
+const (
+	LeadsPaymentsOutputDataProductsItemTransactionsItemRoleProducer   LeadsPaymentsOutputDataProductsItemTransactionsItemRole = "producer"
+	LeadsPaymentsOutputDataProductsItemTransactionsItemRoleAffiliate  LeadsPaymentsOutputDataProductsItemTransactionsItemRole = "affiliate"
+	LeadsPaymentsOutputDataProductsItemTransactionsItemRoleCoproducer LeadsPaymentsOutputDataProductsItemTransactionsItemRole = "coproducer"
+)
 
 // LeadsPaymentsParams holds the query parameters of [LeadsService.Payments].
 type LeadsPaymentsParams struct {

@@ -13,6 +13,24 @@ type VturbService struct {
 	client *Client
 }
 
+// List Vturb A/B tests.
+//
+// Read-only. Lists the A/B tests (Vturb calls them comparison groups) of the connected account: `id`,
+// `name`, `variants` (each with `playerId`, `trafficPercentage`, `locked`), `startedAt`, `finishedAt`
+// and `running`. Use it to answer "qual variante ganhou / meu teste A/B está rodando" and to get the
+// `abTestId` + `playerId`s required by `vturb_ab_tests_stats`. `running: true` means the test is STILL
+// SPLITTING TRAFFIC — report partial numbers as a trend, never as a final winner. Optional
+// `startDate`/`endDate` filter by when the test was CREATED, not by the metric window.
+//
+// Calls GET /vturb/ab-tests-list.
+func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListParams, opts ...Option) (*VturbAbTestsListOutput, error) {
+	var out VturbAbTestsListOutput
+	if err := s.client.do(ctx, "GET", "/vturb/ab-tests-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Compare variants of a Vturb A/B test.
 //
 // Read-only. Side-by-side metrics for the variants of one A/B test — the tool that actually picks a
@@ -26,28 +44,28 @@ type VturbService struct {
 // variants entered at different times. Use `retentionCurve` to find where viewers drop off and to
 // choose the second for the progressive-reveal CTA.
 //
-// Calls POST /vturb/ab-test-stats.
-func (s *VturbService) AbTestStats(ctx context.Context, body VturbAbTestStatsInput, opts ...Option) (*VturbAbTestStatsOutput, error) {
-	var out VturbAbTestStatsOutput
-	if err := s.client.do(ctx, "POST", "/vturb/ab-test-stats", nil, body, &out, opts); err != nil {
+// Calls POST /vturb/ab-tests-stats.
+func (s *VturbService) AbTestsStats(ctx context.Context, body VturbAbTestsStatsInput, opts ...Option) (*VturbAbTestsStatsOutput, error) {
+	var out VturbAbTestsStatsOutput
+	if err := s.client.do(ctx, "POST", "/vturb/ab-tests-stats", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
-// List Vturb A/B tests.
+// List Vturb videos (players).
 //
-// Read-only. Lists the A/B tests (Vturb calls them comparison groups) of the connected account: `id`,
-// `name`, `variants` (each with `playerId`, `trafficPercentage`, `locked`), `startedAt`, `finishedAt`
-// and `running`. Use it to answer "qual variante ganhou / meu teste A/B está rodando" and to get the
-// `abTestId` + `playerId`s required by `vturb_ab_test_stats`. `running: true` means the test is STILL
-// SPLITTING TRAFFIC — report partial numbers as a trend, never as a final winner. Optional
-// `startDate`/`endDate` filter by when the test was CREATED, not by the metric window.
+// Read-only. Lists the videos (players) of the connected Vturb account with `id`, `name`, `duration`
+// (seconds), `pitchTime` (the second where the offer is made) and `posterUrl`. Use it to resolve a
+// video the user names in prose ("minha VSL principal") into the `playerId` required by
+// `vturb_players_stats` and `vturb_players_live_users` — those tools only accept ids, so this is the
+// mandatory second step after `vturb_status`. `pitchTime` vs `duration` matters when judging metrics:
+// engagement is measured up to the pitch, so a pitch late in the video mechanically lowers it.
 //
-// Calls GET /vturb/ab-tests-list.
-func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListParams, opts ...Option) (*VturbAbTestsListOutput, error) {
-	var out VturbAbTestsListOutput
-	if err := s.client.do(ctx, "GET", "/vturb/ab-tests-list", params.values(), nil, &out, opts); err != nil {
+// Calls GET /vturb/players-list.
+func (s *VturbService) PlayersList(ctx context.Context, opts ...Option) (*VturbPlayersListOutput, error) {
+	var out VturbPlayersListOutput
+	if err := s.client.do(ctx, "GET", "/vturb/players-list", nil, nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -59,12 +77,12 @@ func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListP
 // counting people who ENTERED the page in the last `minutes` window (default 60) — it does not prove
 // they are still watching, so phrase it as "entraram nos últimos N minutos", never "estão assistindo
 // agora". Use for "quantas pessoas estão na minha VSL agora" or to confirm a launch/campaign is
-// receiving traffic. For performance analysis over a period use `vturb_player_stats` instead.
+// receiving traffic. For performance analysis over a period use `vturb_players_stats` instead.
 //
-// Calls GET /vturb/player-live-users.
-func (s *VturbService) PlayerLiveUsers(ctx context.Context, params VturbPlayerLiveUsersParams, opts ...Option) (*VturbPlayerLiveUsersOutput, error) {
-	var out VturbPlayerLiveUsersOutput
-	if err := s.client.do(ctx, "GET", "/vturb/player-live-users", params.values(), nil, &out, opts); err != nil {
+// Calls GET /vturb/players-live-users.
+func (s *VturbService) PlayersLiveUsers(ctx context.Context, params VturbPlayersLiveUsersParams, opts ...Option) (*VturbPlayersLiveUsersOutput, error) {
+	var out VturbPlayersLiveUsersOutput
+	if err := s.client.do(ctx, "GET", "/vturb/players-live-users", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -80,30 +98,12 @@ func (s *VturbService) PlayerLiveUsers(ctx context.Context, params VturbPlayerLi
 // read it together with the `pitchTime`/`duration` from `vturb_players_list`. `conversionRate` here is
 // conversions over plays as tracked BY VTURB, so it can diverge from Clickmax sales data — never
 // present the two as the same number. Data is cached ~5 min upstream, so it is not real-time; for that
-// use `vturb_player_live_users`.
+// use `vturb_players_live_users`.
 //
-// Calls GET /vturb/player-stats.
-func (s *VturbService) PlayerStats(ctx context.Context, params VturbPlayerStatsParams, opts ...Option) (*VturbPlayerStatsOutput, error) {
-	var out VturbPlayerStatsOutput
-	if err := s.client.do(ctx, "GET", "/vturb/player-stats", params.values(), nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// List Vturb videos (players).
-//
-// Read-only. Lists the videos (players) of the connected Vturb account with `id`, `name`, `duration`
-// (seconds), `pitchTime` (the second where the offer is made) and `posterUrl`. Use it to resolve a
-// video the user names in prose ("minha VSL principal") into the `playerId` required by
-// `vturb_player_stats` and `vturb_player_live_users` — those tools only accept ids, so this is the
-// mandatory second step after `vturb_status`. `pitchTime` vs `duration` matters when judging metrics:
-// engagement is measured up to the pitch, so a pitch late in the video mechanically lowers it.
-//
-// Calls GET /vturb/players-list.
-func (s *VturbService) PlayersList(ctx context.Context, opts ...Option) (*VturbPlayersListOutput, error) {
-	var out VturbPlayersListOutput
-	if err := s.client.do(ctx, "GET", "/vturb/players-list", nil, nil, &out, opts); err != nil {
+// Calls GET /vturb/players-stats.
+func (s *VturbService) PlayersStats(ctx context.Context, params VturbPlayersStatsParams, opts ...Option) (*VturbPlayersStatsOutput, error) {
+	var out VturbPlayersStatsOutput
+	if err := s.client.do(ctx, "GET", "/vturb/players-stats", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -128,73 +128,6 @@ func (s *VturbService) Status(ctx context.Context, opts ...Option) (*VturbStatus
 		return nil, err
 	}
 	return &out, nil
-}
-
-// VturbAbTestStatsInput is the request body of [VturbService.AbTestStats].
-type VturbAbTestStatsInput struct {
-	AbTestID  string   `json:"abTestId"`
-	PlayerIDs []string `json:"playerIds"`
-	StartDate *string  `json:"startDate,omitzero"`
-	EndDate   *string  `json:"endDate,omitzero"`
-	Timezone  *string  `json:"timezone,omitzero"`
-}
-
-// VturbAbTestStatsOutput is the response of [VturbService.AbTestStats].
-type VturbAbTestStatsOutput struct {
-	AbTest   VturbAbTestStatsOutputAbTest         `json:"abTest"`
-	Variants []VturbAbTestStatsOutputVariantsItem `json:"variants"`
-}
-
-// VturbAbTestStatsOutputAbTest is the type of [VturbAbTestStatsOutput.AbTest].
-type VturbAbTestStatsOutputAbTest struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	StartedAt  *string `json:"startedAt"`
-	FinishedAt *string `json:"finishedAt"`
-}
-
-// VturbAbTestStatsOutputVariantsItem is an element of [VturbAbTestStatsOutput.Variants].
-type VturbAbTestStatsOutputVariantsItem struct {
-	PlayerID           string                                                 `json:"playerId"`
-	PitchTime          int64                                                  `json:"pitchTime"`
-	VideoDuration      int64                                                  `json:"videoDuration"`
-	Views              int64                                                  `json:"views"`
-	Plays              int64                                                  `json:"plays"`
-	Finishes           int64                                                  `json:"finishes"`
-	Clicks             int64                                                  `json:"clicks"`
-	Conversions        int64                                                  `json:"conversions"`
-	PlayRate           float64                                                `json:"playRate"`
-	ConversionRate     float64                                                `json:"conversionRate"`
-	EngagementRate     float64                                                `json:"engagementRate"`
-	PitchAudience      int64                                                  `json:"pitchAudience"`
-	PitchRetentionRate float64                                                `json:"pitchRetentionRate"`
-	AverageWatchedTime float64                                                `json:"averageWatchedTime"`
-	Revenue            VturbAbTestStatsOutputVariantsItemRevenue              `json:"revenue"`
-	RevenuePerVisitor  VturbAbTestStatsOutputVariantsItemRevenuePerVisitor    `json:"revenuePerVisitor"`
-	RetentionCurve     []VturbAbTestStatsOutputVariantsItemRetentionCurveItem `json:"retentionCurve"`
-}
-
-// VturbAbTestStatsOutputVariantsItemRetentionCurveItem is an element of
-// [VturbAbTestStatsOutputVariantsItem.RetentionCurve].
-type VturbAbTestStatsOutputVariantsItemRetentionCurveItem struct {
-	Second  int64 `json:"second"`
-	Viewers int64 `json:"viewers"`
-}
-
-// VturbAbTestStatsOutputVariantsItemRevenue is the type of
-// [VturbAbTestStatsOutputVariantsItem.Revenue].
-type VturbAbTestStatsOutputVariantsItemRevenue struct {
-	Usd float64 `json:"usd"`
-	Brl float64 `json:"brl"`
-	Eur float64 `json:"eur"`
-}
-
-// VturbAbTestStatsOutputVariantsItemRevenuePerVisitor is the type of
-// [VturbAbTestStatsOutputVariantsItem.RevenuePerVisitor].
-type VturbAbTestStatsOutputVariantsItemRevenuePerVisitor struct {
-	Usd float64 `json:"usd"`
-	Brl float64 `json:"brl"`
-	Eur float64 `json:"eur"`
 }
 
 // VturbAbTestsListOutput is the response of [VturbService.AbTestsList].
@@ -237,62 +170,71 @@ func (p VturbAbTestsListParams) values() url.Values {
 	return v
 }
 
-// VturbPlayerLiveUsersOutput is the response of [VturbService.PlayerLiveUsers].
-type VturbPlayerLiveUsersOutput struct {
-	Total    int64                                    `json:"total"`
-	ByDomain []VturbPlayerLiveUsersOutputByDomainItem `json:"byDomain"`
+// VturbAbTestsStatsInput is the request body of [VturbService.AbTestsStats].
+type VturbAbTestsStatsInput struct {
+	AbTestID  string   `json:"abTestId"`
+	PlayerIDs []string `json:"playerIds"`
+	StartDate *string  `json:"startDate,omitzero"`
+	EndDate   *string  `json:"endDate,omitzero"`
+	Timezone  *string  `json:"timezone,omitzero"`
 }
 
-// VturbPlayerLiveUsersOutputByDomainItem is an element of [VturbPlayerLiveUsersOutput.ByDomain].
-type VturbPlayerLiveUsersOutputByDomainItem struct {
-	Domain    string `json:"domain"`
-	LiveUsers int64  `json:"liveUsers"`
+// VturbAbTestsStatsOutput is the response of [VturbService.AbTestsStats].
+type VturbAbTestsStatsOutput struct {
+	AbTest   VturbAbTestsStatsOutputAbTest         `json:"abTest"`
+	Variants []VturbAbTestsStatsOutputVariantsItem `json:"variants"`
 }
 
-// VturbPlayerLiveUsersParams holds the query parameters of [VturbService.PlayerLiveUsers].
-type VturbPlayerLiveUsersParams struct {
-	PlayerID string
-	Minutes  *int64
+// VturbAbTestsStatsOutputAbTest is the type of [VturbAbTestsStatsOutput.AbTest].
+type VturbAbTestsStatsOutputAbTest struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	StartedAt  *string `json:"startedAt"`
+	FinishedAt *string `json:"finishedAt"`
 }
 
-func (p VturbPlayerLiveUsersParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "playerId", &p.PlayerID)
-	addInt(v, "minutes", p.Minutes)
-	return v
+// VturbAbTestsStatsOutputVariantsItem is an element of [VturbAbTestsStatsOutput.Variants].
+type VturbAbTestsStatsOutputVariantsItem struct {
+	PlayerID           string                                                  `json:"playerId"`
+	PitchTime          int64                                                   `json:"pitchTime"`
+	VideoDuration      int64                                                   `json:"videoDuration"`
+	Views              int64                                                   `json:"views"`
+	Plays              int64                                                   `json:"plays"`
+	Finishes           int64                                                   `json:"finishes"`
+	Clicks             int64                                                   `json:"clicks"`
+	Conversions        int64                                                   `json:"conversions"`
+	PlayRate           float64                                                 `json:"playRate"`
+	ConversionRate     float64                                                 `json:"conversionRate"`
+	EngagementRate     float64                                                 `json:"engagementRate"`
+	PitchAudience      int64                                                   `json:"pitchAudience"`
+	PitchRetentionRate float64                                                 `json:"pitchRetentionRate"`
+	AverageWatchedTime float64                                                 `json:"averageWatchedTime"`
+	Revenue            VturbAbTestsStatsOutputVariantsItemRevenue              `json:"revenue"`
+	RevenuePerVisitor  VturbAbTestsStatsOutputVariantsItemRevenuePerVisitor    `json:"revenuePerVisitor"`
+	RetentionCurve     []VturbAbTestsStatsOutputVariantsItemRetentionCurveItem `json:"retentionCurve"`
 }
 
-// VturbPlayerStatsOutput is the response of [VturbService.PlayerStats].
-type VturbPlayerStatsOutput struct {
-	Plays          int64   `json:"plays"`
-	UniqueDevices  int64   `json:"uniqueDevices"`
-	Finishes       int64   `json:"finishes"`
-	Conversions    int64   `json:"conversions"`
-	ConversionRate float64 `json:"conversionRate"`
-	PlayRate       float64 `json:"playRate"`
-	EngagementRate float64 `json:"engagementRate"`
-	Clicks         int64   `json:"clicks"`
+// VturbAbTestsStatsOutputVariantsItemRetentionCurveItem is an element of
+// [VturbAbTestsStatsOutputVariantsItem.RetentionCurve].
+type VturbAbTestsStatsOutputVariantsItemRetentionCurveItem struct {
+	Second  int64 `json:"second"`
+	Viewers int64 `json:"viewers"`
 }
 
-// VturbPlayerStatsParams holds the query parameters of [VturbService.PlayerStats].
-type VturbPlayerStatsParams struct {
-	PlayerID      string
-	StartDate     string
-	EndDate       string
-	VideoDuration *int64
-	PitchTime     *int64
-	Timezone      *string
+// VturbAbTestsStatsOutputVariantsItemRevenue is the type of
+// [VturbAbTestsStatsOutputVariantsItem.Revenue].
+type VturbAbTestsStatsOutputVariantsItemRevenue struct {
+	Usd float64 `json:"usd"`
+	Brl float64 `json:"brl"`
+	Eur float64 `json:"eur"`
 }
 
-func (p VturbPlayerStatsParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "playerId", &p.PlayerID)
-	addString(v, "startDate", &p.StartDate)
-	addString(v, "endDate", &p.EndDate)
-	addInt(v, "videoDuration", p.VideoDuration)
-	addInt(v, "pitchTime", p.PitchTime)
-	addString(v, "timezone", p.Timezone)
-	return v
+// VturbAbTestsStatsOutputVariantsItemRevenuePerVisitor is the type of
+// [VturbAbTestsStatsOutputVariantsItem.RevenuePerVisitor].
+type VturbAbTestsStatsOutputVariantsItemRevenuePerVisitor struct {
+	Usd float64 `json:"usd"`
+	Brl float64 `json:"brl"`
+	Eur float64 `json:"eur"`
 }
 
 // VturbPlayersListOutput is the response of [VturbService.PlayersList].
@@ -308,6 +250,64 @@ type VturbPlayersListOutputPlayersItem struct {
 	Duration  int64   `json:"duration"`
 	CreatedAt string  `json:"createdAt"`
 	PosterURL *string `json:"posterUrl"`
+}
+
+// VturbPlayersLiveUsersOutput is the response of [VturbService.PlayersLiveUsers].
+type VturbPlayersLiveUsersOutput struct {
+	Total    int64                                     `json:"total"`
+	ByDomain []VturbPlayersLiveUsersOutputByDomainItem `json:"byDomain"`
+}
+
+// VturbPlayersLiveUsersOutputByDomainItem is an element of [VturbPlayersLiveUsersOutput.ByDomain].
+type VturbPlayersLiveUsersOutputByDomainItem struct {
+	Domain    string `json:"domain"`
+	LiveUsers int64  `json:"liveUsers"`
+}
+
+// VturbPlayersLiveUsersParams holds the query parameters of [VturbService.PlayersLiveUsers].
+type VturbPlayersLiveUsersParams struct {
+	PlayerID string
+	Minutes  *int64
+}
+
+func (p VturbPlayersLiveUsersParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "playerId", &p.PlayerID)
+	addInt(v, "minutes", p.Minutes)
+	return v
+}
+
+// VturbPlayersStatsOutput is the response of [VturbService.PlayersStats].
+type VturbPlayersStatsOutput struct {
+	Plays          int64   `json:"plays"`
+	UniqueDevices  int64   `json:"uniqueDevices"`
+	Finishes       int64   `json:"finishes"`
+	Conversions    int64   `json:"conversions"`
+	ConversionRate float64 `json:"conversionRate"`
+	PlayRate       float64 `json:"playRate"`
+	EngagementRate float64 `json:"engagementRate"`
+	Clicks         int64   `json:"clicks"`
+}
+
+// VturbPlayersStatsParams holds the query parameters of [VturbService.PlayersStats].
+type VturbPlayersStatsParams struct {
+	PlayerID      string
+	StartDate     string
+	EndDate       string
+	VideoDuration *int64
+	PitchTime     *int64
+	Timezone      *string
+}
+
+func (p VturbPlayersStatsParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "playerId", &p.PlayerID)
+	addString(v, "startDate", &p.StartDate)
+	addString(v, "endDate", &p.EndDate)
+	addInt(v, "videoDuration", p.VideoDuration)
+	addInt(v, "pitchTime", p.PitchTime)
+	addString(v, "timezone", p.Timezone)
+	return v
 }
 
 // VturbStatusOutput is the response of [VturbService.Status].

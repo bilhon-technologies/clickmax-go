@@ -17,7 +17,7 @@ type PlaybooksService struct {
 //
 // Creates a playbook (sales method) for meetings. Restricted to owner/admin/editor. It does not change
 // any pipeline or scheduled meeting: to make it the default of a pipeline follow up with
-// `playbooks_pipeline_attach`, and to use it in one meeting pass its id as `playbookId` when booking.
+// `playbooks_pipelines_attach`, and to use it in one meeting pass its id as `playbookId` when booking.
 // Before saving, you can rehearse the draft with `playbooks_simulate`. The document is saved whole:
 // `name`, `description`, `scopes` (1 to 4) and the five collections `stages` (max 20), `tones` (max 12),
 // `keywords` (max 40), `attachments` (max 30) and `guardrails` (max 20 strings of up to 300 chars) are
@@ -111,10 +111,10 @@ func (s *PlaybooksService) List(ctx context.Context, params PlaybooksListParams,
 // the source for `playbooks_simulate` (`script` + `guardrails` go into its `briefing`). 404 when the
 // playbook does not exist or does not have the `meeting` scope.
 //
-// Calls GET /playbooks/meeting-guide-get.
-func (s *PlaybooksService) MeetingGuideGet(ctx context.Context, params PlaybooksMeetingGuideGetParams, opts ...Option) (*PlaybooksMeetingGuideGetOutput, error) {
-	var out PlaybooksMeetingGuideGetOutput
-	if err := s.client.do(ctx, "GET", "/playbooks/meeting-guide-get", params.values(), nil, &out, opts); err != nil {
+// Calls GET /playbooks/meeting-guides-get.
+func (s *PlaybooksService) MeetingGuidesGet(ctx context.Context, params PlaybooksMeetingGuidesGetParams, opts ...Option) (*PlaybooksMeetingGuidesGetOutput, error) {
+	var out PlaybooksMeetingGuidesGetOutput
+	if err := s.client.do(ctx, "GET", "/playbooks/meeting-guides-get", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -148,10 +148,10 @@ func (s *PlaybooksService) MeetingGuidesList(ctx context.Context, opts ...Option
 // untouched. The playbook must have the `meeting` scope, otherwise the call fails with
 // `PLAYBOOK_SCOPE_NOT_AVAILABLE`. Restricted to owner/admin/editor. Returns `{ success }`.
 //
-// Calls POST /playbooks/pipeline-attach.
-func (s *PlaybooksService) PipelineAttach(ctx context.Context, body PlaybooksPipelineAttachInput, opts ...Option) (*PlaybooksPipelineAttachOutput, error) {
-	var out PlaybooksPipelineAttachOutput
-	if err := s.client.do(ctx, "POST", "/playbooks/pipeline-attach", nil, body, &out, opts); err != nil {
+// Calls POST /playbooks/pipelines-attach.
+func (s *PlaybooksService) PipelinesAttach(ctx context.Context, body PlaybooksPipelinesAttachInput, opts ...Option) (*PlaybooksPipelinesAttachOutput, error) {
+	var out PlaybooksPipelinesAttachOutput
+	if err := s.client.do(ctx, "POST", "/playbooks/pipelines-attach", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -165,10 +165,10 @@ func (s *PlaybooksService) PipelineAttach(ctx context.Context, body PlaybooksPip
 // another playbook, nothing is cleared and the call still returns `{ success: true }` (the requested
 // outcome is already true). Restricted to owner/admin/editor.
 //
-// Calls POST /playbooks/pipeline-detach.
-func (s *PlaybooksService) PipelineDetach(ctx context.Context, body PlaybooksPipelineDetachInput, opts ...Option) (*PlaybooksPipelineDetachOutput, error) {
-	var out PlaybooksPipelineDetachOutput
-	if err := s.client.do(ctx, "POST", "/playbooks/pipeline-detach", nil, body, &out, opts); err != nil {
+// Calls POST /playbooks/pipelines-detach.
+func (s *PlaybooksService) PipelinesDetach(ctx context.Context, body PlaybooksPipelinesDetachInput, opts ...Option) (*PlaybooksPipelinesDetachOutput, error) {
+	var out PlaybooksPipelinesDetachOutput
+	if err := s.client.do(ctx, "POST", "/playbooks/pipelines-detach", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -179,7 +179,7 @@ func (s *PlaybooksService) PipelineDetach(ctx context.Context, body PlaybooksPip
 // Lists ALL live pipelines of the workspace (not only the ones linked), ordered by name, each marked
 // from the point of view of this playbook: `linked` = the pipeline suggests THIS playbook;
 // `currentPlaybookName` = the name of ANOTHER playbook the pipeline suggests today (null when it has
-// none or already follows this one). Returns `{ items }`. Read it before `playbooks_pipeline_attach`,
+// none or already follows this one). Returns `{ items }`. Read it before `playbooks_pipelines_attach`,
 // because attaching REPLACES whatever the pipeline suggested — `currentPlaybookName` is the warning
 // to relay to the user.
 //
@@ -192,44 +192,6 @@ func (s *PlaybooksService) PipelinesList(ctx context.Context, params PlaybooksPi
 	return &out, nil
 }
 
-// Get the playbook a pipeline suggests.
-//
-// Returns what the meetings and calls of a pipeline start from: `playbook` (the FULL playbook body, or
-// null when the pipeline suggests none — a normal state, not an error) and `defaultCopilotAgentId`
-// (the AI agent that answers as copilot in those meetings, null = the platform default model). 404
-// only when the pipeline is not from this workspace or was deleted. To see the reverse view — which
-// pipelines follow one playbook — use `playbooks_pipelines_list`.
-//
-// Calls GET /playbooks/pipelines-playbook-get.
-func (s *PlaybooksService) PipelinesPlaybookGet(ctx context.Context, params PipelinesPlaybookGetParams, opts ...Option) (*PipelinesPlaybookGetOutput, error) {
-	var out PipelinesPlaybookGetOutput
-	if err := s.client.do(ctx, "GET", "/playbooks/pipelines-playbook-get", params.values(), nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// Set the playbook and copilot agent of a pipeline.
-//
-// Sets, per pipeline, the playbook suggested when a meeting is booked and/or the default AI copilot
-// agent. The two fields are independent and follow the PATCH rule: an ABSENT field is left untouched,
-// `null` clears it — never resend one you are not changing. `playbookId` must be a playbook of this
-// workspace with the `meeting` scope (otherwise 404). `defaultCopilotAgentId` must be a non-deleted AI
-// agent of this workspace (404 otherwise); only a PUBLISHED agent actually answers — a draft or
-// paused one leaves the copilot silent — and it answers on that agent own model key, so confirm the
-// choice with the user. Only future bookings are affected — meetings already booked keep their
-// playbook. Restricted to owner/admin/editor. Returns the resolved state, like
-// `pipelines_playbook_get`.
-//
-// Calls POST /playbooks/pipelines-playbook-set.
-func (s *PlaybooksService) PipelinesPlaybookSet(ctx context.Context, body PipelinesPlaybookSetInput, opts ...Option) (*PipelinesPlaybookGetOutput, error) {
-	var out PipelinesPlaybookGetOutput
-	if err := s.client.do(ctx, "POST", "/playbooks/pipelines-playbook-set", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // Rehearse a playbook in the test environment.
 //
 // Test environment: runs the REAL meeting AI copilot over a made-up conversation and returns the ONE
@@ -237,7 +199,7 @@ func (s *PlaybooksService) PipelinesPlaybookSet(ctx context.Context, body Pipeli
 // lead, but every call is a real AI model call (on the agent own model key when `agentId` is set) and
 // the answer is not deterministic — so do not loop it. Restricted to owner/admin/editor. It takes NO
 // playbook id on purpose: it tests a DRAFT, so YOU must put the method into `briefing`. To rehearse a
-// saved playbook, call `playbooks_meeting_guide_get` and pass its `script` as `briefing.script` and
+// saved playbook, call `playbooks_meeting_guides_get` and pass its `script` as `briefing.script` and
 // its `guardrails` as `briefing.guardrails`; add `briefing.goal` (what the meeting must achieve) and
 // `briefing.persona` (who is on the other side) to make the suggestion specific. `turns` (1-40) is the
 // whole conversation so far, each `{ role: "host" | "guest", name, text }` — send it whole on every
@@ -290,118 +252,6 @@ func (s *PlaybooksService) Update(ctx context.Context, body PlaybooksUpdateInput
 		return nil, err
 	}
 	return &out, nil
-}
-
-// PipelinesPlaybookGetOutput is the response of [PlaybooksService.PipelinesPlaybookGet] and
-// [PlaybooksService.PipelinesPlaybookSet].
-type PipelinesPlaybookGetOutput struct {
-	Playbook              *PipelinesPlaybookGetOutputPlaybook `json:"playbook,omitzero"`
-	DefaultCopilotAgentID *string                             `json:"defaultCopilotAgentId,omitzero"`
-}
-
-// PipelinesPlaybookGetOutputPlaybook is the type of [PipelinesPlaybookGetOutput.Playbook].
-type PipelinesPlaybookGetOutputPlaybook struct {
-	ID          string                                              `json:"id"`
-	Name        string                                              `json:"name"`
-	Description string                                              `json:"description"`
-	Scopes      []PipelinesPlaybookGetOutputPlaybookScopesItem      `json:"scopes"`
-	Stages      []PipelinesPlaybookGetOutputPlaybookStagesItem      `json:"stages"`
-	Tones       []PipelinesPlaybookGetOutputPlaybookTonesItem       `json:"tones"`
-	Keywords    []PipelinesPlaybookGetOutputPlaybookKeywordsItem    `json:"keywords"`
-	Attachments []PipelinesPlaybookGetOutputPlaybookAttachmentsItem `json:"attachments"`
-	Guardrails  []string                                            `json:"guardrails"`
-	OwnerID     string                                              `json:"ownerId"`
-	CreatedAt   time.Time                                           `json:"createdAt"`
-	UpdatedAt   time.Time                                           `json:"updatedAt"`
-}
-
-// PipelinesPlaybookGetOutputPlaybookAttachmentsItem is an element of
-// [PipelinesPlaybookGetOutputPlaybook.Attachments].
-type PipelinesPlaybookGetOutputPlaybookAttachmentsItem struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	MimeType string `json:"mimeType"`
-	Size     int64  `json:"size"`
-}
-
-// PipelinesPlaybookGetOutputPlaybookKeywordsItem is an element of
-// [PipelinesPlaybookGetOutputPlaybook.Keywords].
-type PipelinesPlaybookGetOutputPlaybookKeywordsItem struct {
-	ID    string                                             `json:"id"`
-	Terms []string                                           `json:"terms"`
-	Title string                                             `json:"title"`
-	Text  string                                             `json:"text"`
-	Tone  PipelinesPlaybookGetOutputPlaybookKeywordsItemTone `json:"tone"`
-}
-
-// PipelinesPlaybookGetOutputPlaybookKeywordsItemTone is the type of
-// [PipelinesPlaybookGetOutputPlaybookKeywordsItem.Tone].
-type PipelinesPlaybookGetOutputPlaybookKeywordsItemTone string
-
-// Values of [PipelinesPlaybookGetOutputPlaybookKeywordsItemTone].
-const (
-	PipelinesPlaybookGetOutputPlaybookKeywordsItemToneInfo    PipelinesPlaybookGetOutputPlaybookKeywordsItemTone = "info"
-	PipelinesPlaybookGetOutputPlaybookKeywordsItemToneWarning PipelinesPlaybookGetOutputPlaybookKeywordsItemTone = "warning"
-	PipelinesPlaybookGetOutputPlaybookKeywordsItemToneUrgent  PipelinesPlaybookGetOutputPlaybookKeywordsItemTone = "urgent"
-)
-
-// PipelinesPlaybookGetOutputPlaybookScopesItem is an element of
-// [PipelinesPlaybookGetOutputPlaybook.Scopes].
-type PipelinesPlaybookGetOutputPlaybookScopesItem string
-
-// Values of [PipelinesPlaybookGetOutputPlaybookScopesItem].
-const (
-	PipelinesPlaybookGetOutputPlaybookScopesItemMeeting  PipelinesPlaybookGetOutputPlaybookScopesItem = "meeting"
-	PipelinesPlaybookGetOutputPlaybookScopesItemWhatsapp PipelinesPlaybookGetOutputPlaybookScopesItem = "whatsapp"
-	PipelinesPlaybookGetOutputPlaybookScopesItemLivechat PipelinesPlaybookGetOutputPlaybookScopesItem = "livechat"
-	PipelinesPlaybookGetOutputPlaybookScopesItemFlows    PipelinesPlaybookGetOutputPlaybookScopesItem = "flows"
-)
-
-// PipelinesPlaybookGetOutputPlaybookStagesItem is an element of
-// [PipelinesPlaybookGetOutputPlaybook.Stages].
-type PipelinesPlaybookGetOutputPlaybookStagesItem struct {
-	ID        string                                                      `json:"id"`
-	Key       *string                                                     `json:"key,omitzero"`
-	Title     string                                                      `json:"title"`
-	Objective string                                                      `json:"objective"`
-	TalkTrack string                                                      `json:"talkTrack"`
-	WatchOut  string                                                      `json:"watchOut"`
-	Questions []PipelinesPlaybookGetOutputPlaybookStagesItemQuestionsItem `json:"questions"`
-}
-
-// PipelinesPlaybookGetOutputPlaybookStagesItemQuestionsItem is an element of
-// [PipelinesPlaybookGetOutputPlaybookStagesItem.Questions].
-type PipelinesPlaybookGetOutputPlaybookStagesItemQuestionsItem struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
-}
-
-// PipelinesPlaybookGetOutputPlaybookTonesItem is an element of
-// [PipelinesPlaybookGetOutputPlaybook.Tones].
-type PipelinesPlaybookGetOutputPlaybookTonesItem struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	When     string `json:"when"`
-	Delivery string `json:"delivery"`
-}
-
-// PipelinesPlaybookGetParams holds the query parameters of [PlaybooksService.PipelinesPlaybookGet].
-type PipelinesPlaybookGetParams struct {
-	ID string
-}
-
-func (p PipelinesPlaybookGetParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "id", &p.ID)
-	return v
-}
-
-// PipelinesPlaybookSetInput is the request body of [PlaybooksService.PipelinesPlaybookSet].
-type PipelinesPlaybookSetInput struct {
-	ID                    string           `json:"id"`
-	PlaybookID            Nullable[string] `json:"playbookId,omitzero"`
-	DefaultCopilotAgentID Nullable[string] `json:"defaultCopilotAgentId,omitzero"`
 }
 
 // PlaybooksCreateInput is the request body of [PlaybooksService.Create].
@@ -633,93 +483,93 @@ const (
 	PlaybooksListParamsScopeFlows    PlaybooksListParamsScope = "flows"
 )
 
-// PlaybooksMeetingGuideGetOutput is the response of [PlaybooksService.MeetingGuideGet].
-type PlaybooksMeetingGuideGetOutput struct {
-	Guide      *PlaybooksMeetingGuideGetOutputGuide `json:"guide"`
-	Script     string                               `json:"script"`
-	Guardrails []string                             `json:"guardrails"`
+// PlaybooksMeetingGuidesGetOutput is the response of [PlaybooksService.MeetingGuidesGet].
+type PlaybooksMeetingGuidesGetOutput struct {
+	Guide      *PlaybooksMeetingGuidesGetOutputGuide `json:"guide"`
+	Script     string                                `json:"script"`
+	Guardrails []string                              `json:"guardrails"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuide is the type of [PlaybooksMeetingGuideGetOutput.Guide].
-type PlaybooksMeetingGuideGetOutputGuide struct {
-	Ref         *string                                              `json:"ref,omitzero"`
-	Title       *string                                              `json:"title,omitzero"`
-	Attachments []PlaybooksMeetingGuideGetOutputGuideAttachmentsItem `json:"attachments,omitzero"`
-	Script      *string                                              `json:"script,omitzero"`
-	Checklist   []PlaybooksMeetingGuideGetOutputGuideChecklistItem   `json:"checklist,omitzero"`
-	Stages      []PlaybooksMeetingGuideGetOutputGuideStagesItem      `json:"stages,omitzero"`
-	Tones       []PlaybooksMeetingGuideGetOutputGuideTonesItem       `json:"tones,omitzero"`
-	Cues        []PlaybooksMeetingGuideGetOutputGuideCuesItem        `json:"cues,omitzero"`
-	Guardrails  []string                                             `json:"guardrails,omitzero"`
+// PlaybooksMeetingGuidesGetOutputGuide is the type of [PlaybooksMeetingGuidesGetOutput.Guide].
+type PlaybooksMeetingGuidesGetOutputGuide struct {
+	Ref         *string                                               `json:"ref,omitzero"`
+	Title       *string                                               `json:"title,omitzero"`
+	Attachments []PlaybooksMeetingGuidesGetOutputGuideAttachmentsItem `json:"attachments,omitzero"`
+	Script      *string                                               `json:"script,omitzero"`
+	Checklist   []PlaybooksMeetingGuidesGetOutputGuideChecklistItem   `json:"checklist,omitzero"`
+	Stages      []PlaybooksMeetingGuidesGetOutputGuideStagesItem      `json:"stages,omitzero"`
+	Tones       []PlaybooksMeetingGuidesGetOutputGuideTonesItem       `json:"tones,omitzero"`
+	Cues        []PlaybooksMeetingGuidesGetOutputGuideCuesItem        `json:"cues,omitzero"`
+	Guardrails  []string                                              `json:"guardrails,omitzero"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuideAttachmentsItem is an element of
-// [PlaybooksMeetingGuideGetOutputGuide.Attachments].
-type PlaybooksMeetingGuideGetOutputGuideAttachmentsItem struct {
+// PlaybooksMeetingGuidesGetOutputGuideAttachmentsItem is an element of
+// [PlaybooksMeetingGuidesGetOutputGuide.Attachments].
+type PlaybooksMeetingGuidesGetOutputGuideAttachmentsItem struct {
 	Label string `json:"label"`
 	URL   string `json:"url"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuideChecklistItem is an element of
-// [PlaybooksMeetingGuideGetOutputGuide.Checklist].
-type PlaybooksMeetingGuideGetOutputGuideChecklistItem struct {
+// PlaybooksMeetingGuidesGetOutputGuideChecklistItem is an element of
+// [PlaybooksMeetingGuidesGetOutputGuide.Checklist].
+type PlaybooksMeetingGuidesGetOutputGuideChecklistItem struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuideCuesItem is an element of
-// [PlaybooksMeetingGuideGetOutputGuide.Cues].
-type PlaybooksMeetingGuideGetOutputGuideCuesItem struct {
-	ID    string                                           `json:"id"`
-	Terms []string                                         `json:"terms"`
-	Title *string                                          `json:"title,omitzero"`
-	Text  string                                           `json:"text"`
-	Tone  *PlaybooksMeetingGuideGetOutputGuideCuesItemTone `json:"tone,omitzero"`
+// PlaybooksMeetingGuidesGetOutputGuideCuesItem is an element of
+// [PlaybooksMeetingGuidesGetOutputGuide.Cues].
+type PlaybooksMeetingGuidesGetOutputGuideCuesItem struct {
+	ID    string                                            `json:"id"`
+	Terms []string                                          `json:"terms"`
+	Title *string                                           `json:"title,omitzero"`
+	Text  string                                            `json:"text"`
+	Tone  *PlaybooksMeetingGuidesGetOutputGuideCuesItemTone `json:"tone,omitzero"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuideCuesItemTone is the type of
-// [PlaybooksMeetingGuideGetOutputGuideCuesItem.Tone].
-type PlaybooksMeetingGuideGetOutputGuideCuesItemTone string
+// PlaybooksMeetingGuidesGetOutputGuideCuesItemTone is the type of
+// [PlaybooksMeetingGuidesGetOutputGuideCuesItem.Tone].
+type PlaybooksMeetingGuidesGetOutputGuideCuesItemTone string
 
-// Values of [PlaybooksMeetingGuideGetOutputGuideCuesItemTone].
+// Values of [PlaybooksMeetingGuidesGetOutputGuideCuesItemTone].
 const (
-	PlaybooksMeetingGuideGetOutputGuideCuesItemToneInfo    PlaybooksMeetingGuideGetOutputGuideCuesItemTone = "info"
-	PlaybooksMeetingGuideGetOutputGuideCuesItemToneWarning PlaybooksMeetingGuideGetOutputGuideCuesItemTone = "warning"
-	PlaybooksMeetingGuideGetOutputGuideCuesItemToneUrgent  PlaybooksMeetingGuideGetOutputGuideCuesItemTone = "urgent"
+	PlaybooksMeetingGuidesGetOutputGuideCuesItemToneInfo    PlaybooksMeetingGuidesGetOutputGuideCuesItemTone = "info"
+	PlaybooksMeetingGuidesGetOutputGuideCuesItemToneWarning PlaybooksMeetingGuidesGetOutputGuideCuesItemTone = "warning"
+	PlaybooksMeetingGuidesGetOutputGuideCuesItemToneUrgent  PlaybooksMeetingGuidesGetOutputGuideCuesItemTone = "urgent"
 )
 
-// PlaybooksMeetingGuideGetOutputGuideStagesItem is an element of
-// [PlaybooksMeetingGuideGetOutputGuide.Stages].
-type PlaybooksMeetingGuideGetOutputGuideStagesItem struct {
-	ID        string                                                       `json:"id"`
-	Title     string                                                       `json:"title"`
-	Objective *string                                                      `json:"objective,omitzero"`
-	TalkTrack *string                                                      `json:"talkTrack,omitzero"`
-	WatchOut  *string                                                      `json:"watchOut,omitzero"`
-	Questions []PlaybooksMeetingGuideGetOutputGuideStagesItemQuestionsItem `json:"questions"`
+// PlaybooksMeetingGuidesGetOutputGuideStagesItem is an element of
+// [PlaybooksMeetingGuidesGetOutputGuide.Stages].
+type PlaybooksMeetingGuidesGetOutputGuideStagesItem struct {
+	ID        string                                                        `json:"id"`
+	Title     string                                                        `json:"title"`
+	Objective *string                                                       `json:"objective,omitzero"`
+	TalkTrack *string                                                       `json:"talkTrack,omitzero"`
+	WatchOut  *string                                                       `json:"watchOut,omitzero"`
+	Questions []PlaybooksMeetingGuidesGetOutputGuideStagesItemQuestionsItem `json:"questions"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuideStagesItemQuestionsItem is an element of
-// [PlaybooksMeetingGuideGetOutputGuideStagesItem.Questions].
-type PlaybooksMeetingGuideGetOutputGuideStagesItemQuestionsItem struct {
+// PlaybooksMeetingGuidesGetOutputGuideStagesItemQuestionsItem is an element of
+// [PlaybooksMeetingGuidesGetOutputGuideStagesItem.Questions].
+type PlaybooksMeetingGuidesGetOutputGuideStagesItemQuestionsItem struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 }
 
-// PlaybooksMeetingGuideGetOutputGuideTonesItem is an element of
-// [PlaybooksMeetingGuideGetOutputGuide.Tones].
-type PlaybooksMeetingGuideGetOutputGuideTonesItem struct {
+// PlaybooksMeetingGuidesGetOutputGuideTonesItem is an element of
+// [PlaybooksMeetingGuidesGetOutputGuide.Tones].
+type PlaybooksMeetingGuidesGetOutputGuideTonesItem struct {
 	Name     string  `json:"name"`
 	When     *string `json:"when,omitzero"`
 	Delivery *string `json:"delivery,omitzero"`
 }
 
-// PlaybooksMeetingGuideGetParams holds the query parameters of [PlaybooksService.MeetingGuideGet].
-type PlaybooksMeetingGuideGetParams struct {
+// PlaybooksMeetingGuidesGetParams holds the query parameters of [PlaybooksService.MeetingGuidesGet].
+type PlaybooksMeetingGuidesGetParams struct {
 	ID string
 }
 
-func (p PlaybooksMeetingGuideGetParams) values() url.Values {
+func (p PlaybooksMeetingGuidesGetParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "id", &p.ID)
 	return v
@@ -738,25 +588,25 @@ type PlaybooksMeetingGuidesListOutputItemsItem struct {
 	StageCount  int64  `json:"stageCount"`
 }
 
-// PlaybooksPipelineAttachInput is the request body of [PlaybooksService.PipelineAttach].
-type PlaybooksPipelineAttachInput struct {
+// PlaybooksPipelinesAttachInput is the request body of [PlaybooksService.PipelinesAttach].
+type PlaybooksPipelinesAttachInput struct {
 	ID         string `json:"id"`
 	PipelineID string `json:"pipelineId"`
 }
 
-// PlaybooksPipelineAttachOutput is the response of [PlaybooksService.PipelineAttach].
-type PlaybooksPipelineAttachOutput struct {
+// PlaybooksPipelinesAttachOutput is the response of [PlaybooksService.PipelinesAttach].
+type PlaybooksPipelinesAttachOutput struct {
 	Success bool `json:"success"`
 }
 
-// PlaybooksPipelineDetachInput is the request body of [PlaybooksService.PipelineDetach].
-type PlaybooksPipelineDetachInput struct {
+// PlaybooksPipelinesDetachInput is the request body of [PlaybooksService.PipelinesDetach].
+type PlaybooksPipelinesDetachInput struct {
 	ID         string `json:"id"`
 	PipelineID string `json:"pipelineId"`
 }
 
-// PlaybooksPipelineDetachOutput is the response of [PlaybooksService.PipelineDetach].
-type PlaybooksPipelineDetachOutput struct {
+// PlaybooksPipelinesDetachOutput is the response of [PlaybooksService.PipelinesDetach].
+type PlaybooksPipelinesDetachOutput struct {
 	Success bool `json:"success"`
 }
 

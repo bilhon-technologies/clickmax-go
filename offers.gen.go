@@ -13,6 +13,61 @@ type OffersService struct {
 	client *Client
 }
 
+// Deliver an uploaded file on an offer.
+//
+// Connects an uploaded file (e.g. a PDF) as the delivery of an offer, so buyers of that offer receive
+// that file as their deliverable. Pass the `offerId` (a product's main offer id) plus the file's
+// public `url` (from an upload) and a `title` (its display name); `description` is optional. Use this
+// for a file the user uploaded or already hosts as a direct download — as opposed to a plain
+// external link (`offers_add_link_delivery`) or a Clickmax members-area classroom
+// (`offers_add_membership_delivery`). `url` must be a valid http(s) URL. An offer can hold several
+// deliverables; this adds a `file` deliverable and does not remove existing ones.
+//
+// Calls POST /offers/add-file-delivery.
+func (s *OffersService) AddFileDelivery(ctx context.Context, body OffersAddFileDeliveryInput, opts ...Option) (*OffersAddMembershipDeliveryOutput, error) {
+	var out OffersAddMembershipDeliveryOutput
+	if err := s.client.do(ctx, "POST", "/offers/add-file-delivery", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Deliver external link(s) on an offer.
+//
+// Connects one or more external links (each `{ title, url }`) as the delivery of an offer, so buyers
+// of that offer receive those links as their deliverable. Pass the `offerId` (a product's main offer
+// id — resolve it via the product/offer tools) plus `links`. Use this when the deliverable the user
+// already has lives at an external URL (a hosted PDF, a Google Drive/Notion page, a third-party course
+// area) — as opposed to a Clickmax members-area classroom, which uses
+// `offers_add_membership_delivery`. `url` must be a valid http(s) URL. An offer can hold several
+// deliverables; this adds a `link` deliverable and does not remove existing ones.
+//
+// Calls POST /offers/add-link-delivery.
+func (s *OffersService) AddLinkDelivery(ctx context.Context, body OffersAddLinkDeliveryInput, opts ...Option) (*OffersAddMembershipDeliveryOutput, error) {
+	var out OffersAddMembershipDeliveryOutput
+	if err := s.client.do(ctx, "POST", "/offers/add-link-delivery", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Deliver a members-area classroom on an offer.
+//
+// Connects a Clickmax members-area classroom as the delivery of an offer, so buyers of that offer are
+// granted access to that classroom. Pass the `offerId` (a product's main offer id — resolve it via
+// the product/offer tools) plus the members-area `portalId` and `classroomId`. This is how you wire
+// 'this membership/course is what the product delivers'. An offer can hold several deliverables; this
+// adds the internal-membership one (it does not remove existing ones).
+//
+// Calls POST /offers/add-membership-delivery.
+func (s *OffersService) AddMembershipDelivery(ctx context.Context, body OffersAddMembershipDeliveryInput, opts ...Option) (*OffersAddMembershipDeliveryOutput, error) {
+	var out OffersAddMembershipDeliveryOutput
+	if err := s.client.do(ctx, "POST", "/offers/add-membership-delivery", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Archive an offer.
 //
 // Archives an offer so it is hidden from active checkout flows. Reversible via `offers_unarchive`.
@@ -209,6 +264,171 @@ func (s *OffersService) Update(ctx context.Context, body OffersUpdateInput, opts
 	}
 	return &out, nil
 }
+
+// OffersAddFileDeliveryInput is the request body of [OffersService.AddFileDelivery].
+type OffersAddFileDeliveryInput struct {
+	OfferID     string  `json:"offerId"`
+	URL         string  `json:"url"`
+	Title       string  `json:"title"`
+	Description *string `json:"description,omitzero"`
+}
+
+// OffersAddLinkDeliveryInput is the request body of [OffersService.AddLinkDelivery].
+type OffersAddLinkDeliveryInput struct {
+	OfferID string                                `json:"offerId"`
+	Links   []OffersAddLinkDeliveryInputLinksItem `json:"links"`
+}
+
+// OffersAddLinkDeliveryInputLinksItem is an element of [OffersAddLinkDeliveryInput.Links].
+type OffersAddLinkDeliveryInputLinksItem struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
+// OffersAddMembershipDeliveryInput is the request body of [OffersService.AddMembershipDelivery].
+type OffersAddMembershipDeliveryInput struct {
+	OfferID     string `json:"offerId"`
+	PortalID    string `json:"portalId"`
+	ClassroomID string `json:"classroomId"`
+}
+
+// OffersAddMembershipDeliveryOutput is the response of [OffersService.AddFileDelivery],
+// [OffersService.AddLinkDelivery] and [OffersService.AddMembershipDelivery].
+type OffersAddMembershipDeliveryOutput struct {
+	ID                 string                                               `json:"id"`
+	URL                *string                                              `json:"url,omitzero"`
+	Title              *string                                              `json:"title,omitzero"`
+	Description        *string                                              `json:"description,omitzero"`
+	Type               *string                                              `json:"type,omitzero"`
+	Size               *string                                              `json:"size,omitzero"`
+	Category           OffersAddMembershipDeliveryOutputCategory            `json:"category"`
+	Links              []OffersAddMembershipDeliveryOutputLinksItem         `json:"links,omitzero"`
+	Event              *OffersAddMembershipDeliveryOutputEvent              `json:"event,omitzero"`
+	Email              *OffersAddMembershipDeliveryOutputEmail              `json:"email,omitzero"`
+	Membership         *OffersAddMembershipDeliveryOutputMembership         `json:"membership,omitzero"`
+	InternalMembership *OffersAddMembershipDeliveryOutputInternalMembership `json:"internalMembership,omitzero"`
+	Webhook            *OffersAddMembershipDeliveryOutputWebhook            `json:"webhook,omitzero"`
+	CreatedAt          time.Time                                            `json:"createdAt"`
+	TargetDeleted      *bool                                                `json:"targetDeleted,omitzero"`
+}
+
+// OffersAddMembershipDeliveryOutputCategory is the type of
+// [OffersAddMembershipDeliveryOutput.Category].
+type OffersAddMembershipDeliveryOutputCategory string
+
+// Values of [OffersAddMembershipDeliveryOutputCategory].
+const (
+	OffersAddMembershipDeliveryOutputCategoryFile               OffersAddMembershipDeliveryOutputCategory = "file"
+	OffersAddMembershipDeliveryOutputCategoryLink               OffersAddMembershipDeliveryOutputCategory = "link"
+	OffersAddMembershipDeliveryOutputCategoryEvent              OffersAddMembershipDeliveryOutputCategory = "event"
+	OffersAddMembershipDeliveryOutputCategoryEmail              OffersAddMembershipDeliveryOutputCategory = "email"
+	OffersAddMembershipDeliveryOutputCategoryMembership         OffersAddMembershipDeliveryOutputCategory = "membership"
+	OffersAddMembershipDeliveryOutputCategoryInternalMembership OffersAddMembershipDeliveryOutputCategory = "internal_membership"
+	OffersAddMembershipDeliveryOutputCategoryWebhook            OffersAddMembershipDeliveryOutputCategory = "webhook"
+	OffersAddMembershipDeliveryOutputCategoryClickmaxPlan       OffersAddMembershipDeliveryOutputCategory = "clickmax_plan"
+	OffersAddMembershipDeliveryOutputCategoryAddon              OffersAddMembershipDeliveryOutputCategory = "addon"
+)
+
+// OffersAddMembershipDeliveryOutputEmail is the type of [OffersAddMembershipDeliveryOutput.Email].
+type OffersAddMembershipDeliveryOutputEmail struct {
+	BodyText   string `json:"bodyText"`
+	ButtonText string `json:"buttonText"`
+}
+
+// OffersAddMembershipDeliveryOutputEvent is the type of [OffersAddMembershipDeliveryOutput.Event].
+type OffersAddMembershipDeliveryOutputEvent struct {
+	StartDate time.Time `json:"startDate"`
+	EndDate   time.Time `json:"endDate"`
+	StartTime string    `json:"startTime"`
+	EndTime   string    `json:"endTime"`
+}
+
+// OffersAddMembershipDeliveryOutputInternalMembership is the type of
+// [OffersAddMembershipDeliveryOutput.InternalMembership].
+type OffersAddMembershipDeliveryOutputInternalMembership struct {
+	PortalID    string  `json:"portalId"`
+	ClassroomID string  `json:"classroomId"`
+	ContentID   *string `json:"contentId,omitzero"`
+}
+
+// OffersAddMembershipDeliveryOutputLinksItem is an element of
+// [OffersAddMembershipDeliveryOutput.Links].
+type OffersAddMembershipDeliveryOutputLinksItem struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
+// OffersAddMembershipDeliveryOutputMembership is the type of
+// [OffersAddMembershipDeliveryOutput.Membership].
+type OffersAddMembershipDeliveryOutputMembership struct {
+	Tokens      OffersAddMembershipDeliveryOutputMembershipTokens      `json:"tokens"`
+	ProductID   string                                                 `json:"productId"`
+	Platform    string                                                 `json:"platform"`
+	AdminAccess OffersAddMembershipDeliveryOutputMembershipAdminAccess `json:"adminAccess"`
+}
+
+// OffersAddMembershipDeliveryOutputMembershipAdminAccess is the type of
+// [OffersAddMembershipDeliveryOutputMembership.AdminAccess].
+type OffersAddMembershipDeliveryOutputMembershipAdminAccess struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Link     string `json:"link"`
+}
+
+// OffersAddMembershipDeliveryOutputMembershipTokens is the type of
+// [OffersAddMembershipDeliveryOutputMembership.Tokens].
+type OffersAddMembershipDeliveryOutputMembershipTokens struct {
+	APIKey    string  `json:"apiKey"`
+	APISecret *string `json:"apiSecret,omitzero"`
+}
+
+// OffersAddMembershipDeliveryOutputWebhook is the type of [OffersAddMembershipDeliveryOutput.Webhook].
+type OffersAddMembershipDeliveryOutputWebhook struct {
+	URL            string                                                  `json:"url"`
+	Method         OffersAddMembershipDeliveryOutputWebhookMethod          `json:"method"`
+	Headers        map[string]string                                       `json:"headers,omitzero"`
+	Events         []OffersAddMembershipDeliveryOutputWebhookEventsItem    `json:"events"`
+	CustomPayloads *OffersAddMembershipDeliveryOutputWebhookCustomPayloads `json:"customPayloads,omitzero"`
+}
+
+// OffersAddMembershipDeliveryOutputWebhookCustomPayloads is the type of
+// [OffersAddMembershipDeliveryOutputWebhook.CustomPayloads].
+type OffersAddMembershipDeliveryOutputWebhookCustomPayloads struct {
+	// Parsed JSON template object with {{variable}} and @each
+	CheckoutTransactionPaidV1 map[string]any `json:"checkout.transaction.paid.v1,omitzero"`
+	// Parsed JSON template object with {{variable}} and @each
+	CheckoutTransactionCreatedV1 map[string]any `json:"checkout.transaction.created.v1,omitzero"`
+	// Parsed JSON template object with {{variable}} and @each
+	CheckoutChargebackRequestedV1 map[string]any `json:"checkout.chargeback.requested.v1,omitzero"`
+	// Parsed JSON template object with {{variable}} and @each
+	CheckoutRefundRequestedV1 map[string]any `json:"checkout.refund.requested.v1,omitzero"`
+	// Parsed JSON template object with {{variable}} and @each
+	CheckoutSubscriptionCanceledV1 map[string]any `json:"checkout.subscription.canceled.v1,omitzero"`
+}
+
+// OffersAddMembershipDeliveryOutputWebhookEventsItem is an element of
+// [OffersAddMembershipDeliveryOutputWebhook.Events].
+type OffersAddMembershipDeliveryOutputWebhookEventsItem string
+
+// Values of [OffersAddMembershipDeliveryOutputWebhookEventsItem].
+const (
+	OffersAddMembershipDeliveryOutputWebhookEventsItemCheckoutTransactionPaidV1      OffersAddMembershipDeliveryOutputWebhookEventsItem = "checkout.transaction.paid.v1"
+	OffersAddMembershipDeliveryOutputWebhookEventsItemCheckoutTransactionCreatedV1   OffersAddMembershipDeliveryOutputWebhookEventsItem = "checkout.transaction.created.v1"
+	OffersAddMembershipDeliveryOutputWebhookEventsItemCheckoutChargebackRequestedV1  OffersAddMembershipDeliveryOutputWebhookEventsItem = "checkout.chargeback.requested.v1"
+	OffersAddMembershipDeliveryOutputWebhookEventsItemCheckoutRefundRequestedV1      OffersAddMembershipDeliveryOutputWebhookEventsItem = "checkout.refund.requested.v1"
+	OffersAddMembershipDeliveryOutputWebhookEventsItemCheckoutSubscriptionCanceledV1 OffersAddMembershipDeliveryOutputWebhookEventsItem = "checkout.subscription.canceled.v1"
+)
+
+// OffersAddMembershipDeliveryOutputWebhookMethod is the type of
+// [OffersAddMembershipDeliveryOutputWebhook.Method].
+type OffersAddMembershipDeliveryOutputWebhookMethod string
+
+// Values of [OffersAddMembershipDeliveryOutputWebhookMethod].
+const (
+	OffersAddMembershipDeliveryOutputWebhookMethodPost  OffersAddMembershipDeliveryOutputWebhookMethod = "POST"
+	OffersAddMembershipDeliveryOutputWebhookMethodPut   OffersAddMembershipDeliveryOutputWebhookMethod = "PUT"
+	OffersAddMembershipDeliveryOutputWebhookMethodPatch OffersAddMembershipDeliveryOutputWebhookMethod = "PATCH"
+)
 
 // OffersArchiveInput is the request body of [OffersService.Archive].
 type OffersArchiveInput struct {
@@ -816,6 +1036,7 @@ type OffersGetOutputDeliverablesItem struct {
 	InternalMembership *OffersGetOutputDeliverablesItemInternalMembership `json:"internalMembership,omitzero"`
 	Webhook            *OffersGetOutputDeliverablesItemWebhook            `json:"webhook,omitzero"`
 	CreatedAt          time.Time                                          `json:"createdAt"`
+	TargetDeleted      *bool                                              `json:"targetDeleted,omitzero"`
 }
 
 // OffersGetOutputDeliverablesItemCategory is the type of [OffersGetOutputDeliverablesItem.Category].

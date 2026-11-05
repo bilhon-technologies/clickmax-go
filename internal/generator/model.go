@@ -115,13 +115,6 @@ func build(doc *document, reserved map[string]string) (*model, error) {
 		claimed:  maps.Clone(reserved),
 	}
 	b.claimed["Client"] = "the generated Client"
-	for _, name := range slices.Sorted(maps.Keys(doc.Components.Schemas)) {
-		s, err := b.sh.shape(doc.Components.Schemas[name])
-		if err != nil {
-			return nil, fmt.Errorf("components.schemas.%s: %w", name, err)
-		}
-		b.shapes[name] = s
-	}
 
 	type rawOp struct {
 		path, verb string
@@ -149,13 +142,25 @@ func build(doc *document, reserved map[string]string) (*model, error) {
 				if len(op.Parameters) > 0 {
 					return nil, fmt.Errorf("%s: has both a request body and query parameters", where)
 				}
-				b.markRequest(r.body)
+				if err := b.markRequest(r.body); err != nil {
+					return nil, err
+				}
 			}
 			ops = append(ops, r)
 		}
 	}
 
-	for _, name := range slices.Sorted(maps.Keys(b.shapes)) {
+	// Only components reachable from a request body or a 200 response become types. The rest,
+	// such as ApiError behind the 4XX/5XX responses, are covered by the runtime's Error or unused.
+	var roots []string
+	for _, r := range ops {
+		roots = append(roots, r.out)
+		if r.body != "" {
+			roots = append(roots, r.body)
+		}
+	}
+	slices.Sort(roots)
+	for _, name := range slices.Compact(roots) {
 		if _, err := b.component(name); err != nil {
 			return nil, err
 		}
@@ -328,25 +333,49 @@ func responseRef(op *operation) (string, error) {
 
 // markRequest flags a component, and every component it refers to, as reachable from a request
 // body: their optional nullable fields need Nullable to send an explicit null.
-func (b *builder) markRequest(name string) {
+func (b *builder) markRequest(name string) error {
 	if b.request[name] {
-		return
+		return nil
 	}
 	b.request[name] = true
-	var walk func(*shape)
-	walk = func(s *shape) {
+	s, err := b.shapeOf(name)
+	if err != nil {
+		return err
+	}
+	var walk func(*shape) error
+	walk = func(s *shape) error {
 		switch s.kind {
 		case kRef:
-			b.markRequest(s.ref)
+			return b.markRequest(s.ref)
 		case kArray, kMap:
-			walk(s.elem)
+			return walk(s.elem)
 		case kObject:
 			for _, p := range s.props {
-				walk(p.shape)
+				if err := walk(p.shape); err != nil {
+					return err
+				}
 			}
 		}
+		return nil
 	}
-	walk(b.shapes[name])
+	return walk(s)
+}
+
+// shapeOf shapes a component on first use, so components no operation reaches are never read.
+func (b *builder) shapeOf(name string) (*shape, error) {
+	if s := b.shapes[name]; s != nil {
+		return s, nil
+	}
+	sch := b.sh.components[name]
+	if sch == nil {
+		return nil, fmt.Errorf("unknown component %q", name)
+	}
+	s, err := b.sh.shape(sch)
+	if err != nil {
+		return nil, fmt.Errorf("components.schemas.%s: %w", name, err)
+	}
+	b.shapes[name] = s
+	return s, nil
 }
 
 func (b *builder) component(name string) (*goType, error) {
@@ -366,7 +395,10 @@ func (b *builder) component(name string) (*goType, error) {
 	// Spec names go through pascal too, so AiAgentsGetOutput reads AIAgentsGetOutput like the
 	// AIAgentsGetParams named from the operationId next to it.
 	goName := pascal(name)
-	s := b.shapes[name]
+	s, err := b.shapeOf(name)
+	if err != nil {
+		return nil, err
+	}
 	t, err := b.typeOf(s, goName, "")
 	if err != nil {
 		return nil, err

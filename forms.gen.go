@@ -95,7 +95,7 @@ func (s *FormsService) List(ctx context.Context, params FormsListParams, opts ..
 //
 // Overwrites the ENTIRE `schema` (the server re-derives `kind`). Use only for wholesale rewrites or
 // theme/settings/qualification edits — to add/edit/remove individual quiz steps prefer
-// `forms_step_upsert`/`forms_step_delete`, which never require resending the whole document. Pass
+// `forms_steps_upsert`/`forms_steps_delete`, which never require resending the whole document. Pass
 // `expectedUpdatedAt` (from `forms_get`) to reject stale overwrites with a conflict. BLOCK ID FORMAT:
 // every block, option, step, and condition `field` id MUST be identifier-safe —
 // letters/digits/underscores only, no hyphens (regex: `^[a-zA-Z_][a-zA-Z0-9_]*$`). Recommended:
@@ -117,10 +117,10 @@ func (s *FormsService) ReplaceSchema(ctx context.Context, body FormsReplaceSchem
 // Removes one step from a quiz by `stepId` and reindexes the remaining steps. Pass `expectedUpdatedAt`
 // (from `forms_get`) for lost-update protection (conflict on stale). Quizzes only.
 //
-// Calls DELETE /forms/step-delete.
-func (s *FormsService) StepDelete(ctx context.Context, body FormsStepDeleteInput, opts ...Option) (*FormsGetOutput, error) {
+// Calls DELETE /forms/steps-delete.
+func (s *FormsService) StepsDelete(ctx context.Context, body FormsStepsDeleteInput, opts ...Option) (*FormsGetOutput, error) {
 	var out FormsGetOutput
-	if err := s.client.do(ctx, "DELETE", "/forms/step-delete", nil, body, &out, opts); err != nil {
+	if err := s.client.do(ctx, "DELETE", "/forms/steps-delete", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -138,10 +138,10 @@ func (s *FormsService) StepDelete(ctx context.Context, body FormsStepDeleteInput
 // runtime expression evaluator. In `displayRule.when[].field`, reference the BLOCK id (e.g.
 // `b_renal`), not the CRM custom-field mapping key.
 //
-// Calls POST /forms/step-upsert.
-func (s *FormsService) StepUpsert(ctx context.Context, body FormsStepUpsertInput, opts ...Option) (*FormsGetOutput, error) {
+// Calls POST /forms/steps-upsert.
+func (s *FormsService) StepsUpsert(ctx context.Context, body FormsStepsUpsertInput, opts ...Option) (*FormsGetOutput, error) {
 	var out FormsGetOutput
-	if err := s.client.do(ctx, "POST", "/forms/step-upsert", nil, body, &out, opts); err != nil {
+	if err := s.client.do(ctx, "POST", "/forms/steps-upsert", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -165,7 +165,7 @@ func (s *FormsService) SubmissionsList(ctx context.Context, params FormsSubmissi
 //
 // Updates metadata only — `name`, `title`, `description`, `status` (`active` publishes, `paused`
 // takes offline), `slug`, `funnelId`, `pageId`. CANNOT change the `schema`, so it can never clobber
-// quiz content. Use `forms_step_upsert`/`forms_step_delete` to edit quiz structure, or
+// quiz content. Use `forms_steps_upsert`/`forms_steps_delete` to edit quiz structure, or
 // `forms_replace_schema` for a wholesale rewrite.
 //
 // Calls POST /forms/update.
@@ -1061,7 +1061,7 @@ type FormsDeleteOutput struct {
 }
 
 // FormsGetOutput is the response of [FormsService.Create], [FormsService.Get],
-// [FormsService.ReplaceSchema], [FormsService.StepDelete], [FormsService.StepUpsert] and
+// [FormsService.ReplaceSchema], [FormsService.StepsDelete], [FormsService.StepsUpsert] and
 // [FormsService.Update].
 type FormsGetOutput struct {
 	ID             string                        `json:"id"`
@@ -3386,25 +3386,25 @@ type FormsReplaceSchemaInputSchemaThemeQuizDesign struct {
 	ShowHeader    *bool   `json:"showHeader,omitzero"`
 }
 
-// FormsStepDeleteInput is the request body of [FormsService.StepDelete].
-type FormsStepDeleteInput struct {
+// FormsStepsDeleteInput is the request body of [FormsService.StepsDelete].
+type FormsStepsDeleteInput struct {
 	ID                string     `json:"id"`
 	StepID            string     `json:"stepId"`
 	ExpectedUpdatedAt *time.Time `json:"expectedUpdatedAt,omitzero"`
 }
 
-// FormsStepUpsertInput is the request body of [FormsService.StepUpsert].
-type FormsStepUpsertInput struct {
-	ID                string                           `json:"id"`
-	StepID            *string                          `json:"stepId,omitzero"`
-	Name              *string                          `json:"name,omitzero"`
-	Next              *string                          `json:"next,omitzero"`
-	Blocks            []FormsStepUpsertInputBlocksItem `json:"blocks,omitzero"`
-	Index             *int64                           `json:"index,omitzero"`
-	ExpectedUpdatedAt *time.Time                       `json:"expectedUpdatedAt,omitzero"`
+// FormsStepsUpsertInput is the request body of [FormsService.StepsUpsert].
+type FormsStepsUpsertInput struct {
+	ID                string                            `json:"id"`
+	StepID            *string                           `json:"stepId,omitzero"`
+	Name              *string                           `json:"name,omitzero"`
+	Next              *string                           `json:"next,omitzero"`
+	Blocks            []FormsStepsUpsertInputBlocksItem `json:"blocks,omitzero"`
+	Index             *int64                            `json:"index,omitzero"`
+	ExpectedUpdatedAt *time.Time                        `json:"expectedUpdatedAt,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItem is an element of [FormsStepUpsertInput.Blocks].
+// FormsStepsUpsertInputBlocksItem is an element of [FormsStepsUpsertInput.Blocks].
 //
 // A value has one of these property sets:
 //   - id, displayRule, type, body, align
@@ -3425,204 +3425,204 @@ type FormsStepUpsertInput struct {
 //   - id, displayRule, type, title, beforeUrl, afterUrl, beforeLabel, afterLabel
 //   - id, displayRule, type, title, planName, price, period, badge, highlight, features, ctaLabel, ctaUrl
 //   - id, displayRule, type, title, caption, chartType, points
-type FormsStepUpsertInputBlocksItem struct {
-	ID                   string                                       `json:"id"`
-	DisplayRule          *FormsStepUpsertInputBlocksItemDisplayRule   `json:"displayRule,omitzero"`
-	Type                 FormsStepUpsertInputBlocksItemType           `json:"type"`
-	Body                 *string                                      `json:"body,omitzero"`
-	Align                *FormsStepUpsertInputBlocksItemAlign         `json:"align,omitzero"`
-	URL                  *string                                      `json:"url,omitzero"`
-	Alt                  *string                                      `json:"alt,omitzero"`
-	Layout               *FormsStepUpsertInputBlocksItemLayout        `json:"layout,omitzero"`
-	Title                *string                                      `json:"title,omitzero"`
-	Autoplay             *bool                                        `json:"autoplay,omitzero"`
-	SoundLabel           *string                                      `json:"soundLabel,omitzero"`
-	Size                 *FormsStepUpsertInputBlocksItemSize          `json:"size,omitzero"`
-	Label                *string                                      `json:"label,omitzero"`
-	Options              []FormsStepUpsertInputBlocksItemOptionsItem  `json:"options,omitzero"`
-	Direction            *FormsStepUpsertInputBlocksItemDirection     `json:"direction,omitzero"`
-	Disposition          *FormsStepUpsertInputBlocksItemDisposition   `json:"disposition,omitzero"`
-	Required             *bool                                        `json:"required,omitzero"`
-	Multiple             *bool                                        `json:"multiple,omitzero"`
-	RedirectOnButtonOnly *bool                                        `json:"redirectOnButtonOnly,omitzero"`
-	Mapping              *FormsStepUpsertInputBlocksItemMapping       `json:"mapping,omitzero"`
-	Min                  *float64                                     `json:"min,omitzero"`
-	Max                  *float64                                     `json:"max,omitzero"`
-	MinLabel             *string                                      `json:"minLabel,omitzero"`
-	MaxLabel             *string                                      `json:"maxLabel,omitzero"`
-	Placeholder          *string                                      `json:"placeholder,omitzero"`
-	CurrencyCode         *string                                      `json:"currencyCode,omitzero"`
-	Kind                 *FormsStepUpsertInputBlocksItemKind          `json:"kind,omitzero"`
-	DefaultValue         *float64                                     `json:"defaultValue,omitzero"`
-	Step                 *float64                                     `json:"step,omitzero"`
-	AllowUnitToggle      *bool                                        `json:"allowUnitToggle,omitzero"`
-	Action               *FormsStepUpsertInputBlocksItemAction        `json:"action,omitzero"`
-	Target               *string                                      `json:"target,omitzero"`
-	Variant              *FormsStepUpsertInputBlocksItemVariant       `json:"variant,omitzero"`
-	Fields               []FormsStepUpsertInputBlocksItemFieldsItem   `json:"fields,omitzero"`
-	SubmitLabel          *string                                      `json:"submitLabel,omitzero"`
-	OfferID              *string                                      `json:"offerId,omitzero"`
-	ProductName          *string                                      `json:"productName,omitzero"`
-	OfferName            *string                                      `json:"offerName,omitzero"`
-	PriceLabel           *string                                      `json:"priceLabel,omitzero"`
-	ImageURL             *string                                      `json:"imageUrl,omitzero"`
-	CheckoutURL          *string                                      `json:"checkoutUrl,omitzero"`
-	CtaLabel             *string                                      `json:"ctaLabel,omitzero"`
-	DurationMs           *float64                                     `json:"durationMs,omitzero"`
-	Goto                 *string                                      `json:"goto,omitzero"`
-	Items                []FormsStepUpsertInputBlocksItemItemsItem    `json:"items,omitzero"`
-	BeforeURL            *string                                      `json:"beforeUrl,omitzero"`
-	AfterURL             *string                                      `json:"afterUrl,omitzero"`
-	BeforeLabel          *string                                      `json:"beforeLabel,omitzero"`
-	AfterLabel           *string                                      `json:"afterLabel,omitzero"`
-	PlanName             *string                                      `json:"planName,omitzero"`
-	Price                *string                                      `json:"price,omitzero"`
-	Period               *string                                      `json:"period,omitzero"`
-	Badge                *string                                      `json:"badge,omitzero"`
-	Highlight            *bool                                        `json:"highlight,omitzero"`
-	Features             []FormsStepUpsertInputBlocksItemFeaturesItem `json:"features,omitzero"`
-	CtaURL               *string                                      `json:"ctaUrl,omitzero"`
-	Caption              *string                                      `json:"caption,omitzero"`
-	ChartType            *FormsStepUpsertInputBlocksItemChartType     `json:"chartType,omitzero"`
-	Points               []FormsStepUpsertInputBlocksItemPointsItem   `json:"points,omitzero"`
+type FormsStepsUpsertInputBlocksItem struct {
+	ID                   string                                        `json:"id"`
+	DisplayRule          *FormsStepsUpsertInputBlocksItemDisplayRule   `json:"displayRule,omitzero"`
+	Type                 FormsStepsUpsertInputBlocksItemType           `json:"type"`
+	Body                 *string                                       `json:"body,omitzero"`
+	Align                *FormsStepsUpsertInputBlocksItemAlign         `json:"align,omitzero"`
+	URL                  *string                                       `json:"url,omitzero"`
+	Alt                  *string                                       `json:"alt,omitzero"`
+	Layout               *FormsStepsUpsertInputBlocksItemLayout        `json:"layout,omitzero"`
+	Title                *string                                       `json:"title,omitzero"`
+	Autoplay             *bool                                         `json:"autoplay,omitzero"`
+	SoundLabel           *string                                       `json:"soundLabel,omitzero"`
+	Size                 *FormsStepsUpsertInputBlocksItemSize          `json:"size,omitzero"`
+	Label                *string                                       `json:"label,omitzero"`
+	Options              []FormsStepsUpsertInputBlocksItemOptionsItem  `json:"options,omitzero"`
+	Direction            *FormsStepsUpsertInputBlocksItemDirection     `json:"direction,omitzero"`
+	Disposition          *FormsStepsUpsertInputBlocksItemDisposition   `json:"disposition,omitzero"`
+	Required             *bool                                         `json:"required,omitzero"`
+	Multiple             *bool                                         `json:"multiple,omitzero"`
+	RedirectOnButtonOnly *bool                                         `json:"redirectOnButtonOnly,omitzero"`
+	Mapping              *FormsStepsUpsertInputBlocksItemMapping       `json:"mapping,omitzero"`
+	Min                  *float64                                      `json:"min,omitzero"`
+	Max                  *float64                                      `json:"max,omitzero"`
+	MinLabel             *string                                       `json:"minLabel,omitzero"`
+	MaxLabel             *string                                       `json:"maxLabel,omitzero"`
+	Placeholder          *string                                       `json:"placeholder,omitzero"`
+	CurrencyCode         *string                                       `json:"currencyCode,omitzero"`
+	Kind                 *FormsStepsUpsertInputBlocksItemKind          `json:"kind,omitzero"`
+	DefaultValue         *float64                                      `json:"defaultValue,omitzero"`
+	Step                 *float64                                      `json:"step,omitzero"`
+	AllowUnitToggle      *bool                                         `json:"allowUnitToggle,omitzero"`
+	Action               *FormsStepsUpsertInputBlocksItemAction        `json:"action,omitzero"`
+	Target               *string                                       `json:"target,omitzero"`
+	Variant              *FormsStepsUpsertInputBlocksItemVariant       `json:"variant,omitzero"`
+	Fields               []FormsStepsUpsertInputBlocksItemFieldsItem   `json:"fields,omitzero"`
+	SubmitLabel          *string                                       `json:"submitLabel,omitzero"`
+	OfferID              *string                                       `json:"offerId,omitzero"`
+	ProductName          *string                                       `json:"productName,omitzero"`
+	OfferName            *string                                       `json:"offerName,omitzero"`
+	PriceLabel           *string                                       `json:"priceLabel,omitzero"`
+	ImageURL             *string                                       `json:"imageUrl,omitzero"`
+	CheckoutURL          *string                                       `json:"checkoutUrl,omitzero"`
+	CtaLabel             *string                                       `json:"ctaLabel,omitzero"`
+	DurationMs           *float64                                      `json:"durationMs,omitzero"`
+	Goto                 *string                                       `json:"goto,omitzero"`
+	Items                []FormsStepsUpsertInputBlocksItemItemsItem    `json:"items,omitzero"`
+	BeforeURL            *string                                       `json:"beforeUrl,omitzero"`
+	AfterURL             *string                                       `json:"afterUrl,omitzero"`
+	BeforeLabel          *string                                       `json:"beforeLabel,omitzero"`
+	AfterLabel           *string                                       `json:"afterLabel,omitzero"`
+	PlanName             *string                                       `json:"planName,omitzero"`
+	Price                *string                                       `json:"price,omitzero"`
+	Period               *string                                       `json:"period,omitzero"`
+	Badge                *string                                       `json:"badge,omitzero"`
+	Highlight            *bool                                         `json:"highlight,omitzero"`
+	Features             []FormsStepsUpsertInputBlocksItemFeaturesItem `json:"features,omitzero"`
+	CtaURL               *string                                       `json:"ctaUrl,omitzero"`
+	Caption              *string                                       `json:"caption,omitzero"`
+	ChartType            *FormsStepsUpsertInputBlocksItemChartType     `json:"chartType,omitzero"`
+	Points               []FormsStepsUpsertInputBlocksItemPointsItem   `json:"points,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItemAction is the type of [FormsStepUpsertInputBlocksItem.Action].
-type FormsStepUpsertInputBlocksItemAction string
+// FormsStepsUpsertInputBlocksItemAction is the type of [FormsStepsUpsertInputBlocksItem.Action].
+type FormsStepsUpsertInputBlocksItemAction string
 
-// Values of [FormsStepUpsertInputBlocksItemAction].
+// Values of [FormsStepsUpsertInputBlocksItemAction].
 const (
-	FormsStepUpsertInputBlocksItemActionNext FormsStepUpsertInputBlocksItemAction = "next"
-	FormsStepUpsertInputBlocksItemActionGoto FormsStepUpsertInputBlocksItemAction = "goto"
-	FormsStepUpsertInputBlocksItemActionURL  FormsStepUpsertInputBlocksItemAction = "url"
+	FormsStepsUpsertInputBlocksItemActionNext FormsStepsUpsertInputBlocksItemAction = "next"
+	FormsStepsUpsertInputBlocksItemActionGoto FormsStepsUpsertInputBlocksItemAction = "goto"
+	FormsStepsUpsertInputBlocksItemActionURL  FormsStepsUpsertInputBlocksItemAction = "url"
 )
 
-// FormsStepUpsertInputBlocksItemAlign is the type of [FormsStepUpsertInputBlocksItem.Align].
-type FormsStepUpsertInputBlocksItemAlign string
+// FormsStepsUpsertInputBlocksItemAlign is the type of [FormsStepsUpsertInputBlocksItem.Align].
+type FormsStepsUpsertInputBlocksItemAlign string
 
-// Values of [FormsStepUpsertInputBlocksItemAlign].
+// Values of [FormsStepsUpsertInputBlocksItemAlign].
 const (
-	FormsStepUpsertInputBlocksItemAlignLeft   FormsStepUpsertInputBlocksItemAlign = "left"
-	FormsStepUpsertInputBlocksItemAlignCenter FormsStepUpsertInputBlocksItemAlign = "center"
+	FormsStepsUpsertInputBlocksItemAlignLeft   FormsStepsUpsertInputBlocksItemAlign = "left"
+	FormsStepsUpsertInputBlocksItemAlignCenter FormsStepsUpsertInputBlocksItemAlign = "center"
 )
 
-// FormsStepUpsertInputBlocksItemChartType is the type of [FormsStepUpsertInputBlocksItem.ChartType].
-type FormsStepUpsertInputBlocksItemChartType string
+// FormsStepsUpsertInputBlocksItemChartType is the type of [FormsStepsUpsertInputBlocksItem.ChartType].
+type FormsStepsUpsertInputBlocksItemChartType string
 
-// Values of [FormsStepUpsertInputBlocksItemChartType].
+// Values of [FormsStepsUpsertInputBlocksItemChartType].
 const (
-	FormsStepUpsertInputBlocksItemChartTypeLine FormsStepUpsertInputBlocksItemChartType = "line"
-	FormsStepUpsertInputBlocksItemChartTypeBar  FormsStepUpsertInputBlocksItemChartType = "bar"
-	FormsStepUpsertInputBlocksItemChartTypePie  FormsStepUpsertInputBlocksItemChartType = "pie"
+	FormsStepsUpsertInputBlocksItemChartTypeLine FormsStepsUpsertInputBlocksItemChartType = "line"
+	FormsStepsUpsertInputBlocksItemChartTypeBar  FormsStepsUpsertInputBlocksItemChartType = "bar"
+	FormsStepsUpsertInputBlocksItemChartTypePie  FormsStepsUpsertInputBlocksItemChartType = "pie"
 )
 
-// FormsStepUpsertInputBlocksItemDirection is the type of [FormsStepUpsertInputBlocksItem.Direction].
-type FormsStepUpsertInputBlocksItemDirection string
+// FormsStepsUpsertInputBlocksItemDirection is the type of [FormsStepsUpsertInputBlocksItem.Direction].
+type FormsStepsUpsertInputBlocksItemDirection string
 
-// Values of [FormsStepUpsertInputBlocksItemDirection].
+// Values of [FormsStepsUpsertInputBlocksItemDirection].
 const (
-	FormsStepUpsertInputBlocksItemDirectionVertical   FormsStepUpsertInputBlocksItemDirection = "vertical"
-	FormsStepUpsertInputBlocksItemDirectionHorizontal FormsStepUpsertInputBlocksItemDirection = "horizontal"
+	FormsStepsUpsertInputBlocksItemDirectionVertical   FormsStepsUpsertInputBlocksItemDirection = "vertical"
+	FormsStepsUpsertInputBlocksItemDirectionHorizontal FormsStepsUpsertInputBlocksItemDirection = "horizontal"
 )
 
-// FormsStepUpsertInputBlocksItemDisplayRule is the type of
-// [FormsStepUpsertInputBlocksItem.DisplayRule].
-type FormsStepUpsertInputBlocksItemDisplayRule struct {
-	When []FormsStepUpsertInputBlocksItemDisplayRuleWhenItem `json:"when"`
+// FormsStepsUpsertInputBlocksItemDisplayRule is the type of
+// [FormsStepsUpsertInputBlocksItem.DisplayRule].
+type FormsStepsUpsertInputBlocksItemDisplayRule struct {
+	When []FormsStepsUpsertInputBlocksItemDisplayRuleWhenItem `json:"when"`
 }
 
-// FormsStepUpsertInputBlocksItemDisplayRuleWhenItem is an element of
-// [FormsStepUpsertInputBlocksItemDisplayRule.When].
-type FormsStepUpsertInputBlocksItemDisplayRuleWhenItem struct {
-	Field string                                              `json:"field"`
-	Op    FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp `json:"op"`
-	Value any                                                 `json:"value,omitzero"`
+// FormsStepsUpsertInputBlocksItemDisplayRuleWhenItem is an element of
+// [FormsStepsUpsertInputBlocksItemDisplayRule.When].
+type FormsStepsUpsertInputBlocksItemDisplayRuleWhenItem struct {
+	Field string                                               `json:"field"`
+	Op    FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp `json:"op"`
+	Value any                                                  `json:"value,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp is the type of
-// [FormsStepUpsertInputBlocksItemDisplayRuleWhenItem.Op].
-type FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp string
+// FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp is the type of
+// [FormsStepsUpsertInputBlocksItemDisplayRuleWhenItem.Op].
+type FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp string
 
-// Values of [FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp].
+// Values of [FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp].
 const (
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpEq       FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "eq"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpNeq      FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "neq"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpContains FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "contains"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpIn       FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "in"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpGt       FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "gt"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpGte      FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "gte"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpLt       FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "lt"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpLte      FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "lte"
-	FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOpExists   FormsStepUpsertInputBlocksItemDisplayRuleWhenItemOp = "exists"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpEq       FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "eq"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpNeq      FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "neq"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpContains FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "contains"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpIn       FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "in"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpGt       FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "gt"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpGte      FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "gte"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpLt       FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "lt"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpLte      FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "lte"
+	FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOpExists   FormsStepsUpsertInputBlocksItemDisplayRuleWhenItemOp = "exists"
 )
 
-// FormsStepUpsertInputBlocksItemDisposition is the type of
-// [FormsStepUpsertInputBlocksItem.Disposition].
-type FormsStepUpsertInputBlocksItemDisposition string
+// FormsStepsUpsertInputBlocksItemDisposition is the type of
+// [FormsStepsUpsertInputBlocksItem.Disposition].
+type FormsStepsUpsertInputBlocksItemDisposition string
 
-// Values of [FormsStepUpsertInputBlocksItemDisposition].
+// Values of [FormsStepsUpsertInputBlocksItemDisposition].
 const (
-	FormsStepUpsertInputBlocksItemDispositionText       FormsStepUpsertInputBlocksItemDisposition = "text"
-	FormsStepUpsertInputBlocksItemDispositionImageText  FormsStepUpsertInputBlocksItemDisposition = "image-text"
-	FormsStepUpsertInputBlocksItemDispositionImageCover FormsStepUpsertInputBlocksItemDisposition = "image-cover"
+	FormsStepsUpsertInputBlocksItemDispositionText       FormsStepsUpsertInputBlocksItemDisposition = "text"
+	FormsStepsUpsertInputBlocksItemDispositionImageText  FormsStepsUpsertInputBlocksItemDisposition = "image-text"
+	FormsStepsUpsertInputBlocksItemDispositionImageCover FormsStepsUpsertInputBlocksItemDisposition = "image-cover"
 )
 
-// FormsStepUpsertInputBlocksItemFeaturesItem is an element of
-// [FormsStepUpsertInputBlocksItem.Features].
-type FormsStepUpsertInputBlocksItemFeaturesItem struct {
+// FormsStepsUpsertInputBlocksItemFeaturesItem is an element of
+// [FormsStepsUpsertInputBlocksItem.Features].
+type FormsStepsUpsertInputBlocksItemFeaturesItem struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 }
 
-// FormsStepUpsertInputBlocksItemFieldsItem is an element of [FormsStepUpsertInputBlocksItem.Fields].
-type FormsStepUpsertInputBlocksItemFieldsItem struct {
-	ID          string                                            `json:"id"`
-	FieldType   FormsStepUpsertInputBlocksItemFieldsItemFieldType `json:"fieldType"`
-	Label       string                                            `json:"label"`
-	Placeholder *string                                           `json:"placeholder,omitzero"`
-	Required    bool                                              `json:"required"`
-	Mapping     FormsStepUpsertInputBlocksItemFieldsItemMapping   `json:"mapping"`
+// FormsStepsUpsertInputBlocksItemFieldsItem is an element of [FormsStepsUpsertInputBlocksItem.Fields].
+type FormsStepsUpsertInputBlocksItemFieldsItem struct {
+	ID          string                                             `json:"id"`
+	FieldType   FormsStepsUpsertInputBlocksItemFieldsItemFieldType `json:"fieldType"`
+	Label       string                                             `json:"label"`
+	Placeholder *string                                            `json:"placeholder,omitzero"`
+	Required    bool                                               `json:"required"`
+	Mapping     FormsStepsUpsertInputBlocksItemFieldsItemMapping   `json:"mapping"`
 }
 
-// FormsStepUpsertInputBlocksItemFieldsItemFieldType is the type of
-// [FormsStepUpsertInputBlocksItemFieldsItem.FieldType].
-type FormsStepUpsertInputBlocksItemFieldsItemFieldType string
+// FormsStepsUpsertInputBlocksItemFieldsItemFieldType is the type of
+// [FormsStepsUpsertInputBlocksItemFieldsItem.FieldType].
+type FormsStepsUpsertInputBlocksItemFieldsItemFieldType string
 
-// Values of [FormsStepUpsertInputBlocksItemFieldsItemFieldType].
+// Values of [FormsStepsUpsertInputBlocksItemFieldsItemFieldType].
 const (
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeText     FormsStepUpsertInputBlocksItemFieldsItemFieldType = "text"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeEmail    FormsStepUpsertInputBlocksItemFieldsItemFieldType = "email"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypePhone    FormsStepUpsertInputBlocksItemFieldsItemFieldType = "phone"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeNumber   FormsStepUpsertInputBlocksItemFieldsItemFieldType = "number"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeCurrency FormsStepUpsertInputBlocksItemFieldsItemFieldType = "currency"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeTextarea FormsStepUpsertInputBlocksItemFieldsItemFieldType = "textarea"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeSelect   FormsStepUpsertInputBlocksItemFieldsItemFieldType = "select"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeMulti    FormsStepUpsertInputBlocksItemFieldsItemFieldType = "multi"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeRating   FormsStepUpsertInputBlocksItemFieldsItemFieldType = "rating"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeSwitch   FormsStepUpsertInputBlocksItemFieldsItemFieldType = "switch"
-	FormsStepUpsertInputBlocksItemFieldsItemFieldTypeDate     FormsStepUpsertInputBlocksItemFieldsItemFieldType = "date"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeText     FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "text"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeEmail    FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "email"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypePhone    FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "phone"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeNumber   FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "number"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeCurrency FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "currency"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeTextarea FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "textarea"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeSelect   FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "select"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeMulti    FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "multi"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeRating   FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "rating"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeSwitch   FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "switch"
+	FormsStepsUpsertInputBlocksItemFieldsItemFieldTypeDate     FormsStepsUpsertInputBlocksItemFieldsItemFieldType = "date"
 )
 
-// FormsStepUpsertInputBlocksItemFieldsItemMapping is the type of
-// [FormsStepUpsertInputBlocksItemFieldsItem.Mapping].
-type FormsStepUpsertInputBlocksItemFieldsItemMapping struct {
-	Scope  FormsStepUpsertInputBlocksItemFieldsItemMappingScope `json:"scope"`
-	Target *string                                              `json:"target,omitzero"`
+// FormsStepsUpsertInputBlocksItemFieldsItemMapping is the type of
+// [FormsStepsUpsertInputBlocksItemFieldsItem.Mapping].
+type FormsStepsUpsertInputBlocksItemFieldsItemMapping struct {
+	Scope  FormsStepsUpsertInputBlocksItemFieldsItemMappingScope `json:"scope"`
+	Target *string                                               `json:"target,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItemFieldsItemMappingScope is the type of
-// [FormsStepUpsertInputBlocksItemFieldsItemMapping.Scope].
-type FormsStepUpsertInputBlocksItemFieldsItemMappingScope string
+// FormsStepsUpsertInputBlocksItemFieldsItemMappingScope is the type of
+// [FormsStepsUpsertInputBlocksItemFieldsItemMapping.Scope].
+type FormsStepsUpsertInputBlocksItemFieldsItemMappingScope string
 
-// Values of [FormsStepUpsertInputBlocksItemFieldsItemMappingScope].
+// Values of [FormsStepsUpsertInputBlocksItemFieldsItemMappingScope].
 const (
-	FormsStepUpsertInputBlocksItemFieldsItemMappingScopeLead        FormsStepUpsertInputBlocksItemFieldsItemMappingScope = "lead"
-	FormsStepUpsertInputBlocksItemFieldsItemMappingScopeCustom      FormsStepUpsertInputBlocksItemFieldsItemMappingScope = "custom"
-	FormsStepUpsertInputBlocksItemFieldsItemMappingScopeOpportunity FormsStepUpsertInputBlocksItemFieldsItemMappingScope = "opportunity"
-	FormsStepUpsertInputBlocksItemFieldsItemMappingScopeNone        FormsStepUpsertInputBlocksItemFieldsItemMappingScope = "none"
+	FormsStepsUpsertInputBlocksItemFieldsItemMappingScopeLead        FormsStepsUpsertInputBlocksItemFieldsItemMappingScope = "lead"
+	FormsStepsUpsertInputBlocksItemFieldsItemMappingScopeCustom      FormsStepsUpsertInputBlocksItemFieldsItemMappingScope = "custom"
+	FormsStepsUpsertInputBlocksItemFieldsItemMappingScopeOpportunity FormsStepsUpsertInputBlocksItemFieldsItemMappingScope = "opportunity"
+	FormsStepsUpsertInputBlocksItemFieldsItemMappingScopeNone        FormsStepsUpsertInputBlocksItemFieldsItemMappingScope = "none"
 )
 
-// FormsStepUpsertInputBlocksItemItemsItem is an element of [FormsStepUpsertInputBlocksItem.Items].
+// FormsStepsUpsertInputBlocksItemItemsItem is an element of [FormsStepsUpsertInputBlocksItem.Items].
 //
 // A value has one of these property sets:
 //   - id, value, label
@@ -3630,7 +3630,7 @@ const (
 //   - id, name, role, quote, avatarUrl, rating
 //   - id, question, answer
 //   - id, text
-type FormsStepUpsertInputBlocksItemItemsItem struct {
+type FormsStepsUpsertInputBlocksItemItemsItem struct {
 	ID          string   `json:"id"`
 	Value       *string  `json:"value,omitzero"`
 	Label       *string  `json:"label,omitzero"`
@@ -3646,47 +3646,48 @@ type FormsStepUpsertInputBlocksItemItemsItem struct {
 	Text        *string  `json:"text,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItemKind is the type of [FormsStepUpsertInputBlocksItem.Kind].
-type FormsStepUpsertInputBlocksItemKind string
+// FormsStepsUpsertInputBlocksItemKind is the type of [FormsStepsUpsertInputBlocksItem.Kind].
+type FormsStepsUpsertInputBlocksItemKind string
 
-// Values of [FormsStepUpsertInputBlocksItemKind].
+// Values of [FormsStepsUpsertInputBlocksItemKind].
 const (
-	FormsStepUpsertInputBlocksItemKindWeight FormsStepUpsertInputBlocksItemKind = "weight"
-	FormsStepUpsertInputBlocksItemKindHeight FormsStepUpsertInputBlocksItemKind = "height"
+	FormsStepsUpsertInputBlocksItemKindWeight FormsStepsUpsertInputBlocksItemKind = "weight"
+	FormsStepsUpsertInputBlocksItemKindHeight FormsStepsUpsertInputBlocksItemKind = "height"
 )
 
-// FormsStepUpsertInputBlocksItemLayout is the type of [FormsStepUpsertInputBlocksItem.Layout].
-type FormsStepUpsertInputBlocksItemLayout string
+// FormsStepsUpsertInputBlocksItemLayout is the type of [FormsStepsUpsertInputBlocksItem.Layout].
+type FormsStepsUpsertInputBlocksItemLayout string
 
-// Values of [FormsStepUpsertInputBlocksItemLayout].
+// Values of [FormsStepsUpsertInputBlocksItemLayout].
 const (
-	FormsStepUpsertInputBlocksItemLayoutCenter FormsStepUpsertInputBlocksItemLayout = "center"
-	FormsStepUpsertInputBlocksItemLayoutSplit  FormsStepUpsertInputBlocksItemLayout = "split"
-	FormsStepUpsertInputBlocksItemLayoutList   FormsStepUpsertInputBlocksItemLayout = "list"
-	FormsStepUpsertInputBlocksItemLayoutGrid2  FormsStepUpsertInputBlocksItemLayout = "grid2"
-	FormsStepUpsertInputBlocksItemLayoutGrid3  FormsStepUpsertInputBlocksItemLayout = "grid3"
+	FormsStepsUpsertInputBlocksItemLayoutCenter FormsStepsUpsertInputBlocksItemLayout = "center"
+	FormsStepsUpsertInputBlocksItemLayoutSplit  FormsStepsUpsertInputBlocksItemLayout = "split"
+	FormsStepsUpsertInputBlocksItemLayoutList   FormsStepsUpsertInputBlocksItemLayout = "list"
+	FormsStepsUpsertInputBlocksItemLayoutGrid2  FormsStepsUpsertInputBlocksItemLayout = "grid2"
+	FormsStepsUpsertInputBlocksItemLayoutGrid3  FormsStepsUpsertInputBlocksItemLayout = "grid3"
 )
 
-// FormsStepUpsertInputBlocksItemMapping is the type of [FormsStepUpsertInputBlocksItem.Mapping].
-type FormsStepUpsertInputBlocksItemMapping struct {
-	Scope  FormsStepUpsertInputBlocksItemMappingScope `json:"scope"`
-	Target *string                                    `json:"target,omitzero"`
+// FormsStepsUpsertInputBlocksItemMapping is the type of [FormsStepsUpsertInputBlocksItem.Mapping].
+type FormsStepsUpsertInputBlocksItemMapping struct {
+	Scope  FormsStepsUpsertInputBlocksItemMappingScope `json:"scope"`
+	Target *string                                     `json:"target,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItemMappingScope is the type of
-// [FormsStepUpsertInputBlocksItemMapping.Scope].
-type FormsStepUpsertInputBlocksItemMappingScope string
+// FormsStepsUpsertInputBlocksItemMappingScope is the type of
+// [FormsStepsUpsertInputBlocksItemMapping.Scope].
+type FormsStepsUpsertInputBlocksItemMappingScope string
 
-// Values of [FormsStepUpsertInputBlocksItemMappingScope].
+// Values of [FormsStepsUpsertInputBlocksItemMappingScope].
 const (
-	FormsStepUpsertInputBlocksItemMappingScopeLead        FormsStepUpsertInputBlocksItemMappingScope = "lead"
-	FormsStepUpsertInputBlocksItemMappingScopeCustom      FormsStepUpsertInputBlocksItemMappingScope = "custom"
-	FormsStepUpsertInputBlocksItemMappingScopeOpportunity FormsStepUpsertInputBlocksItemMappingScope = "opportunity"
-	FormsStepUpsertInputBlocksItemMappingScopeNone        FormsStepUpsertInputBlocksItemMappingScope = "none"
+	FormsStepsUpsertInputBlocksItemMappingScopeLead        FormsStepsUpsertInputBlocksItemMappingScope = "lead"
+	FormsStepsUpsertInputBlocksItemMappingScopeCustom      FormsStepsUpsertInputBlocksItemMappingScope = "custom"
+	FormsStepsUpsertInputBlocksItemMappingScopeOpportunity FormsStepsUpsertInputBlocksItemMappingScope = "opportunity"
+	FormsStepsUpsertInputBlocksItemMappingScopeNone        FormsStepsUpsertInputBlocksItemMappingScope = "none"
 )
 
-// FormsStepUpsertInputBlocksItemOptionsItem is an element of [FormsStepUpsertInputBlocksItem.Options].
-type FormsStepUpsertInputBlocksItemOptionsItem struct {
+// FormsStepsUpsertInputBlocksItemOptionsItem is an element of
+// [FormsStepsUpsertInputBlocksItem.Options].
+type FormsStepsUpsertInputBlocksItemOptionsItem struct {
 	ID       string   `json:"id"`
 	Label    string   `json:"label"`
 	Value    *string  `json:"value,omitzero"`
@@ -3695,66 +3696,66 @@ type FormsStepUpsertInputBlocksItemOptionsItem struct {
 	Score    *float64 `json:"score,omitzero"`
 }
 
-// FormsStepUpsertInputBlocksItemPointsItem is an element of [FormsStepUpsertInputBlocksItem.Points].
-type FormsStepUpsertInputBlocksItemPointsItem struct {
+// FormsStepsUpsertInputBlocksItemPointsItem is an element of [FormsStepsUpsertInputBlocksItem.Points].
+type FormsStepsUpsertInputBlocksItemPointsItem struct {
 	ID    string  `json:"id"`
 	Label string  `json:"label"`
 	Value float64 `json:"value"`
 }
 
-// FormsStepUpsertInputBlocksItemSize is the type of [FormsStepUpsertInputBlocksItem.Size].
-type FormsStepUpsertInputBlocksItemSize string
+// FormsStepsUpsertInputBlocksItemSize is the type of [FormsStepsUpsertInputBlocksItem.Size].
+type FormsStepsUpsertInputBlocksItemSize string
 
-// Values of [FormsStepUpsertInputBlocksItemSize].
+// Values of [FormsStepsUpsertInputBlocksItemSize].
 const (
-	FormsStepUpsertInputBlocksItemSizeSm FormsStepUpsertInputBlocksItemSize = "sm"
-	FormsStepUpsertInputBlocksItemSizeMd FormsStepUpsertInputBlocksItemSize = "md"
-	FormsStepUpsertInputBlocksItemSizeLg FormsStepUpsertInputBlocksItemSize = "lg"
+	FormsStepsUpsertInputBlocksItemSizeSm FormsStepsUpsertInputBlocksItemSize = "sm"
+	FormsStepsUpsertInputBlocksItemSizeMd FormsStepsUpsertInputBlocksItemSize = "md"
+	FormsStepsUpsertInputBlocksItemSizeLg FormsStepsUpsertInputBlocksItemSize = "lg"
 )
 
-// FormsStepUpsertInputBlocksItemType is the type of [FormsStepUpsertInputBlocksItem.Type].
-type FormsStepUpsertInputBlocksItemType string
+// FormsStepsUpsertInputBlocksItemType is the type of [FormsStepsUpsertInputBlocksItem.Type].
+type FormsStepsUpsertInputBlocksItemType string
 
-// Values of [FormsStepUpsertInputBlocksItemType].
+// Values of [FormsStepsUpsertInputBlocksItemType].
 const (
-	FormsStepUpsertInputBlocksItemTypeText         FormsStepUpsertInputBlocksItemType = "text"
-	FormsStepUpsertInputBlocksItemTypeDescription  FormsStepUpsertInputBlocksItemType = "description"
-	FormsStepUpsertInputBlocksItemTypeImage        FormsStepUpsertInputBlocksItemType = "image"
-	FormsStepUpsertInputBlocksItemTypeVideo        FormsStepUpsertInputBlocksItemType = "video"
-	FormsStepUpsertInputBlocksItemTypeSpacer       FormsStepUpsertInputBlocksItemType = "spacer"
-	FormsStepUpsertInputBlocksItemTypeOptions      FormsStepUpsertInputBlocksItemType = "options"
-	FormsStepUpsertInputBlocksItemTypeScale        FormsStepUpsertInputBlocksItemType = "scale"
-	FormsStepUpsertInputBlocksItemTypeNumber       FormsStepUpsertInputBlocksItemType = "number"
-	FormsStepUpsertInputBlocksItemTypeCurrency     FormsStepUpsertInputBlocksItemType = "currency"
-	FormsStepUpsertInputBlocksItemTypeMeasure      FormsStepUpsertInputBlocksItemType = "measure"
-	FormsStepUpsertInputBlocksItemTypeButton       FormsStepUpsertInputBlocksItemType = "button"
-	FormsStepUpsertInputBlocksItemTypeCapture      FormsStepUpsertInputBlocksItemType = "capture"
-	FormsStepUpsertInputBlocksItemTypeAlert        FormsStepUpsertInputBlocksItemType = "alert"
-	FormsStepUpsertInputBlocksItemTypeOffer        FormsStepUpsertInputBlocksItemType = "offer"
-	FormsStepUpsertInputBlocksItemTypeLoading      FormsStepUpsertInputBlocksItemType = "loading"
-	FormsStepUpsertInputBlocksItemTypeMetrics      FormsStepUpsertInputBlocksItemType = "metrics"
-	FormsStepUpsertInputBlocksItemTypeResults      FormsStepUpsertInputBlocksItemType = "results"
-	FormsStepUpsertInputBlocksItemTypeTestimonials FormsStepUpsertInputBlocksItemType = "testimonials"
-	FormsStepUpsertInputBlocksItemTypeBeforeAfter  FormsStepUpsertInputBlocksItemType = "beforeAfter"
-	FormsStepUpsertInputBlocksItemTypeFaq          FormsStepUpsertInputBlocksItemType = "faq"
-	FormsStepUpsertInputBlocksItemTypeChecklist    FormsStepUpsertInputBlocksItemType = "checklist"
-	FormsStepUpsertInputBlocksItemTypePricing      FormsStepUpsertInputBlocksItemType = "pricing"
-	FormsStepUpsertInputBlocksItemTypeResultChart  FormsStepUpsertInputBlocksItemType = "resultChart"
+	FormsStepsUpsertInputBlocksItemTypeText         FormsStepsUpsertInputBlocksItemType = "text"
+	FormsStepsUpsertInputBlocksItemTypeDescription  FormsStepsUpsertInputBlocksItemType = "description"
+	FormsStepsUpsertInputBlocksItemTypeImage        FormsStepsUpsertInputBlocksItemType = "image"
+	FormsStepsUpsertInputBlocksItemTypeVideo        FormsStepsUpsertInputBlocksItemType = "video"
+	FormsStepsUpsertInputBlocksItemTypeSpacer       FormsStepsUpsertInputBlocksItemType = "spacer"
+	FormsStepsUpsertInputBlocksItemTypeOptions      FormsStepsUpsertInputBlocksItemType = "options"
+	FormsStepsUpsertInputBlocksItemTypeScale        FormsStepsUpsertInputBlocksItemType = "scale"
+	FormsStepsUpsertInputBlocksItemTypeNumber       FormsStepsUpsertInputBlocksItemType = "number"
+	FormsStepsUpsertInputBlocksItemTypeCurrency     FormsStepsUpsertInputBlocksItemType = "currency"
+	FormsStepsUpsertInputBlocksItemTypeMeasure      FormsStepsUpsertInputBlocksItemType = "measure"
+	FormsStepsUpsertInputBlocksItemTypeButton       FormsStepsUpsertInputBlocksItemType = "button"
+	FormsStepsUpsertInputBlocksItemTypeCapture      FormsStepsUpsertInputBlocksItemType = "capture"
+	FormsStepsUpsertInputBlocksItemTypeAlert        FormsStepsUpsertInputBlocksItemType = "alert"
+	FormsStepsUpsertInputBlocksItemTypeOffer        FormsStepsUpsertInputBlocksItemType = "offer"
+	FormsStepsUpsertInputBlocksItemTypeLoading      FormsStepsUpsertInputBlocksItemType = "loading"
+	FormsStepsUpsertInputBlocksItemTypeMetrics      FormsStepsUpsertInputBlocksItemType = "metrics"
+	FormsStepsUpsertInputBlocksItemTypeResults      FormsStepsUpsertInputBlocksItemType = "results"
+	FormsStepsUpsertInputBlocksItemTypeTestimonials FormsStepsUpsertInputBlocksItemType = "testimonials"
+	FormsStepsUpsertInputBlocksItemTypeBeforeAfter  FormsStepsUpsertInputBlocksItemType = "beforeAfter"
+	FormsStepsUpsertInputBlocksItemTypeFaq          FormsStepsUpsertInputBlocksItemType = "faq"
+	FormsStepsUpsertInputBlocksItemTypeChecklist    FormsStepsUpsertInputBlocksItemType = "checklist"
+	FormsStepsUpsertInputBlocksItemTypePricing      FormsStepsUpsertInputBlocksItemType = "pricing"
+	FormsStepsUpsertInputBlocksItemTypeResultChart  FormsStepsUpsertInputBlocksItemType = "resultChart"
 )
 
-// FormsStepUpsertInputBlocksItemVariant is the type of [FormsStepUpsertInputBlocksItem.Variant].
-type FormsStepUpsertInputBlocksItemVariant string
+// FormsStepsUpsertInputBlocksItemVariant is the type of [FormsStepsUpsertInputBlocksItem.Variant].
+type FormsStepsUpsertInputBlocksItemVariant string
 
-// Values of [FormsStepUpsertInputBlocksItemVariant].
+// Values of [FormsStepsUpsertInputBlocksItemVariant].
 const (
-	FormsStepUpsertInputBlocksItemVariantSolid   FormsStepUpsertInputBlocksItemVariant = "solid"
-	FormsStepUpsertInputBlocksItemVariantOutline FormsStepUpsertInputBlocksItemVariant = "outline"
-	FormsStepUpsertInputBlocksItemVariantGhost   FormsStepUpsertInputBlocksItemVariant = "ghost"
-	FormsStepUpsertInputBlocksItemVariantLink    FormsStepUpsertInputBlocksItemVariant = "link"
-	FormsStepUpsertInputBlocksItemVariantInfo    FormsStepUpsertInputBlocksItemVariant = "info"
-	FormsStepUpsertInputBlocksItemVariantSuccess FormsStepUpsertInputBlocksItemVariant = "success"
-	FormsStepUpsertInputBlocksItemVariantWarning FormsStepUpsertInputBlocksItemVariant = "warning"
-	FormsStepUpsertInputBlocksItemVariantError   FormsStepUpsertInputBlocksItemVariant = "error"
+	FormsStepsUpsertInputBlocksItemVariantSolid   FormsStepsUpsertInputBlocksItemVariant = "solid"
+	FormsStepsUpsertInputBlocksItemVariantOutline FormsStepsUpsertInputBlocksItemVariant = "outline"
+	FormsStepsUpsertInputBlocksItemVariantGhost   FormsStepsUpsertInputBlocksItemVariant = "ghost"
+	FormsStepsUpsertInputBlocksItemVariantLink    FormsStepsUpsertInputBlocksItemVariant = "link"
+	FormsStepsUpsertInputBlocksItemVariantInfo    FormsStepsUpsertInputBlocksItemVariant = "info"
+	FormsStepsUpsertInputBlocksItemVariantSuccess FormsStepsUpsertInputBlocksItemVariant = "success"
+	FormsStepsUpsertInputBlocksItemVariantWarning FormsStepsUpsertInputBlocksItemVariant = "warning"
+	FormsStepsUpsertInputBlocksItemVariantError   FormsStepsUpsertInputBlocksItemVariant = "error"
 )
 
 // FormsSubmissionsListOutput is the response of [FormsService.SubmissionsList].

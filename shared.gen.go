@@ -401,418 +401,419 @@ const (
 	AnalyticsRecentActivitiesInputEventNameItemAdsPixelEvent                             AnalyticsRecentActivitiesInputEventNameItem = "ads.pixel.event"
 )
 
-// CheckoutGetOutput is the response of [CheckoutService.Get] and [PagesService.Get].
-type CheckoutGetOutput struct {
-	ID          string                `json:"id"`
-	Name        string                `json:"name"`
-	Description *string               `json:"description,omitzero"`
-	Assets      []string              `json:"assets"`
-	AssetsInR2  bool                  `json:"assetsInR2"`
-	Type        CheckoutGetOutputType `json:"type"`
-	ImageURL    *string               `json:"imageUrl,omitzero"`
+// CheckoutsGetOutput is the response of [CheckoutsService.Get] and [PagesService.Get].
+type CheckoutsGetOutput struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description *string                `json:"description,omitzero"`
+	Assets      []string               `json:"assets"`
+	AssetsInR2  bool                   `json:"assetsInR2"`
+	Type        CheckoutsGetOutputType `json:"type"`
+	ImageURL    *string                `json:"imageUrl,omitzero"`
 	// Path must start with / and can only contain letters, numbers, -, _ and /
 	// https://regex101.com/r/UXuOGQ/1
-	Path                  string                           `json:"path"`
-	ProjectID             string                           `json:"projectId"`
-	OwnerID               string                           `json:"ownerId"`
-	DomainID              *string                          `json:"domainId,omitzero"`
-	TemplateID            *string                          `json:"templateId,omitzero"`
-	StyleGuideID          *string                          `json:"styleGuideId,omitzero"`
-	PageDesignID          *string                          `json:"pageDesignId,omitzero"`
-	EditorVersion         CheckoutGetOutputEditorVersion   `json:"editorVersion"`
-	ExternalURL           *string                          `json:"externalUrl,omitzero"`
-	ExternalConfig        *CheckoutGetOutputExternalConfig `json:"externalConfig,omitzero"`
-	MaxDesignRepositoryID *string                          `json:"maxDesignRepositoryId,omitzero"`
-	MaxDesignRouteKey     *string                          `json:"maxDesignRouteKey,omitzero"`
-	MaxDesignRouteKeyHash *string                          `json:"maxDesignRouteKeyHash,omitzero"`
-	TriggerMap            *CheckoutGetOutputTriggerMap     `json:"triggerMap,omitzero"`
-	PixelViewContent      bool                             `json:"pixelViewContent"`
-	CreatedAt             time.Time                        `json:"createdAt"`
-	UpdatedAt             time.Time                        `json:"updatedAt"`
-	DeletedAt             *time.Time                       `json:"deletedAt,omitzero"`
-	LastPublishedAt       *time.Time                       `json:"lastPublishedAt,omitzero"`
-	OfferID               *string                          `json:"offerId,omitzero"`
-	FavIcon               *string                          `json:"favIcon,omitzero"`
-	Title                 *string                          `json:"title,omitzero"`
-	Thumbnail             *string                          `json:"thumbnail,omitzero"`
-	WhatsappConfig        any                              `json:"whatsappConfig,omitzero"`
-	WebchatConfig         any                              `json:"webchatConfig,omitzero"`
-	AllowFrameAncestors   bool                             `json:"allowFrameAncestors"`
-	ConfigDescription     *string                          `json:"configDescription,omitzero"`
-	DomainName            *string                          `json:"domainName,omitzero"`
-	ProjectSlug           string                           `json:"projectSlug"`
-	PageURL               string                           `json:"pageUrl"`
-	PublishedTemplateID   *string                          `json:"publishedTemplateId,omitzero"`
+	Path                  string                            `json:"path"`
+	ProjectID             string                            `json:"projectId"`
+	OwnerID               string                            `json:"ownerId"`
+	DomainID              *string                           `json:"domainId,omitzero"`
+	TemplateID            *string                           `json:"templateId,omitzero"`
+	StyleGuideID          *string                           `json:"styleGuideId,omitzero"`
+	PageDesignID          *string                           `json:"pageDesignId,omitzero"`
+	EditorVersion         CheckoutsGetOutputEditorVersion   `json:"editorVersion"`
+	ExternalURL           *string                           `json:"externalUrl,omitzero"`
+	ExternalConfig        *CheckoutsGetOutputExternalConfig `json:"externalConfig,omitzero"`
+	MaxDesignRepositoryID *string                           `json:"maxDesignRepositoryId,omitzero"`
+	MaxDesignRouteKey     *string                           `json:"maxDesignRouteKey,omitzero"`
+	MaxDesignRouteKeyHash *string                           `json:"maxDesignRouteKeyHash,omitzero"`
+	TriggerMap            *CheckoutsGetOutputTriggerMap     `json:"triggerMap,omitzero"`
+	PixelViewContent      bool                              `json:"pixelViewContent"`
+	CreatedAt             time.Time                         `json:"createdAt"`
+	UpdatedAt             time.Time                         `json:"updatedAt"`
+	DeletedAt             *time.Time                        `json:"deletedAt,omitzero"`
+	LastPublishedAt       *time.Time                        `json:"lastPublishedAt,omitzero"`
+	OfferID               *string                           `json:"offerId,omitzero"`
+	FavIcon               *string                           `json:"favIcon,omitzero"`
+	Title                 *string                           `json:"title,omitzero"`
+	Thumbnail             *string                           `json:"thumbnail,omitzero"`
+	WhatsappConfig        any                               `json:"whatsappConfig,omitzero"`
+	WebchatConfig         any                               `json:"webchatConfig,omitzero"`
+	AllowFrameAncestors   bool                              `json:"allowFrameAncestors"`
+	ConfigDescription     *string                           `json:"configDescription,omitzero"`
+	DomainName            *string                           `json:"domainName,omitzero"`
+	ProjectSlug           string                            `json:"projectSlug"`
+	PageURL               string                            `json:"pageUrl"`
+	PublishedTemplateID   *string                           `json:"publishedTemplateId,omitzero"`
 }
 
-// CheckoutGetOutputEditorVersion is the type of [CheckoutGetOutput.EditorVersion].
-type CheckoutGetOutputEditorVersion string
+// CheckoutsGetOutputEditorVersion is the type of [CheckoutsGetOutput.EditorVersion].
+type CheckoutsGetOutputEditorVersion string
 
-// Values of [CheckoutGetOutputEditorVersion].
+// Values of [CheckoutsGetOutputEditorVersion].
 const (
-	CheckoutGetOutputEditorVersionV2        CheckoutGetOutputEditorVersion = "v2"
-	CheckoutGetOutputEditorVersionV3        CheckoutGetOutputEditorVersion = "v3"
-	CheckoutGetOutputEditorVersionExternal  CheckoutGetOutputEditorVersion = "external"
-	CheckoutGetOutputEditorVersionMaxDesign CheckoutGetOutputEditorVersion = "maxDesign"
+	CheckoutsGetOutputEditorVersionV2        CheckoutsGetOutputEditorVersion = "v2"
+	CheckoutsGetOutputEditorVersionV3        CheckoutsGetOutputEditorVersion = "v3"
+	CheckoutsGetOutputEditorVersionExternal  CheckoutsGetOutputEditorVersion = "external"
+	CheckoutsGetOutputEditorVersionMaxDesign CheckoutsGetOutputEditorVersion = "maxDesign"
 )
 
-// CheckoutGetOutputExternalConfig is the type of [CheckoutGetOutput.ExternalConfig].
-type CheckoutGetOutputExternalConfig struct {
-	HasProduct       bool                                             `json:"hasProduct"`
-	ProductValue     *float64                                         `json:"productValue,omitzero"`
-	ProductName      *string                                          `json:"productName,omitzero"`
-	ProductImageURL  *string                                          `json:"productImageUrl,omitzero"`
-	ExternalCategory *CheckoutGetOutputExternalConfigExternalCategory `json:"externalCategory,omitzero"`
+// CheckoutsGetOutputExternalConfig is the type of [CheckoutsGetOutput.ExternalConfig].
+type CheckoutsGetOutputExternalConfig struct {
+	HasProduct       bool                                              `json:"hasProduct"`
+	ProductValue     *float64                                          `json:"productValue,omitzero"`
+	ProductName      *string                                           `json:"productName,omitzero"`
+	ProductImageURL  *string                                           `json:"productImageUrl,omitzero"`
+	ExternalCategory *CheckoutsGetOutputExternalConfigExternalCategory `json:"externalCategory,omitzero"`
 }
 
-// CheckoutGetOutputExternalConfigExternalCategory is the type of
-// [CheckoutGetOutputExternalConfig.ExternalCategory].
-type CheckoutGetOutputExternalConfigExternalCategory string
+// CheckoutsGetOutputExternalConfigExternalCategory is the type of
+// [CheckoutsGetOutputExternalConfig.ExternalCategory].
+type CheckoutsGetOutputExternalConfigExternalCategory string
 
-// Values of [CheckoutGetOutputExternalConfigExternalCategory].
+// Values of [CheckoutsGetOutputExternalConfigExternalCategory].
 const (
-	CheckoutGetOutputExternalConfigExternalCategoryCapture CheckoutGetOutputExternalConfigExternalCategory = "capture"
-	CheckoutGetOutputExternalConfigExternalCategorySales   CheckoutGetOutputExternalConfigExternalCategory = "sales"
-	CheckoutGetOutputExternalConfigExternalCategoryOther   CheckoutGetOutputExternalConfigExternalCategory = "other"
+	CheckoutsGetOutputExternalConfigExternalCategoryCapture CheckoutsGetOutputExternalConfigExternalCategory = "capture"
+	CheckoutsGetOutputExternalConfigExternalCategorySales   CheckoutsGetOutputExternalConfigExternalCategory = "sales"
+	CheckoutsGetOutputExternalConfigExternalCategoryOther   CheckoutsGetOutputExternalConfigExternalCategory = "other"
 )
 
-// CheckoutGetOutputTriggerMap is the type of [CheckoutGetOutput.TriggerMap].
-type CheckoutGetOutputTriggerMap struct {
-	PageTriggers      []CheckoutGetOutputTriggerMapPageTriggersItem      `json:"pageTriggers"`
-	Elements          []CheckoutGetOutputTriggerMapElementsItem          `json:"elements"`
-	AvailableTriggers []CheckoutGetOutputTriggerMapAvailableTriggersItem `json:"availableTriggers"`
-	Media             []CheckoutGetOutputTriggerMapMediaItem             `json:"media,omitzero"`
-	AnalyzedAt        time.Time                                          `json:"analyzedAt"`
+// CheckoutsGetOutputTriggerMap is the type of [CheckoutsGetOutput.TriggerMap].
+type CheckoutsGetOutputTriggerMap struct {
+	PageTriggers      []CheckoutsGetOutputTriggerMapPageTriggersItem      `json:"pageTriggers"`
+	Elements          []CheckoutsGetOutputTriggerMapElementsItem          `json:"elements"`
+	AvailableTriggers []CheckoutsGetOutputTriggerMapAvailableTriggersItem `json:"availableTriggers"`
+	Media             []CheckoutsGetOutputTriggerMapMediaItem             `json:"media,omitzero"`
+	AnalyzedAt        time.Time                                           `json:"analyzedAt"`
 }
 
-// CheckoutGetOutputTriggerMapAvailableTriggersItem is an element of
-// [CheckoutGetOutputTriggerMap.AvailableTriggers].
-type CheckoutGetOutputTriggerMapAvailableTriggersItem string
+// CheckoutsGetOutputTriggerMapAvailableTriggersItem is an element of
+// [CheckoutsGetOutputTriggerMap.AvailableTriggers].
+type CheckoutsGetOutputTriggerMapAvailableTriggersItem string
 
-// Values of [CheckoutGetOutputTriggerMapAvailableTriggersItem].
+// Values of [CheckoutsGetOutputTriggerMapAvailableTriggersItem].
 const (
-	CheckoutGetOutputTriggerMapAvailableTriggersItemVisualConnection          CheckoutGetOutputTriggerMapAvailableTriggersItem = "visual_connection"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemUndefined                 CheckoutGetOutputTriggerMapAvailableTriggersItem = "undefined"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemPageViewed                CheckoutGetOutputTriggerMapAvailableTriggersItem = "page_viewed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemScroll                    CheckoutGetOutputTriggerMapAvailableTriggersItem = "scroll"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTimeOnPage                CheckoutGetOutputTriggerMapAvailableTriggersItem = "time_on_page"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemExitIntent                CheckoutGetOutputTriggerMapAvailableTriggersItem = "exit_intent"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemButtonClick               CheckoutGetOutputTriggerMapAvailableTriggersItem = "button_click"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemLinkClick                 CheckoutGetOutputTriggerMapAvailableTriggersItem = "link_click"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemFormSubmit                CheckoutGetOutputTriggerMapAvailableTriggersItem = "form_submit"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemContactCaptured           CheckoutGetOutputTriggerMapAvailableTriggersItem = "contact_captured"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCustomTrigger             CheckoutGetOutputTriggerMapAvailableTriggersItem = "custom_trigger"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemVideo                     CheckoutGetOutputTriggerMapAvailableTriggersItem = "video"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemVideoStarted              CheckoutGetOutputTriggerMapAvailableTriggersItem = "video_started"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemVideoPaused               CheckoutGetOutputTriggerMapAvailableTriggersItem = "video_paused"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemVideoCompleted            CheckoutGetOutputTriggerMapAvailableTriggersItem = "video_completed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCheckoutViewed            CheckoutGetOutputTriggerMapAvailableTriggersItem = "checkout_viewed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCartAbandoned             CheckoutGetOutputTriggerMapAvailableTriggersItem = "cart_abandoned"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemPurchaseApproved          CheckoutGetOutputTriggerMapAvailableTriggersItem = "purchase_approved"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemPurchaseDeclined          CheckoutGetOutputTriggerMapAvailableTriggersItem = "purchase_declined"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCardDeclined              CheckoutGetOutputTriggerMapAvailableTriggersItem = "card_declined"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemPixGenerated              CheckoutGetOutputTriggerMapAvailableTriggersItem = "pix_generated"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemPixExpired                CheckoutGetOutputTriggerMapAvailableTriggersItem = "pix_expired"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemBoletoGenerated           CheckoutGetOutputTriggerMapAvailableTriggersItem = "boleto_generated"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemBoletoExpired             CheckoutGetOutputTriggerMapAvailableTriggersItem = "boleto_expired"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemRefundRequested           CheckoutGetOutputTriggerMapAvailableTriggersItem = "refund_requested"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemRefundCompleted           CheckoutGetOutputTriggerMapAvailableTriggersItem = "refund_completed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemChargeback                CheckoutGetOutputTriggerMapAvailableTriggersItem = "chargeback"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemUpsellAccepted            CheckoutGetOutputTriggerMapAvailableTriggersItem = "upsell_accepted"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemUpsellDeclined            CheckoutGetOutputTriggerMapAvailableTriggersItem = "upsell_declined"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemDownsellAccepted          CheckoutGetOutputTriggerMapAvailableTriggersItem = "downsell_accepted"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemDownsellDeclined          CheckoutGetOutputTriggerMapAvailableTriggersItem = "downsell_declined"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSubscriptionCreated       CheckoutGetOutputTriggerMapAvailableTriggersItem = "subscription_created"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSubscriptionCancelled     CheckoutGetOutputTriggerMapAvailableTriggersItem = "subscription_cancelled"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSubscriptionRenewed       CheckoutGetOutputTriggerMapAvailableTriggersItem = "subscription_renewed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSubscriptionRenewalFailed CheckoutGetOutputTriggerMapAvailableTriggersItem = "subscription_renewal_failed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSubscriptionCardUpdated   CheckoutGetOutputTriggerMapAvailableTriggersItem = "subscription_card_updated"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTrialStarted              CheckoutGetOutputTriggerMapAvailableTriggersItem = "trial_started"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTrialExpired              CheckoutGetOutputTriggerMapAvailableTriggersItem = "trial_expired"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTrialConverted            CheckoutGetOutputTriggerMapAvailableTriggersItem = "trial_converted"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemMembersAreaAccessed       CheckoutGetOutputTriggerMapAvailableTriggersItem = "members_area_accessed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCourseStarted             CheckoutGetOutputTriggerMapAvailableTriggersItem = "course_started"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemLessonCompleted           CheckoutGetOutputTriggerMapAvailableTriggersItem = "lesson_completed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemModuleCompleted           CheckoutGetOutputTriggerMapAvailableTriggersItem = "module_completed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCourseCompleted           CheckoutGetOutputTriggerMapAvailableTriggersItem = "course_completed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCertificateIssued         CheckoutGetOutputTriggerMapAvailableTriggersItem = "certificate_issued"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemAffiliateRequested        CheckoutGetOutputTriggerMapAvailableTriggersItem = "affiliate_requested"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemAffiliateApproved         CheckoutGetOutputTriggerMapAvailableTriggersItem = "affiliate_approved"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemAffiliateRejected         CheckoutGetOutputTriggerMapAvailableTriggersItem = "affiliate_rejected"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemAffiliateSale             CheckoutGetOutputTriggerMapAvailableTriggersItem = "affiliate_sale"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemContactCreated            CheckoutGetOutputTriggerMapAvailableTriggersItem = "contact_created"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemContactUpdated            CheckoutGetOutputTriggerMapAvailableTriggersItem = "contact_updated"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTagAdded                  CheckoutGetOutputTriggerMapAvailableTriggersItem = "tag_added"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTagRemoved                CheckoutGetOutputTriggerMapAvailableTriggersItem = "tag_removed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemListAdded                 CheckoutGetOutputTriggerMapAvailableTriggersItem = "list_added"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemListRemoved               CheckoutGetOutputTriggerMapAvailableTriggersItem = "list_removed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemLeadScoreChanged          CheckoutGetOutputTriggerMapAvailableTriggersItem = "lead_score_changed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemFieldUpdated              CheckoutGetOutputTriggerMapAvailableTriggersItem = "field_updated"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemInactivity                CheckoutGetOutputTriggerMapAvailableTriggersItem = "inactivity"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemEmailOpened               CheckoutGetOutputTriggerMapAvailableTriggersItem = "email_opened"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemEmailClicked              CheckoutGetOutputTriggerMapAvailableTriggersItem = "email_clicked"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemEmailNotOpened            CheckoutGetOutputTriggerMapAvailableTriggersItem = "email_not_opened"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemEmailUnsubscribed         CheckoutGetOutputTriggerMapAvailableTriggersItem = "email_unsubscribed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemEmailReplied              CheckoutGetOutputTriggerMapAvailableTriggersItem = "email_replied"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemWhatsappMessageReceived   CheckoutGetOutputTriggerMapAvailableTriggersItem = "whatsapp_message_received"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemWhatsappKeyword           CheckoutGetOutputTriggerMapAvailableTriggersItem = "whatsapp_keyword"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemWhatsappButtonClicked     CheckoutGetOutputTriggerMapAvailableTriggersItem = "whatsapp_button_clicked"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemInstagramComment          CheckoutGetOutputTriggerMapAvailableTriggersItem = "instagram_comment"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemInstagramDm               CheckoutGetOutputTriggerMapAvailableTriggersItem = "instagram_dm"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemInstagramLeadForm         CheckoutGetOutputTriggerMapAvailableTriggersItem = "instagram_lead_form"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSMSClicked                CheckoutGetOutputTriggerMapAvailableTriggersItem = "sms_clicked"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemSMSReplied                CheckoutGetOutputTriggerMapAvailableTriggersItem = "sms_replied"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTelegramMessage           CheckoutGetOutputTriggerMapAvailableTriggersItem = "telegram_message"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemTelegramCommand           CheckoutGetOutputTriggerMapAvailableTriggersItem = "telegram_command"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCallAnswered              CheckoutGetOutputTriggerMapAvailableTriggersItem = "call_answered"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemCallMissed                CheckoutGetOutputTriggerMapAvailableTriggersItem = "call_missed"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemBroadcastList             CheckoutGetOutputTriggerMapAvailableTriggersItem = "broadcast_list"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemBroadcastTag              CheckoutGetOutputTriggerMapAvailableTriggersItem = "broadcast_tag"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemBroadcastSegment          CheckoutGetOutputTriggerMapAvailableTriggersItem = "broadcast_segment"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemScheduledDatetime         CheckoutGetOutputTriggerMapAvailableTriggersItem = "scheduled_datetime"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemDelayAfterEvent           CheckoutGetOutputTriggerMapAvailableTriggersItem = "delay_after_event"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemDelayBeforeDate           CheckoutGetOutputTriggerMapAvailableTriggersItem = "delay_before_date"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemManualTrigger             CheckoutGetOutputTriggerMapAvailableTriggersItem = "manual_trigger"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemAPIWebhook                CheckoutGetOutputTriggerMapAvailableTriggersItem = "api_webhook"
-	CheckoutGetOutputTriggerMapAvailableTriggersItemDateBased                 CheckoutGetOutputTriggerMapAvailableTriggersItem = "date_based"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemVisualConnection          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "visual_connection"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemUndefined                 CheckoutsGetOutputTriggerMapAvailableTriggersItem = "undefined"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemPageViewed                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "page_viewed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemScroll                    CheckoutsGetOutputTriggerMapAvailableTriggersItem = "scroll"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTimeOnPage                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "time_on_page"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemExitIntent                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "exit_intent"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemButtonClick               CheckoutsGetOutputTriggerMapAvailableTriggersItem = "button_click"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemLinkClick                 CheckoutsGetOutputTriggerMapAvailableTriggersItem = "link_click"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemFormSubmit                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "form_submit"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemContactCaptured           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "contact_captured"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCustomTrigger             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "custom_trigger"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemVideo                     CheckoutsGetOutputTriggerMapAvailableTriggersItem = "video"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemVideoStarted              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "video_started"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemVideoPaused               CheckoutsGetOutputTriggerMapAvailableTriggersItem = "video_paused"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemVideoCompleted            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "video_completed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCheckoutViewed            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "checkout_viewed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCartAbandoned             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "cart_abandoned"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemPurchaseApproved          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "purchase_approved"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemPurchaseDeclined          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "purchase_declined"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCardDeclined              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "card_declined"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemPixGenerated              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "pix_generated"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemPixExpired                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "pix_expired"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemBoletoGenerated           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "boleto_generated"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemBoletoExpired             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "boleto_expired"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemRefundRequested           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "refund_requested"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemRefundCompleted           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "refund_completed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemChargeback                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "chargeback"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemUpsellAccepted            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "upsell_accepted"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemUpsellDeclined            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "upsell_declined"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemDownsellAccepted          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "downsell_accepted"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemDownsellDeclined          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "downsell_declined"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSubscriptionCreated       CheckoutsGetOutputTriggerMapAvailableTriggersItem = "subscription_created"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSubscriptionCancelled     CheckoutsGetOutputTriggerMapAvailableTriggersItem = "subscription_cancelled"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSubscriptionRenewed       CheckoutsGetOutputTriggerMapAvailableTriggersItem = "subscription_renewed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSubscriptionRenewalFailed CheckoutsGetOutputTriggerMapAvailableTriggersItem = "subscription_renewal_failed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSubscriptionCardUpdated   CheckoutsGetOutputTriggerMapAvailableTriggersItem = "subscription_card_updated"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTrialStarted              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "trial_started"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTrialExpired              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "trial_expired"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTrialConverted            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "trial_converted"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemMembersAreaAccessed       CheckoutsGetOutputTriggerMapAvailableTriggersItem = "members_area_accessed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCourseStarted             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "course_started"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemLessonCompleted           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "lesson_completed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemModuleCompleted           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "module_completed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCourseCompleted           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "course_completed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCertificateIssued         CheckoutsGetOutputTriggerMapAvailableTriggersItem = "certificate_issued"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemAffiliateRequested        CheckoutsGetOutputTriggerMapAvailableTriggersItem = "affiliate_requested"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemAffiliateApproved         CheckoutsGetOutputTriggerMapAvailableTriggersItem = "affiliate_approved"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemAffiliateRejected         CheckoutsGetOutputTriggerMapAvailableTriggersItem = "affiliate_rejected"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemAffiliateSale             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "affiliate_sale"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemContactCreated            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "contact_created"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemContactUpdated            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "contact_updated"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTagAdded                  CheckoutsGetOutputTriggerMapAvailableTriggersItem = "tag_added"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTagRemoved                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "tag_removed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemListAdded                 CheckoutsGetOutputTriggerMapAvailableTriggersItem = "list_added"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemListRemoved               CheckoutsGetOutputTriggerMapAvailableTriggersItem = "list_removed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemLeadScoreChanged          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "lead_score_changed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemFieldUpdated              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "field_updated"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemInactivity                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "inactivity"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemEmailOpened               CheckoutsGetOutputTriggerMapAvailableTriggersItem = "email_opened"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemEmailClicked              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "email_clicked"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemEmailNotOpened            CheckoutsGetOutputTriggerMapAvailableTriggersItem = "email_not_opened"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemEmailUnsubscribed         CheckoutsGetOutputTriggerMapAvailableTriggersItem = "email_unsubscribed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemEmailReplied              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "email_replied"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemWhatsappMessageReceived   CheckoutsGetOutputTriggerMapAvailableTriggersItem = "whatsapp_message_received"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemWhatsappKeyword           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "whatsapp_keyword"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemWhatsappButtonClicked     CheckoutsGetOutputTriggerMapAvailableTriggersItem = "whatsapp_button_clicked"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemInstagramComment          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "instagram_comment"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemInstagramDm               CheckoutsGetOutputTriggerMapAvailableTriggersItem = "instagram_dm"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemInstagramLeadForm         CheckoutsGetOutputTriggerMapAvailableTriggersItem = "instagram_lead_form"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSMSClicked                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "sms_clicked"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemSMSReplied                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "sms_replied"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTelegramMessage           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "telegram_message"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemTelegramCommand           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "telegram_command"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCallAnswered              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "call_answered"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemCallMissed                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "call_missed"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemBroadcastList             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "broadcast_list"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemBroadcastTag              CheckoutsGetOutputTriggerMapAvailableTriggersItem = "broadcast_tag"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemBroadcastSegment          CheckoutsGetOutputTriggerMapAvailableTriggersItem = "broadcast_segment"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemScheduledDatetime         CheckoutsGetOutputTriggerMapAvailableTriggersItem = "scheduled_datetime"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemDelayAfterEvent           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "delay_after_event"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemDelayBeforeDate           CheckoutsGetOutputTriggerMapAvailableTriggersItem = "delay_before_date"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemManualTrigger             CheckoutsGetOutputTriggerMapAvailableTriggersItem = "manual_trigger"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemAPIWebhook                CheckoutsGetOutputTriggerMapAvailableTriggersItem = "api_webhook"
+	CheckoutsGetOutputTriggerMapAvailableTriggersItemDateBased                 CheckoutsGetOutputTriggerMapAvailableTriggersItem = "date_based"
 )
 
-// CheckoutGetOutputTriggerMapElementsItem is an element of [CheckoutGetOutputTriggerMap.Elements].
-type CheckoutGetOutputTriggerMapElementsItem struct {
-	ID            string                                                `json:"id"`
-	ComponentType string                                                `json:"componentType"`
-	Label         string                                                `json:"label"`
-	Content       *string                                               `json:"content,omitzero"`
-	Triggers      []CheckoutGetOutputTriggerMapElementsItemTriggersItem `json:"triggers"`
-	Annotated     *bool                                                 `json:"annotated,omitzero"`
-	Component     *string                                               `json:"component,omitzero"`
-	EntityID      *string                                               `json:"entityId,omitzero"`
+// CheckoutsGetOutputTriggerMapElementsItem is an element of [CheckoutsGetOutputTriggerMap.Elements].
+type CheckoutsGetOutputTriggerMapElementsItem struct {
+	ID            string                                                 `json:"id"`
+	ComponentType string                                                 `json:"componentType"`
+	Label         string                                                 `json:"label"`
+	Content       *string                                                `json:"content,omitzero"`
+	Triggers      []CheckoutsGetOutputTriggerMapElementsItemTriggersItem `json:"triggers"`
+	Annotated     *bool                                                  `json:"annotated,omitzero"`
+	Href          *string                                                `json:"href,omitzero"`
+	Component     *string                                                `json:"component,omitzero"`
+	EntityID      *string                                                `json:"entityId,omitzero"`
 }
 
-// CheckoutGetOutputTriggerMapElementsItemTriggersItem is an element of
-// [CheckoutGetOutputTriggerMapElementsItem.Triggers].
-type CheckoutGetOutputTriggerMapElementsItemTriggersItem string
+// CheckoutsGetOutputTriggerMapElementsItemTriggersItem is an element of
+// [CheckoutsGetOutputTriggerMapElementsItem.Triggers].
+type CheckoutsGetOutputTriggerMapElementsItemTriggersItem string
 
-// Values of [CheckoutGetOutputTriggerMapElementsItemTriggersItem].
+// Values of [CheckoutsGetOutputTriggerMapElementsItemTriggersItem].
 const (
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemVisualConnection          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "visual_connection"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemUndefined                 CheckoutGetOutputTriggerMapElementsItemTriggersItem = "undefined"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemPageViewed                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "page_viewed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemScroll                    CheckoutGetOutputTriggerMapElementsItemTriggersItem = "scroll"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTimeOnPage                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "time_on_page"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemExitIntent                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "exit_intent"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemButtonClick               CheckoutGetOutputTriggerMapElementsItemTriggersItem = "button_click"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemLinkClick                 CheckoutGetOutputTriggerMapElementsItemTriggersItem = "link_click"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemFormSubmit                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "form_submit"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemContactCaptured           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "contact_captured"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCustomTrigger             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "custom_trigger"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemVideo                     CheckoutGetOutputTriggerMapElementsItemTriggersItem = "video"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemVideoStarted              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "video_started"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemVideoPaused               CheckoutGetOutputTriggerMapElementsItemTriggersItem = "video_paused"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemVideoCompleted            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "video_completed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCheckoutViewed            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "checkout_viewed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCartAbandoned             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "cart_abandoned"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemPurchaseApproved          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "purchase_approved"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemPurchaseDeclined          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "purchase_declined"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCardDeclined              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "card_declined"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemPixGenerated              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "pix_generated"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemPixExpired                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "pix_expired"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemBoletoGenerated           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "boleto_generated"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemBoletoExpired             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "boleto_expired"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemRefundRequested           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "refund_requested"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemRefundCompleted           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "refund_completed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemChargeback                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "chargeback"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemUpsellAccepted            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "upsell_accepted"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemUpsellDeclined            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "upsell_declined"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemDownsellAccepted          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "downsell_accepted"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemDownsellDeclined          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "downsell_declined"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSubscriptionCreated       CheckoutGetOutputTriggerMapElementsItemTriggersItem = "subscription_created"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSubscriptionCancelled     CheckoutGetOutputTriggerMapElementsItemTriggersItem = "subscription_cancelled"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSubscriptionRenewed       CheckoutGetOutputTriggerMapElementsItemTriggersItem = "subscription_renewed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSubscriptionRenewalFailed CheckoutGetOutputTriggerMapElementsItemTriggersItem = "subscription_renewal_failed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSubscriptionCardUpdated   CheckoutGetOutputTriggerMapElementsItemTriggersItem = "subscription_card_updated"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTrialStarted              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "trial_started"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTrialExpired              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "trial_expired"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTrialConverted            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "trial_converted"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemMembersAreaAccessed       CheckoutGetOutputTriggerMapElementsItemTriggersItem = "members_area_accessed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCourseStarted             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "course_started"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemLessonCompleted           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "lesson_completed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemModuleCompleted           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "module_completed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCourseCompleted           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "course_completed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCertificateIssued         CheckoutGetOutputTriggerMapElementsItemTriggersItem = "certificate_issued"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemAffiliateRequested        CheckoutGetOutputTriggerMapElementsItemTriggersItem = "affiliate_requested"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemAffiliateApproved         CheckoutGetOutputTriggerMapElementsItemTriggersItem = "affiliate_approved"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemAffiliateRejected         CheckoutGetOutputTriggerMapElementsItemTriggersItem = "affiliate_rejected"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemAffiliateSale             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "affiliate_sale"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemContactCreated            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "contact_created"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemContactUpdated            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "contact_updated"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTagAdded                  CheckoutGetOutputTriggerMapElementsItemTriggersItem = "tag_added"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTagRemoved                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "tag_removed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemListAdded                 CheckoutGetOutputTriggerMapElementsItemTriggersItem = "list_added"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemListRemoved               CheckoutGetOutputTriggerMapElementsItemTriggersItem = "list_removed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemLeadScoreChanged          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "lead_score_changed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemFieldUpdated              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "field_updated"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemInactivity                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "inactivity"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemEmailOpened               CheckoutGetOutputTriggerMapElementsItemTriggersItem = "email_opened"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemEmailClicked              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "email_clicked"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemEmailNotOpened            CheckoutGetOutputTriggerMapElementsItemTriggersItem = "email_not_opened"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemEmailUnsubscribed         CheckoutGetOutputTriggerMapElementsItemTriggersItem = "email_unsubscribed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemEmailReplied              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "email_replied"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemWhatsappMessageReceived   CheckoutGetOutputTriggerMapElementsItemTriggersItem = "whatsapp_message_received"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemWhatsappKeyword           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "whatsapp_keyword"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemWhatsappButtonClicked     CheckoutGetOutputTriggerMapElementsItemTriggersItem = "whatsapp_button_clicked"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemInstagramComment          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "instagram_comment"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemInstagramDm               CheckoutGetOutputTriggerMapElementsItemTriggersItem = "instagram_dm"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemInstagramLeadForm         CheckoutGetOutputTriggerMapElementsItemTriggersItem = "instagram_lead_form"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSMSClicked                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "sms_clicked"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemSMSReplied                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "sms_replied"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTelegramMessage           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "telegram_message"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemTelegramCommand           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "telegram_command"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCallAnswered              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "call_answered"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemCallMissed                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "call_missed"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemBroadcastList             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "broadcast_list"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemBroadcastTag              CheckoutGetOutputTriggerMapElementsItemTriggersItem = "broadcast_tag"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemBroadcastSegment          CheckoutGetOutputTriggerMapElementsItemTriggersItem = "broadcast_segment"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemScheduledDatetime         CheckoutGetOutputTriggerMapElementsItemTriggersItem = "scheduled_datetime"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemDelayAfterEvent           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "delay_after_event"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemDelayBeforeDate           CheckoutGetOutputTriggerMapElementsItemTriggersItem = "delay_before_date"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemManualTrigger             CheckoutGetOutputTriggerMapElementsItemTriggersItem = "manual_trigger"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemAPIWebhook                CheckoutGetOutputTriggerMapElementsItemTriggersItem = "api_webhook"
-	CheckoutGetOutputTriggerMapElementsItemTriggersItemDateBased                 CheckoutGetOutputTriggerMapElementsItemTriggersItem = "date_based"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemVisualConnection          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "visual_connection"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemUndefined                 CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "undefined"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemPageViewed                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "page_viewed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemScroll                    CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "scroll"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTimeOnPage                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "time_on_page"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemExitIntent                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "exit_intent"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemButtonClick               CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "button_click"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemLinkClick                 CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "link_click"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemFormSubmit                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "form_submit"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemContactCaptured           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "contact_captured"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCustomTrigger             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "custom_trigger"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemVideo                     CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "video"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemVideoStarted              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "video_started"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemVideoPaused               CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "video_paused"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemVideoCompleted            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "video_completed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCheckoutViewed            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "checkout_viewed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCartAbandoned             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "cart_abandoned"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemPurchaseApproved          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "purchase_approved"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemPurchaseDeclined          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "purchase_declined"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCardDeclined              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "card_declined"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemPixGenerated              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "pix_generated"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemPixExpired                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "pix_expired"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemBoletoGenerated           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "boleto_generated"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemBoletoExpired             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "boleto_expired"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemRefundRequested           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "refund_requested"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemRefundCompleted           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "refund_completed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemChargeback                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "chargeback"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemUpsellAccepted            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "upsell_accepted"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemUpsellDeclined            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "upsell_declined"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemDownsellAccepted          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "downsell_accepted"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemDownsellDeclined          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "downsell_declined"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSubscriptionCreated       CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "subscription_created"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSubscriptionCancelled     CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "subscription_cancelled"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSubscriptionRenewed       CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "subscription_renewed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSubscriptionRenewalFailed CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "subscription_renewal_failed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSubscriptionCardUpdated   CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "subscription_card_updated"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTrialStarted              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "trial_started"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTrialExpired              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "trial_expired"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTrialConverted            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "trial_converted"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemMembersAreaAccessed       CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "members_area_accessed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCourseStarted             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "course_started"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemLessonCompleted           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "lesson_completed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemModuleCompleted           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "module_completed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCourseCompleted           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "course_completed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCertificateIssued         CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "certificate_issued"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemAffiliateRequested        CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "affiliate_requested"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemAffiliateApproved         CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "affiliate_approved"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemAffiliateRejected         CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "affiliate_rejected"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemAffiliateSale             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "affiliate_sale"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemContactCreated            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "contact_created"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemContactUpdated            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "contact_updated"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTagAdded                  CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "tag_added"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTagRemoved                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "tag_removed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemListAdded                 CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "list_added"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemListRemoved               CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "list_removed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemLeadScoreChanged          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "lead_score_changed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemFieldUpdated              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "field_updated"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemInactivity                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "inactivity"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemEmailOpened               CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "email_opened"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemEmailClicked              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "email_clicked"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemEmailNotOpened            CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "email_not_opened"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemEmailUnsubscribed         CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "email_unsubscribed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemEmailReplied              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "email_replied"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemWhatsappMessageReceived   CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "whatsapp_message_received"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemWhatsappKeyword           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "whatsapp_keyword"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemWhatsappButtonClicked     CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "whatsapp_button_clicked"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemInstagramComment          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "instagram_comment"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemInstagramDm               CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "instagram_dm"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemInstagramLeadForm         CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "instagram_lead_form"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSMSClicked                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "sms_clicked"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemSMSReplied                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "sms_replied"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTelegramMessage           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "telegram_message"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemTelegramCommand           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "telegram_command"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCallAnswered              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "call_answered"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemCallMissed                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "call_missed"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemBroadcastList             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "broadcast_list"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemBroadcastTag              CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "broadcast_tag"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemBroadcastSegment          CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "broadcast_segment"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemScheduledDatetime         CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "scheduled_datetime"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemDelayAfterEvent           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "delay_after_event"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemDelayBeforeDate           CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "delay_before_date"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemManualTrigger             CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "manual_trigger"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemAPIWebhook                CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "api_webhook"
+	CheckoutsGetOutputTriggerMapElementsItemTriggersItemDateBased                 CheckoutsGetOutputTriggerMapElementsItemTriggersItem = "date_based"
 )
 
-// CheckoutGetOutputTriggerMapMediaItem is an element of [CheckoutGetOutputTriggerMap.Media].
-type CheckoutGetOutputTriggerMapMediaItem struct {
-	Provider CheckoutGetOutputTriggerMapMediaItemProvider `json:"provider"`
-	VideoID  string                                       `json:"videoId"`
-	Label    *string                                      `json:"label,omitzero"`
+// CheckoutsGetOutputTriggerMapMediaItem is an element of [CheckoutsGetOutputTriggerMap.Media].
+type CheckoutsGetOutputTriggerMapMediaItem struct {
+	Provider CheckoutsGetOutputTriggerMapMediaItemProvider `json:"provider"`
+	VideoID  string                                        `json:"videoId"`
+	Label    *string                                       `json:"label,omitzero"`
 }
 
-// CheckoutGetOutputTriggerMapMediaItemProvider is the type of
-// [CheckoutGetOutputTriggerMapMediaItem.Provider].
-type CheckoutGetOutputTriggerMapMediaItemProvider string
+// CheckoutsGetOutputTriggerMapMediaItemProvider is the type of
+// [CheckoutsGetOutputTriggerMapMediaItem.Provider].
+type CheckoutsGetOutputTriggerMapMediaItemProvider string
 
-// Values of [CheckoutGetOutputTriggerMapMediaItemProvider].
+// Values of [CheckoutsGetOutputTriggerMapMediaItemProvider].
 const (
-	CheckoutGetOutputTriggerMapMediaItemProviderVturb CheckoutGetOutputTriggerMapMediaItemProvider = "vturb"
+	CheckoutsGetOutputTriggerMapMediaItemProviderVturb CheckoutsGetOutputTriggerMapMediaItemProvider = "vturb"
 )
 
-// CheckoutGetOutputTriggerMapPageTriggersItem is an element of
-// [CheckoutGetOutputTriggerMap.PageTriggers].
-type CheckoutGetOutputTriggerMapPageTriggersItem string
+// CheckoutsGetOutputTriggerMapPageTriggersItem is an element of
+// [CheckoutsGetOutputTriggerMap.PageTriggers].
+type CheckoutsGetOutputTriggerMapPageTriggersItem string
 
-// Values of [CheckoutGetOutputTriggerMapPageTriggersItem].
+// Values of [CheckoutsGetOutputTriggerMapPageTriggersItem].
 const (
-	CheckoutGetOutputTriggerMapPageTriggersItemVisualConnection          CheckoutGetOutputTriggerMapPageTriggersItem = "visual_connection"
-	CheckoutGetOutputTriggerMapPageTriggersItemUndefined                 CheckoutGetOutputTriggerMapPageTriggersItem = "undefined"
-	CheckoutGetOutputTriggerMapPageTriggersItemPageViewed                CheckoutGetOutputTriggerMapPageTriggersItem = "page_viewed"
-	CheckoutGetOutputTriggerMapPageTriggersItemScroll                    CheckoutGetOutputTriggerMapPageTriggersItem = "scroll"
-	CheckoutGetOutputTriggerMapPageTriggersItemTimeOnPage                CheckoutGetOutputTriggerMapPageTriggersItem = "time_on_page"
-	CheckoutGetOutputTriggerMapPageTriggersItemExitIntent                CheckoutGetOutputTriggerMapPageTriggersItem = "exit_intent"
-	CheckoutGetOutputTriggerMapPageTriggersItemButtonClick               CheckoutGetOutputTriggerMapPageTriggersItem = "button_click"
-	CheckoutGetOutputTriggerMapPageTriggersItemLinkClick                 CheckoutGetOutputTriggerMapPageTriggersItem = "link_click"
-	CheckoutGetOutputTriggerMapPageTriggersItemFormSubmit                CheckoutGetOutputTriggerMapPageTriggersItem = "form_submit"
-	CheckoutGetOutputTriggerMapPageTriggersItemContactCaptured           CheckoutGetOutputTriggerMapPageTriggersItem = "contact_captured"
-	CheckoutGetOutputTriggerMapPageTriggersItemCustomTrigger             CheckoutGetOutputTriggerMapPageTriggersItem = "custom_trigger"
-	CheckoutGetOutputTriggerMapPageTriggersItemVideo                     CheckoutGetOutputTriggerMapPageTriggersItem = "video"
-	CheckoutGetOutputTriggerMapPageTriggersItemVideoStarted              CheckoutGetOutputTriggerMapPageTriggersItem = "video_started"
-	CheckoutGetOutputTriggerMapPageTriggersItemVideoPaused               CheckoutGetOutputTriggerMapPageTriggersItem = "video_paused"
-	CheckoutGetOutputTriggerMapPageTriggersItemVideoCompleted            CheckoutGetOutputTriggerMapPageTriggersItem = "video_completed"
-	CheckoutGetOutputTriggerMapPageTriggersItemCheckoutViewed            CheckoutGetOutputTriggerMapPageTriggersItem = "checkout_viewed"
-	CheckoutGetOutputTriggerMapPageTriggersItemCartAbandoned             CheckoutGetOutputTriggerMapPageTriggersItem = "cart_abandoned"
-	CheckoutGetOutputTriggerMapPageTriggersItemPurchaseApproved          CheckoutGetOutputTriggerMapPageTriggersItem = "purchase_approved"
-	CheckoutGetOutputTriggerMapPageTriggersItemPurchaseDeclined          CheckoutGetOutputTriggerMapPageTriggersItem = "purchase_declined"
-	CheckoutGetOutputTriggerMapPageTriggersItemCardDeclined              CheckoutGetOutputTriggerMapPageTriggersItem = "card_declined"
-	CheckoutGetOutputTriggerMapPageTriggersItemPixGenerated              CheckoutGetOutputTriggerMapPageTriggersItem = "pix_generated"
-	CheckoutGetOutputTriggerMapPageTriggersItemPixExpired                CheckoutGetOutputTriggerMapPageTriggersItem = "pix_expired"
-	CheckoutGetOutputTriggerMapPageTriggersItemBoletoGenerated           CheckoutGetOutputTriggerMapPageTriggersItem = "boleto_generated"
-	CheckoutGetOutputTriggerMapPageTriggersItemBoletoExpired             CheckoutGetOutputTriggerMapPageTriggersItem = "boleto_expired"
-	CheckoutGetOutputTriggerMapPageTriggersItemRefundRequested           CheckoutGetOutputTriggerMapPageTriggersItem = "refund_requested"
-	CheckoutGetOutputTriggerMapPageTriggersItemRefundCompleted           CheckoutGetOutputTriggerMapPageTriggersItem = "refund_completed"
-	CheckoutGetOutputTriggerMapPageTriggersItemChargeback                CheckoutGetOutputTriggerMapPageTriggersItem = "chargeback"
-	CheckoutGetOutputTriggerMapPageTriggersItemUpsellAccepted            CheckoutGetOutputTriggerMapPageTriggersItem = "upsell_accepted"
-	CheckoutGetOutputTriggerMapPageTriggersItemUpsellDeclined            CheckoutGetOutputTriggerMapPageTriggersItem = "upsell_declined"
-	CheckoutGetOutputTriggerMapPageTriggersItemDownsellAccepted          CheckoutGetOutputTriggerMapPageTriggersItem = "downsell_accepted"
-	CheckoutGetOutputTriggerMapPageTriggersItemDownsellDeclined          CheckoutGetOutputTriggerMapPageTriggersItem = "downsell_declined"
-	CheckoutGetOutputTriggerMapPageTriggersItemSubscriptionCreated       CheckoutGetOutputTriggerMapPageTriggersItem = "subscription_created"
-	CheckoutGetOutputTriggerMapPageTriggersItemSubscriptionCancelled     CheckoutGetOutputTriggerMapPageTriggersItem = "subscription_cancelled"
-	CheckoutGetOutputTriggerMapPageTriggersItemSubscriptionRenewed       CheckoutGetOutputTriggerMapPageTriggersItem = "subscription_renewed"
-	CheckoutGetOutputTriggerMapPageTriggersItemSubscriptionRenewalFailed CheckoutGetOutputTriggerMapPageTriggersItem = "subscription_renewal_failed"
-	CheckoutGetOutputTriggerMapPageTriggersItemSubscriptionCardUpdated   CheckoutGetOutputTriggerMapPageTriggersItem = "subscription_card_updated"
-	CheckoutGetOutputTriggerMapPageTriggersItemTrialStarted              CheckoutGetOutputTriggerMapPageTriggersItem = "trial_started"
-	CheckoutGetOutputTriggerMapPageTriggersItemTrialExpired              CheckoutGetOutputTriggerMapPageTriggersItem = "trial_expired"
-	CheckoutGetOutputTriggerMapPageTriggersItemTrialConverted            CheckoutGetOutputTriggerMapPageTriggersItem = "trial_converted"
-	CheckoutGetOutputTriggerMapPageTriggersItemMembersAreaAccessed       CheckoutGetOutputTriggerMapPageTriggersItem = "members_area_accessed"
-	CheckoutGetOutputTriggerMapPageTriggersItemCourseStarted             CheckoutGetOutputTriggerMapPageTriggersItem = "course_started"
-	CheckoutGetOutputTriggerMapPageTriggersItemLessonCompleted           CheckoutGetOutputTriggerMapPageTriggersItem = "lesson_completed"
-	CheckoutGetOutputTriggerMapPageTriggersItemModuleCompleted           CheckoutGetOutputTriggerMapPageTriggersItem = "module_completed"
-	CheckoutGetOutputTriggerMapPageTriggersItemCourseCompleted           CheckoutGetOutputTriggerMapPageTriggersItem = "course_completed"
-	CheckoutGetOutputTriggerMapPageTriggersItemCertificateIssued         CheckoutGetOutputTriggerMapPageTriggersItem = "certificate_issued"
-	CheckoutGetOutputTriggerMapPageTriggersItemAffiliateRequested        CheckoutGetOutputTriggerMapPageTriggersItem = "affiliate_requested"
-	CheckoutGetOutputTriggerMapPageTriggersItemAffiliateApproved         CheckoutGetOutputTriggerMapPageTriggersItem = "affiliate_approved"
-	CheckoutGetOutputTriggerMapPageTriggersItemAffiliateRejected         CheckoutGetOutputTriggerMapPageTriggersItem = "affiliate_rejected"
-	CheckoutGetOutputTriggerMapPageTriggersItemAffiliateSale             CheckoutGetOutputTriggerMapPageTriggersItem = "affiliate_sale"
-	CheckoutGetOutputTriggerMapPageTriggersItemContactCreated            CheckoutGetOutputTriggerMapPageTriggersItem = "contact_created"
-	CheckoutGetOutputTriggerMapPageTriggersItemContactUpdated            CheckoutGetOutputTriggerMapPageTriggersItem = "contact_updated"
-	CheckoutGetOutputTriggerMapPageTriggersItemTagAdded                  CheckoutGetOutputTriggerMapPageTriggersItem = "tag_added"
-	CheckoutGetOutputTriggerMapPageTriggersItemTagRemoved                CheckoutGetOutputTriggerMapPageTriggersItem = "tag_removed"
-	CheckoutGetOutputTriggerMapPageTriggersItemListAdded                 CheckoutGetOutputTriggerMapPageTriggersItem = "list_added"
-	CheckoutGetOutputTriggerMapPageTriggersItemListRemoved               CheckoutGetOutputTriggerMapPageTriggersItem = "list_removed"
-	CheckoutGetOutputTriggerMapPageTriggersItemLeadScoreChanged          CheckoutGetOutputTriggerMapPageTriggersItem = "lead_score_changed"
-	CheckoutGetOutputTriggerMapPageTriggersItemFieldUpdated              CheckoutGetOutputTriggerMapPageTriggersItem = "field_updated"
-	CheckoutGetOutputTriggerMapPageTriggersItemInactivity                CheckoutGetOutputTriggerMapPageTriggersItem = "inactivity"
-	CheckoutGetOutputTriggerMapPageTriggersItemEmailOpened               CheckoutGetOutputTriggerMapPageTriggersItem = "email_opened"
-	CheckoutGetOutputTriggerMapPageTriggersItemEmailClicked              CheckoutGetOutputTriggerMapPageTriggersItem = "email_clicked"
-	CheckoutGetOutputTriggerMapPageTriggersItemEmailNotOpened            CheckoutGetOutputTriggerMapPageTriggersItem = "email_not_opened"
-	CheckoutGetOutputTriggerMapPageTriggersItemEmailUnsubscribed         CheckoutGetOutputTriggerMapPageTriggersItem = "email_unsubscribed"
-	CheckoutGetOutputTriggerMapPageTriggersItemEmailReplied              CheckoutGetOutputTriggerMapPageTriggersItem = "email_replied"
-	CheckoutGetOutputTriggerMapPageTriggersItemWhatsappMessageReceived   CheckoutGetOutputTriggerMapPageTriggersItem = "whatsapp_message_received"
-	CheckoutGetOutputTriggerMapPageTriggersItemWhatsappKeyword           CheckoutGetOutputTriggerMapPageTriggersItem = "whatsapp_keyword"
-	CheckoutGetOutputTriggerMapPageTriggersItemWhatsappButtonClicked     CheckoutGetOutputTriggerMapPageTriggersItem = "whatsapp_button_clicked"
-	CheckoutGetOutputTriggerMapPageTriggersItemInstagramComment          CheckoutGetOutputTriggerMapPageTriggersItem = "instagram_comment"
-	CheckoutGetOutputTriggerMapPageTriggersItemInstagramDm               CheckoutGetOutputTriggerMapPageTriggersItem = "instagram_dm"
-	CheckoutGetOutputTriggerMapPageTriggersItemInstagramLeadForm         CheckoutGetOutputTriggerMapPageTriggersItem = "instagram_lead_form"
-	CheckoutGetOutputTriggerMapPageTriggersItemSMSClicked                CheckoutGetOutputTriggerMapPageTriggersItem = "sms_clicked"
-	CheckoutGetOutputTriggerMapPageTriggersItemSMSReplied                CheckoutGetOutputTriggerMapPageTriggersItem = "sms_replied"
-	CheckoutGetOutputTriggerMapPageTriggersItemTelegramMessage           CheckoutGetOutputTriggerMapPageTriggersItem = "telegram_message"
-	CheckoutGetOutputTriggerMapPageTriggersItemTelegramCommand           CheckoutGetOutputTriggerMapPageTriggersItem = "telegram_command"
-	CheckoutGetOutputTriggerMapPageTriggersItemCallAnswered              CheckoutGetOutputTriggerMapPageTriggersItem = "call_answered"
-	CheckoutGetOutputTriggerMapPageTriggersItemCallMissed                CheckoutGetOutputTriggerMapPageTriggersItem = "call_missed"
-	CheckoutGetOutputTriggerMapPageTriggersItemBroadcastList             CheckoutGetOutputTriggerMapPageTriggersItem = "broadcast_list"
-	CheckoutGetOutputTriggerMapPageTriggersItemBroadcastTag              CheckoutGetOutputTriggerMapPageTriggersItem = "broadcast_tag"
-	CheckoutGetOutputTriggerMapPageTriggersItemBroadcastSegment          CheckoutGetOutputTriggerMapPageTriggersItem = "broadcast_segment"
-	CheckoutGetOutputTriggerMapPageTriggersItemScheduledDatetime         CheckoutGetOutputTriggerMapPageTriggersItem = "scheduled_datetime"
-	CheckoutGetOutputTriggerMapPageTriggersItemDelayAfterEvent           CheckoutGetOutputTriggerMapPageTriggersItem = "delay_after_event"
-	CheckoutGetOutputTriggerMapPageTriggersItemDelayBeforeDate           CheckoutGetOutputTriggerMapPageTriggersItem = "delay_before_date"
-	CheckoutGetOutputTriggerMapPageTriggersItemManualTrigger             CheckoutGetOutputTriggerMapPageTriggersItem = "manual_trigger"
-	CheckoutGetOutputTriggerMapPageTriggersItemAPIWebhook                CheckoutGetOutputTriggerMapPageTriggersItem = "api_webhook"
-	CheckoutGetOutputTriggerMapPageTriggersItemDateBased                 CheckoutGetOutputTriggerMapPageTriggersItem = "date_based"
+	CheckoutsGetOutputTriggerMapPageTriggersItemVisualConnection          CheckoutsGetOutputTriggerMapPageTriggersItem = "visual_connection"
+	CheckoutsGetOutputTriggerMapPageTriggersItemUndefined                 CheckoutsGetOutputTriggerMapPageTriggersItem = "undefined"
+	CheckoutsGetOutputTriggerMapPageTriggersItemPageViewed                CheckoutsGetOutputTriggerMapPageTriggersItem = "page_viewed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemScroll                    CheckoutsGetOutputTriggerMapPageTriggersItem = "scroll"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTimeOnPage                CheckoutsGetOutputTriggerMapPageTriggersItem = "time_on_page"
+	CheckoutsGetOutputTriggerMapPageTriggersItemExitIntent                CheckoutsGetOutputTriggerMapPageTriggersItem = "exit_intent"
+	CheckoutsGetOutputTriggerMapPageTriggersItemButtonClick               CheckoutsGetOutputTriggerMapPageTriggersItem = "button_click"
+	CheckoutsGetOutputTriggerMapPageTriggersItemLinkClick                 CheckoutsGetOutputTriggerMapPageTriggersItem = "link_click"
+	CheckoutsGetOutputTriggerMapPageTriggersItemFormSubmit                CheckoutsGetOutputTriggerMapPageTriggersItem = "form_submit"
+	CheckoutsGetOutputTriggerMapPageTriggersItemContactCaptured           CheckoutsGetOutputTriggerMapPageTriggersItem = "contact_captured"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCustomTrigger             CheckoutsGetOutputTriggerMapPageTriggersItem = "custom_trigger"
+	CheckoutsGetOutputTriggerMapPageTriggersItemVideo                     CheckoutsGetOutputTriggerMapPageTriggersItem = "video"
+	CheckoutsGetOutputTriggerMapPageTriggersItemVideoStarted              CheckoutsGetOutputTriggerMapPageTriggersItem = "video_started"
+	CheckoutsGetOutputTriggerMapPageTriggersItemVideoPaused               CheckoutsGetOutputTriggerMapPageTriggersItem = "video_paused"
+	CheckoutsGetOutputTriggerMapPageTriggersItemVideoCompleted            CheckoutsGetOutputTriggerMapPageTriggersItem = "video_completed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCheckoutViewed            CheckoutsGetOutputTriggerMapPageTriggersItem = "checkout_viewed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCartAbandoned             CheckoutsGetOutputTriggerMapPageTriggersItem = "cart_abandoned"
+	CheckoutsGetOutputTriggerMapPageTriggersItemPurchaseApproved          CheckoutsGetOutputTriggerMapPageTriggersItem = "purchase_approved"
+	CheckoutsGetOutputTriggerMapPageTriggersItemPurchaseDeclined          CheckoutsGetOutputTriggerMapPageTriggersItem = "purchase_declined"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCardDeclined              CheckoutsGetOutputTriggerMapPageTriggersItem = "card_declined"
+	CheckoutsGetOutputTriggerMapPageTriggersItemPixGenerated              CheckoutsGetOutputTriggerMapPageTriggersItem = "pix_generated"
+	CheckoutsGetOutputTriggerMapPageTriggersItemPixExpired                CheckoutsGetOutputTriggerMapPageTriggersItem = "pix_expired"
+	CheckoutsGetOutputTriggerMapPageTriggersItemBoletoGenerated           CheckoutsGetOutputTriggerMapPageTriggersItem = "boleto_generated"
+	CheckoutsGetOutputTriggerMapPageTriggersItemBoletoExpired             CheckoutsGetOutputTriggerMapPageTriggersItem = "boleto_expired"
+	CheckoutsGetOutputTriggerMapPageTriggersItemRefundRequested           CheckoutsGetOutputTriggerMapPageTriggersItem = "refund_requested"
+	CheckoutsGetOutputTriggerMapPageTriggersItemRefundCompleted           CheckoutsGetOutputTriggerMapPageTriggersItem = "refund_completed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemChargeback                CheckoutsGetOutputTriggerMapPageTriggersItem = "chargeback"
+	CheckoutsGetOutputTriggerMapPageTriggersItemUpsellAccepted            CheckoutsGetOutputTriggerMapPageTriggersItem = "upsell_accepted"
+	CheckoutsGetOutputTriggerMapPageTriggersItemUpsellDeclined            CheckoutsGetOutputTriggerMapPageTriggersItem = "upsell_declined"
+	CheckoutsGetOutputTriggerMapPageTriggersItemDownsellAccepted          CheckoutsGetOutputTriggerMapPageTriggersItem = "downsell_accepted"
+	CheckoutsGetOutputTriggerMapPageTriggersItemDownsellDeclined          CheckoutsGetOutputTriggerMapPageTriggersItem = "downsell_declined"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSubscriptionCreated       CheckoutsGetOutputTriggerMapPageTriggersItem = "subscription_created"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSubscriptionCancelled     CheckoutsGetOutputTriggerMapPageTriggersItem = "subscription_cancelled"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSubscriptionRenewed       CheckoutsGetOutputTriggerMapPageTriggersItem = "subscription_renewed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSubscriptionRenewalFailed CheckoutsGetOutputTriggerMapPageTriggersItem = "subscription_renewal_failed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSubscriptionCardUpdated   CheckoutsGetOutputTriggerMapPageTriggersItem = "subscription_card_updated"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTrialStarted              CheckoutsGetOutputTriggerMapPageTriggersItem = "trial_started"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTrialExpired              CheckoutsGetOutputTriggerMapPageTriggersItem = "trial_expired"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTrialConverted            CheckoutsGetOutputTriggerMapPageTriggersItem = "trial_converted"
+	CheckoutsGetOutputTriggerMapPageTriggersItemMembersAreaAccessed       CheckoutsGetOutputTriggerMapPageTriggersItem = "members_area_accessed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCourseStarted             CheckoutsGetOutputTriggerMapPageTriggersItem = "course_started"
+	CheckoutsGetOutputTriggerMapPageTriggersItemLessonCompleted           CheckoutsGetOutputTriggerMapPageTriggersItem = "lesson_completed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemModuleCompleted           CheckoutsGetOutputTriggerMapPageTriggersItem = "module_completed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCourseCompleted           CheckoutsGetOutputTriggerMapPageTriggersItem = "course_completed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCertificateIssued         CheckoutsGetOutputTriggerMapPageTriggersItem = "certificate_issued"
+	CheckoutsGetOutputTriggerMapPageTriggersItemAffiliateRequested        CheckoutsGetOutputTriggerMapPageTriggersItem = "affiliate_requested"
+	CheckoutsGetOutputTriggerMapPageTriggersItemAffiliateApproved         CheckoutsGetOutputTriggerMapPageTriggersItem = "affiliate_approved"
+	CheckoutsGetOutputTriggerMapPageTriggersItemAffiliateRejected         CheckoutsGetOutputTriggerMapPageTriggersItem = "affiliate_rejected"
+	CheckoutsGetOutputTriggerMapPageTriggersItemAffiliateSale             CheckoutsGetOutputTriggerMapPageTriggersItem = "affiliate_sale"
+	CheckoutsGetOutputTriggerMapPageTriggersItemContactCreated            CheckoutsGetOutputTriggerMapPageTriggersItem = "contact_created"
+	CheckoutsGetOutputTriggerMapPageTriggersItemContactUpdated            CheckoutsGetOutputTriggerMapPageTriggersItem = "contact_updated"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTagAdded                  CheckoutsGetOutputTriggerMapPageTriggersItem = "tag_added"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTagRemoved                CheckoutsGetOutputTriggerMapPageTriggersItem = "tag_removed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemListAdded                 CheckoutsGetOutputTriggerMapPageTriggersItem = "list_added"
+	CheckoutsGetOutputTriggerMapPageTriggersItemListRemoved               CheckoutsGetOutputTriggerMapPageTriggersItem = "list_removed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemLeadScoreChanged          CheckoutsGetOutputTriggerMapPageTriggersItem = "lead_score_changed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemFieldUpdated              CheckoutsGetOutputTriggerMapPageTriggersItem = "field_updated"
+	CheckoutsGetOutputTriggerMapPageTriggersItemInactivity                CheckoutsGetOutputTriggerMapPageTriggersItem = "inactivity"
+	CheckoutsGetOutputTriggerMapPageTriggersItemEmailOpened               CheckoutsGetOutputTriggerMapPageTriggersItem = "email_opened"
+	CheckoutsGetOutputTriggerMapPageTriggersItemEmailClicked              CheckoutsGetOutputTriggerMapPageTriggersItem = "email_clicked"
+	CheckoutsGetOutputTriggerMapPageTriggersItemEmailNotOpened            CheckoutsGetOutputTriggerMapPageTriggersItem = "email_not_opened"
+	CheckoutsGetOutputTriggerMapPageTriggersItemEmailUnsubscribed         CheckoutsGetOutputTriggerMapPageTriggersItem = "email_unsubscribed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemEmailReplied              CheckoutsGetOutputTriggerMapPageTriggersItem = "email_replied"
+	CheckoutsGetOutputTriggerMapPageTriggersItemWhatsappMessageReceived   CheckoutsGetOutputTriggerMapPageTriggersItem = "whatsapp_message_received"
+	CheckoutsGetOutputTriggerMapPageTriggersItemWhatsappKeyword           CheckoutsGetOutputTriggerMapPageTriggersItem = "whatsapp_keyword"
+	CheckoutsGetOutputTriggerMapPageTriggersItemWhatsappButtonClicked     CheckoutsGetOutputTriggerMapPageTriggersItem = "whatsapp_button_clicked"
+	CheckoutsGetOutputTriggerMapPageTriggersItemInstagramComment          CheckoutsGetOutputTriggerMapPageTriggersItem = "instagram_comment"
+	CheckoutsGetOutputTriggerMapPageTriggersItemInstagramDm               CheckoutsGetOutputTriggerMapPageTriggersItem = "instagram_dm"
+	CheckoutsGetOutputTriggerMapPageTriggersItemInstagramLeadForm         CheckoutsGetOutputTriggerMapPageTriggersItem = "instagram_lead_form"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSMSClicked                CheckoutsGetOutputTriggerMapPageTriggersItem = "sms_clicked"
+	CheckoutsGetOutputTriggerMapPageTriggersItemSMSReplied                CheckoutsGetOutputTriggerMapPageTriggersItem = "sms_replied"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTelegramMessage           CheckoutsGetOutputTriggerMapPageTriggersItem = "telegram_message"
+	CheckoutsGetOutputTriggerMapPageTriggersItemTelegramCommand           CheckoutsGetOutputTriggerMapPageTriggersItem = "telegram_command"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCallAnswered              CheckoutsGetOutputTriggerMapPageTriggersItem = "call_answered"
+	CheckoutsGetOutputTriggerMapPageTriggersItemCallMissed                CheckoutsGetOutputTriggerMapPageTriggersItem = "call_missed"
+	CheckoutsGetOutputTriggerMapPageTriggersItemBroadcastList             CheckoutsGetOutputTriggerMapPageTriggersItem = "broadcast_list"
+	CheckoutsGetOutputTriggerMapPageTriggersItemBroadcastTag              CheckoutsGetOutputTriggerMapPageTriggersItem = "broadcast_tag"
+	CheckoutsGetOutputTriggerMapPageTriggersItemBroadcastSegment          CheckoutsGetOutputTriggerMapPageTriggersItem = "broadcast_segment"
+	CheckoutsGetOutputTriggerMapPageTriggersItemScheduledDatetime         CheckoutsGetOutputTriggerMapPageTriggersItem = "scheduled_datetime"
+	CheckoutsGetOutputTriggerMapPageTriggersItemDelayAfterEvent           CheckoutsGetOutputTriggerMapPageTriggersItem = "delay_after_event"
+	CheckoutsGetOutputTriggerMapPageTriggersItemDelayBeforeDate           CheckoutsGetOutputTriggerMapPageTriggersItem = "delay_before_date"
+	CheckoutsGetOutputTriggerMapPageTriggersItemManualTrigger             CheckoutsGetOutputTriggerMapPageTriggersItem = "manual_trigger"
+	CheckoutsGetOutputTriggerMapPageTriggersItemAPIWebhook                CheckoutsGetOutputTriggerMapPageTriggersItem = "api_webhook"
+	CheckoutsGetOutputTriggerMapPageTriggersItemDateBased                 CheckoutsGetOutputTriggerMapPageTriggersItem = "date_based"
 )
 
-// CheckoutGetOutputType is the type of [CheckoutGetOutput.Type].
-type CheckoutGetOutputType string
+// CheckoutsGetOutputType is the type of [CheckoutsGetOutput.Type].
+type CheckoutsGetOutputType string
 
-// Values of [CheckoutGetOutputType].
+// Values of [CheckoutsGetOutputType].
 const (
-	CheckoutGetOutputTypeAdvertorial  CheckoutGetOutputType = "advertorial"
-	CheckoutGetOutputTypeCapture      CheckoutGetOutputType = "capture"
-	CheckoutGetOutputTypeQuiz         CheckoutGetOutputType = "quiz"
-	CheckoutGetOutputTypePresell      CheckoutGetOutputType = "presell"
-	CheckoutGetOutputTypeSales        CheckoutGetOutputType = "sales"
-	CheckoutGetOutputTypeCheckout     CheckoutGetOutputType = "checkout"
-	CheckoutGetOutputTypeUpsell       CheckoutGetOutputType = "upsell"
-	CheckoutGetOutputTypeDownsell     CheckoutGetOutputType = "downsell"
-	CheckoutGetOutputTypeTermsPrivacy CheckoutGetOutputType = "termsPrivacy"
-	CheckoutGetOutputTypeThankYou     CheckoutGetOutputType = "thankYou"
-	CheckoutGetOutputTypeVsl          CheckoutGetOutputType = "vsl"
-	CheckoutGetOutputTypeWebinar      CheckoutGetOutputType = "webinar"
+	CheckoutsGetOutputTypeAdvertorial  CheckoutsGetOutputType = "advertorial"
+	CheckoutsGetOutputTypeCapture      CheckoutsGetOutputType = "capture"
+	CheckoutsGetOutputTypeQuiz         CheckoutsGetOutputType = "quiz"
+	CheckoutsGetOutputTypePresell      CheckoutsGetOutputType = "presell"
+	CheckoutsGetOutputTypeSales        CheckoutsGetOutputType = "sales"
+	CheckoutsGetOutputTypeCheckout     CheckoutsGetOutputType = "checkout"
+	CheckoutsGetOutputTypeUpsell       CheckoutsGetOutputType = "upsell"
+	CheckoutsGetOutputTypeDownsell     CheckoutsGetOutputType = "downsell"
+	CheckoutsGetOutputTypeTermsPrivacy CheckoutsGetOutputType = "termsPrivacy"
+	CheckoutsGetOutputTypeThankYou     CheckoutsGetOutputType = "thankYou"
+	CheckoutsGetOutputTypeVsl          CheckoutsGetOutputType = "vsl"
+	CheckoutsGetOutputTypeWebinar      CheckoutsGetOutputType = "webinar"
 )
 
-// CustomObjectRelationsDeleteOutput is the response of [CustomObjectRecordsService.ClearValue],
-// [CustomObjectRecordsService.CustomObjectLinksDelete], [CustomObjectRecordsService.Delete],
+// CustomObjectRelationsDeleteOutput is the response of [CustomObjectLinksService.Delete],
+// [CustomObjectRecordsService.ClearValue], [CustomObjectRecordsService.Delete],
 // [CustomObjectRecordsService.NotesCreate], [CustomObjectRecordsService.NotesDelete],
-// [CustomObjectRecordsService.NotesUpdate], [CustomObjectsService.CustomObjectRelationsDelete] and
-// [CustomObjectsService.CustomObjectViewsDelete].
+// [CustomObjectRecordsService.NotesUpdate], [CustomObjectRelationsService.Delete] and
+// [CustomObjectViewsService.Delete].
 type CustomObjectRelationsDeleteOutput struct {
 	Success bool `json:"success"`
 }

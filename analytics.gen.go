@@ -100,6 +100,37 @@ func (s *AnalyticsService) RecentActivities(ctx context.Context, body AnalyticsR
 	return &out, nil
 }
 
+// List the records behind an Insights number.
+//
+// Opens the RECORDS behind one number of an Insights widget, for the non-CRM entities: `sale`,
+// `subscription`, `salesRecovery`, `externalSale`, `externalRecovery`, `affiliate`, `visitor`, `flow`,
+// `broadcast`, `message`, `livechat`, `call`, `social`, `customObject` (needs `objectId`). CRM
+// entities (`deal`, `lead`, `activity`, `meeting`) and unsupported metrics answer 422
+// `DRILLDOWN_NOT_SUPPORTED` (also the "Outros"/other slice, which is not a set). `config` = the widget
+// EFFECTIVE config, the same one `analytics_dashboards_run` used: the widget fields (`entity`,
+// `reportType`, `measure`, `viewBy`, `interval`, `segmentBy`, `chartType` and its scope fields) with
+// `filters` = the dashboard shared `filters` (the widget own scope wins: `scopeAttendantIds` replace
+// `attendantIds`, a stage widget `pipelineId` replaces `pipelineIds`) and the dashboard `conditions`
+// when set — otherwise the list will not match the number. `bucketKey` = the `bucketKey` of the
+// clicked point (a period, or the item in a ranking) and `segmentKey` = the series `key`, both exactly
+// as the run returned them; omit both for the whole set behind the headline number (the full period;
+// for a rate, its base; for a snapshot, what is active now). Returns `rows` (`id`, `at`, `title`,
+// `subtitle`, `value` in cents when `money` is true, `status` already translated, `leadId` when there
+// is a contact) + `meta` (`countItens`, `countPages`, `perPage`); page with `page` and `perPage`
+// (1-200, default 50). Each entity needs its module read permission (sales for
+// sales/subscriptions/recovery/affiliates, contacts for visitors, flows, broadcasts for campaigns and
+// sends, conversations for live chat, calls for calls, social posts for social) — 403 otherwise;
+// sends and live chat are also limited to the connected accounts the user can access.
+//
+// Calls POST /analytics/records-drilldown.
+func (s *AnalyticsService) RecordsDrilldown(ctx context.Context, body AnalyticsRecordsDrilldownInput, opts ...Option) (*AnalyticsRecordsDrilldownOutput, error) {
+	var out AnalyticsRecordsDrilldownOutput
+	if err := s.client.do(ctx, "POST", "/analytics/records-drilldown", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Count contacts, products, funnels and automations.
 //
 // Returns `{ contacts, products, funnels, automations }` — the LIVE count of each resource, the same
@@ -463,6 +494,494 @@ const (
 	AnalyticsRecentActivitiesOutputBreakdownCategoriesItemCategoryLeads         AnalyticsRecentActivitiesOutputBreakdownCategoriesItemCategory = "leads"
 	AnalyticsRecentActivitiesOutputBreakdownCategoriesItemCategoryOthers        AnalyticsRecentActivitiesOutputBreakdownCategoriesItemCategory = "others"
 )
+
+// AnalyticsRecordsDrilldownInput is the request body of [AnalyticsService.RecordsDrilldown].
+type AnalyticsRecordsDrilldownInput struct {
+	Config     AnalyticsRecordsDrilldownInputConfig `json:"config"`
+	BucketKey  *string                              `json:"bucketKey,omitzero"`
+	SegmentKey *string                              `json:"segmentKey,omitzero"`
+	Page       *int64                               `json:"page,omitzero"`
+	PerPage    *int64                               `json:"perPage,omitzero"`
+}
+
+// AnalyticsRecordsDrilldownInputConfig is the type of [AnalyticsRecordsDrilldownInput.Config].
+type AnalyticsRecordsDrilldownInputConfig struct {
+	Entity                    AnalyticsRecordsDrilldownInputConfigEntity                 `json:"entity"`
+	ReportType                AnalyticsRecordsDrilldownInputConfigReportType             `json:"reportType"`
+	Measure                   AnalyticsRecordsDrilldownInputConfigMeasure                `json:"measure"`
+	ViewBy                    AnalyticsRecordsDrilldownInputConfigViewBy                 `json:"viewBy"`
+	Interval                  AnalyticsRecordsDrilldownInputConfigInterval               `json:"interval"`
+	SegmentBy                 AnalyticsRecordsDrilldownInputConfigSegmentBy              `json:"segmentBy"`
+	ChartType                 AnalyticsRecordsDrilldownInputConfigChartType              `json:"chartType"`
+	Filters                   AnalyticsRecordsDrilldownInputConfigFilters                `json:"filters"`
+	Conditions                []AnalyticsRecordsDrilldownInputConfigConditionsItem       `json:"conditions,omitzero"`
+	CutStageID                *string                                                    `json:"cutStageId,omitzero"`
+	ObjectID                  *string                                                    `json:"objectId,omitzero"`
+	CustomFieldID             *string                                                    `json:"customFieldId,omitzero"`
+	TagIDs                    []string                                                   `json:"tagIds,omitzero"`
+	SegmentOverTime           *bool                                                      `json:"segmentOverTime,omitzero"`
+	ScopeCustomFieldID        *string                                                    `json:"scopeCustomFieldId,omitzero"`
+	ScopeCustomFieldValue     *string                                                    `json:"scopeCustomFieldValue,omitzero"`
+	ScopeTagIDs               []string                                                   `json:"scopeTagIds,omitzero"`
+	ScopeCardCustomFieldID    *string                                                    `json:"scopeCardCustomFieldId,omitzero"`
+	ScopeCardCustomFieldValue *string                                                    `json:"scopeCardCustomFieldValue,omitzero"`
+	ScopeCardTagIDs           []string                                                   `json:"scopeCardTagIds,omitzero"`
+	MeetingAttendantField     *AnalyticsRecordsDrilldownInputConfigMeetingAttendantField `json:"meetingAttendantField,omitzero"`
+	DistinctByOpportunity     *bool                                                      `json:"distinctByOpportunity,omitzero"`
+	SelfBookedOnly            *bool                                                      `json:"selfBookedOnly,omitzero"`
+	LeadTimeDateFrom          Nullable[time.Time]                                        `json:"leadTimeDateFrom,omitzero"`
+	LeadTimeDateTo            Nullable[time.Time]                                        `json:"leadTimeDateTo,omitzero"`
+	BusinessDaysOnly          *bool                                                      `json:"businessDaysOnly,omitzero"`
+	DurationStat              *AnalyticsRecordsDrilldownInputConfigDurationStat          `json:"durationStat,omitzero"`
+	ReplySender               *AnalyticsRecordsDrilldownInputConfigReplySender           `json:"replySender,omitzero"`
+	BusinessHoursOnly         *bool                                                      `json:"businessHoursOnly,omitzero"`
+	TeamFieldColumns          []AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem `json:"teamFieldColumns,omitzero"`
+}
+
+// AnalyticsRecordsDrilldownInputConfigChartType is the type of
+// [AnalyticsRecordsDrilldownInputConfig.ChartType].
+type AnalyticsRecordsDrilldownInputConfigChartType string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigChartType].
+const (
+	AnalyticsRecordsDrilldownInputConfigChartTypeBar      AnalyticsRecordsDrilldownInputConfigChartType = "bar"
+	AnalyticsRecordsDrilldownInputConfigChartTypeLine     AnalyticsRecordsDrilldownInputConfigChartType = "line"
+	AnalyticsRecordsDrilldownInputConfigChartTypePie      AnalyticsRecordsDrilldownInputConfigChartType = "pie"
+	AnalyticsRecordsDrilldownInputConfigChartTypeNumber   AnalyticsRecordsDrilldownInputConfigChartType = "number"
+	AnalyticsRecordsDrilldownInputConfigChartTypeRanking  AnalyticsRecordsDrilldownInputConfigChartType = "ranking"
+	AnalyticsRecordsDrilldownInputConfigChartTypeList     AnalyticsRecordsDrilldownInputConfigChartType = "list"
+	AnalyticsRecordsDrilldownInputConfigChartTypeTable    AnalyticsRecordsDrilldownInputConfigChartType = "table"
+	AnalyticsRecordsDrilldownInputConfigChartTypePace     AnalyticsRecordsDrilldownInputConfigChartType = "pace"
+	AnalyticsRecordsDrilldownInputConfigChartTypeTracking AnalyticsRecordsDrilldownInputConfigChartType = "tracking"
+)
+
+// AnalyticsRecordsDrilldownInputConfigConditionsItem is an element of
+// [AnalyticsRecordsDrilldownInputConfig.Conditions].
+type AnalyticsRecordsDrilldownInputConfigConditionsItem struct {
+	ID            Nullable[string]                                           `json:"id,omitzero"`
+	Field         AnalyticsRecordsDrilldownInputConfigConditionsItemField    `json:"field"`
+	Operator      AnalyticsRecordsDrilldownInputConfigConditionsItemOperator `json:"operator"`
+	Negation      bool                                                       `json:"negation"`
+	ParentID      Nullable[string]                                           `json:"parentId,omitzero"`
+	Order         int64                                                      `json:"order"`
+	ValueString   Nullable[string]                                           `json:"valueString,omitzero"`
+	ValueNumber   Nullable[float64]                                          `json:"valueNumber,omitzero"`
+	ValueDate     Nullable[string]                                           `json:"valueDate,omitzero"`
+	ValueBool     Nullable[bool]                                             `json:"valueBool,omitzero"`
+	ValueUUID     Nullable[string]                                           `json:"valueUuid,omitzero"`
+	CustomFieldID Nullable[string]                                           `json:"customFieldId,omitzero"`
+}
+
+// AnalyticsRecordsDrilldownInputConfigConditionsItemField is the type of
+// [AnalyticsRecordsDrilldownInputConfigConditionsItem.Field].
+type AnalyticsRecordsDrilldownInputConfigConditionsItemField string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigConditionsItemField].
+const (
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTitle                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "title"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldValue                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "value"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldIsRecurring            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "isRecurring"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldPriority               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "priority"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTemperature            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "temperature"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldStatus                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "status"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldOrigin                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "origin"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldReferredBy             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "referredBy"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLossReason             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "lossReason"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCreatedAt              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "createdAt"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldUpdatedAt              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "updatedAt"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldExpectedClosingDate    AnalyticsRecordsDrilldownInputConfigConditionsItemField = "expectedClosingDate"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldWonAt                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "wonAt"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLostAt                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "lostAt"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldProductID              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "productId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldOfferID                AnalyticsRecordsDrilldownInputConfigConditionsItemField = "offerId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldPipelineID             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "pipelineId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldStageID                AnalyticsRecordsDrilldownInputConfigConditionsItemField = "stageId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldFunnelID               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "funnelId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldResponsibleAttendantID AnalyticsRecordsDrilldownInputConfigConditionsItemField = "responsibleAttendantId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTagID                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "tagId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldAttendantID            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "attendantId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCompanyID              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "companyId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLeadID                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "leadId"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldText        AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldText"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldNumber      AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldNumber"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldDate        AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldDate"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldBoolean     AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldBoolean"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldSelect      AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldSelect"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTaskStatus             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "taskStatus"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTaskType               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "taskType"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTaskDeadline           AnalyticsRecordsDrilldownInputConfigConditionsItemField = "taskDeadline"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldHasOpenTask            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "hasOpenTask"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldChildren               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "children"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLead                   AnalyticsRecordsDrilldownInputConfigConditionsItemField = "lead"
+)
+
+// AnalyticsRecordsDrilldownInputConfigConditionsItemOperator is the type of
+// [AnalyticsRecordsDrilldownInputConfigConditionsItem.Operator].
+type AnalyticsRecordsDrilldownInputConfigConditionsItemOperator string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigConditionsItemOperator].
+const (
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorChildrenAnd        AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "childrenAnd"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorChildrenOr         AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "childrenOr"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorEquals             AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "equals"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorContains           AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "contains"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorStartsWith         AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "startsWith"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorEndsWith           AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "endsWith"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorGreaterThan        AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "greaterThan"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorGreaterThanOrEqual AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "greaterThanOrEqual"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorLessThan           AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "lessThan"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorLessThanOrEqual    AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "lessThanOrEqual"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorIn                 AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "in"
+	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorIsNotEmpty         AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "isNotEmpty"
+)
+
+// AnalyticsRecordsDrilldownInputConfigDurationStat is the type of
+// [AnalyticsRecordsDrilldownInputConfig.DurationStat].
+type AnalyticsRecordsDrilldownInputConfigDurationStat string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigDurationStat].
+const (
+	AnalyticsRecordsDrilldownInputConfigDurationStatAvg    AnalyticsRecordsDrilldownInputConfigDurationStat = "avg"
+	AnalyticsRecordsDrilldownInputConfigDurationStatMedian AnalyticsRecordsDrilldownInputConfigDurationStat = "median"
+	AnalyticsRecordsDrilldownInputConfigDurationStatP90    AnalyticsRecordsDrilldownInputConfigDurationStat = "p90"
+)
+
+// AnalyticsRecordsDrilldownInputConfigEntity is the type of
+// [AnalyticsRecordsDrilldownInputConfig.Entity].
+type AnalyticsRecordsDrilldownInputConfigEntity string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigEntity].
+const (
+	AnalyticsRecordsDrilldownInputConfigEntityDeal             AnalyticsRecordsDrilldownInputConfigEntity = "deal"
+	AnalyticsRecordsDrilldownInputConfigEntityActivity         AnalyticsRecordsDrilldownInputConfigEntity = "activity"
+	AnalyticsRecordsDrilldownInputConfigEntityLead             AnalyticsRecordsDrilldownInputConfigEntity = "lead"
+	AnalyticsRecordsDrilldownInputConfigEntityMeeting          AnalyticsRecordsDrilldownInputConfigEntity = "meeting"
+	AnalyticsRecordsDrilldownInputConfigEntitySale             AnalyticsRecordsDrilldownInputConfigEntity = "sale"
+	AnalyticsRecordsDrilldownInputConfigEntitySubscription     AnalyticsRecordsDrilldownInputConfigEntity = "subscription"
+	AnalyticsRecordsDrilldownInputConfigEntitySalesRecovery    AnalyticsRecordsDrilldownInputConfigEntity = "salesRecovery"
+	AnalyticsRecordsDrilldownInputConfigEntityExternalRecovery AnalyticsRecordsDrilldownInputConfigEntity = "externalRecovery"
+	AnalyticsRecordsDrilldownInputConfigEntityExternalSale     AnalyticsRecordsDrilldownInputConfigEntity = "externalSale"
+	AnalyticsRecordsDrilldownInputConfigEntityAffiliate        AnalyticsRecordsDrilldownInputConfigEntity = "affiliate"
+	AnalyticsRecordsDrilldownInputConfigEntityVisitor          AnalyticsRecordsDrilldownInputConfigEntity = "visitor"
+	AnalyticsRecordsDrilldownInputConfigEntityFlow             AnalyticsRecordsDrilldownInputConfigEntity = "flow"
+	AnalyticsRecordsDrilldownInputConfigEntityBroadcast        AnalyticsRecordsDrilldownInputConfigEntity = "broadcast"
+	AnalyticsRecordsDrilldownInputConfigEntityMessage          AnalyticsRecordsDrilldownInputConfigEntity = "message"
+	AnalyticsRecordsDrilldownInputConfigEntityLivechat         AnalyticsRecordsDrilldownInputConfigEntity = "livechat"
+	AnalyticsRecordsDrilldownInputConfigEntityAttendance       AnalyticsRecordsDrilldownInputConfigEntity = "attendance"
+	AnalyticsRecordsDrilldownInputConfigEntityCall             AnalyticsRecordsDrilldownInputConfigEntity = "call"
+	AnalyticsRecordsDrilldownInputConfigEntitySocial           AnalyticsRecordsDrilldownInputConfigEntity = "social"
+	AnalyticsRecordsDrilldownInputConfigEntityCustomObject     AnalyticsRecordsDrilldownInputConfigEntity = "customObject"
+)
+
+// AnalyticsRecordsDrilldownInputConfigFilters is the type of
+// [AnalyticsRecordsDrilldownInputConfig.Filters].
+type AnalyticsRecordsDrilldownInputConfigFilters struct {
+	PipelineIDs  []string                                                      `json:"pipelineIds,omitzero"`
+	StageIDs     []string                                                      `json:"stageIds,omitzero"`
+	AttendantIDs []string                                                      `json:"attendantIds,omitzero"`
+	Statuses     []AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem     `json:"statuses,omitzero"`
+	Temperatures []AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem `json:"temperatures,omitzero"`
+	Priorities   []AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem   `json:"priorities,omitzero"`
+	TaskStatuses []AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem `json:"taskStatuses,omitzero"`
+	TaskTypes    []AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem    `json:"taskTypes,omitzero"`
+	Origins      []string                                                      `json:"origins,omitzero"`
+	DateFrom     Nullable[time.Time]                                           `json:"dateFrom,omitzero"`
+	DateTo       Nullable[time.Time]                                           `json:"dateTo,omitzero"`
+	ValueMin     Nullable[int64]                                               `json:"valueMin,omitzero"`
+	ValueMax     Nullable[int64]                                               `json:"valueMax,omitzero"`
+}
+
+// AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem is an element of
+// [AnalyticsRecordsDrilldownInputConfigFilters.Priorities].
+type AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem].
+const (
+	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemHigh   AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "high"
+	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemMedium AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "medium"
+	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemLow    AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "low"
+	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemNone   AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "none"
+)
+
+// AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem is an element of
+// [AnalyticsRecordsDrilldownInputConfigFilters.Statuses].
+type AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem].
+const (
+	AnalyticsRecordsDrilldownInputConfigFiltersStatusesItemOpen AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem = "open"
+	AnalyticsRecordsDrilldownInputConfigFiltersStatusesItemWon  AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem = "won"
+	AnalyticsRecordsDrilldownInputConfigFiltersStatusesItemLost AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem = "lost"
+)
+
+// AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem is an element of
+// [AnalyticsRecordsDrilldownInputConfigFilters.TaskStatuses].
+type AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem].
+const (
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemOpen      AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "open"
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemScheduled AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "scheduled"
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemResolved  AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "resolved"
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemCancelled AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "cancelled"
+)
+
+// AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem is an element of
+// [AnalyticsRecordsDrilldownInputConfigFilters.TaskTypes].
+type AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem].
+const (
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemCall     AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "call"
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemWhatsapp AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "whatsapp"
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemMeeting  AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "meeting"
+	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemTask     AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "task"
+)
+
+// AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem is an element of
+// [AnalyticsRecordsDrilldownInputConfigFilters.Temperatures].
+type AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem].
+const (
+	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemHot    AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "hot"
+	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemWarm   AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "warm"
+	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemCold   AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "cold"
+	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemFrozen AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "frozen"
+)
+
+// AnalyticsRecordsDrilldownInputConfigInterval is the type of
+// [AnalyticsRecordsDrilldownInputConfig.Interval].
+type AnalyticsRecordsDrilldownInputConfigInterval string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigInterval].
+const (
+	AnalyticsRecordsDrilldownInputConfigIntervalDaily   AnalyticsRecordsDrilldownInputConfigInterval = "daily"
+	AnalyticsRecordsDrilldownInputConfigIntervalWeekly  AnalyticsRecordsDrilldownInputConfigInterval = "weekly"
+	AnalyticsRecordsDrilldownInputConfigIntervalMonthly AnalyticsRecordsDrilldownInputConfigInterval = "monthly"
+)
+
+// AnalyticsRecordsDrilldownInputConfigMeasure is the type of
+// [AnalyticsRecordsDrilldownInputConfig.Measure].
+type AnalyticsRecordsDrilldownInputConfigMeasure string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigMeasure].
+const (
+	AnalyticsRecordsDrilldownInputConfigMeasureCount AnalyticsRecordsDrilldownInputConfigMeasure = "count"
+	AnalyticsRecordsDrilldownInputConfigMeasureValue AnalyticsRecordsDrilldownInputConfigMeasure = "value"
+)
+
+// AnalyticsRecordsDrilldownInputConfigMeetingAttendantField is the type of
+// [AnalyticsRecordsDrilldownInputConfig.MeetingAttendantField].
+type AnalyticsRecordsDrilldownInputConfigMeetingAttendantField string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigMeetingAttendantField].
+const (
+	AnalyticsRecordsDrilldownInputConfigMeetingAttendantFieldAttendant AnalyticsRecordsDrilldownInputConfigMeetingAttendantField = "attendant"
+	AnalyticsRecordsDrilldownInputConfigMeetingAttendantFieldScheduler AnalyticsRecordsDrilldownInputConfigMeetingAttendantField = "scheduler"
+)
+
+// AnalyticsRecordsDrilldownInputConfigReplySender is the type of
+// [AnalyticsRecordsDrilldownInputConfig.ReplySender].
+type AnalyticsRecordsDrilldownInputConfigReplySender string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigReplySender].
+const (
+	AnalyticsRecordsDrilldownInputConfigReplySenderHuman AnalyticsRecordsDrilldownInputConfigReplySender = "human"
+	AnalyticsRecordsDrilldownInputConfigReplySenderAI    AnalyticsRecordsDrilldownInputConfigReplySender = "ai"
+	AnalyticsRecordsDrilldownInputConfigReplySenderAll   AnalyticsRecordsDrilldownInputConfigReplySender = "all"
+)
+
+// AnalyticsRecordsDrilldownInputConfigReportType is the type of
+// [AnalyticsRecordsDrilldownInputConfig.ReportType].
+type AnalyticsRecordsDrilldownInputConfigReportType string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigReportType].
+const (
+	AnalyticsRecordsDrilldownInputConfigReportTypePerformance      AnalyticsRecordsDrilldownInputConfigReportType = "performance"
+	AnalyticsRecordsDrilldownInputConfigReportTypeConversion       AnalyticsRecordsDrilldownInputConfigReportType = "conversion"
+	AnalyticsRecordsDrilldownInputConfigReportTypeDuration         AnalyticsRecordsDrilldownInputConfigReportType = "duration"
+	AnalyticsRecordsDrilldownInputConfigReportTypeProgress         AnalyticsRecordsDrilldownInputConfigReportType = "progress"
+	AnalyticsRecordsDrilldownInputConfigReportTypeProducts         AnalyticsRecordsDrilldownInputConfigReportType = "products"
+	AnalyticsRecordsDrilldownInputConfigReportTypeTicket           AnalyticsRecordsDrilldownInputConfigReportType = "ticket"
+	AnalyticsRecordsDrilldownInputConfigReportTypeCompletion       AnalyticsRecordsDrilldownInputConfigReportType = "completion"
+	AnalyticsRecordsDrilldownInputConfigReportTypeOverdue          AnalyticsRecordsDrilldownInputConfigReportType = "overdue"
+	AnalyticsRecordsDrilldownInputConfigReportTypeStagetime        AnalyticsRecordsDrilldownInputConfigReportType = "stagetime"
+	AnalyticsRecordsDrilldownInputConfigReportTypeFunnel           AnalyticsRecordsDrilldownInputConfigReportType = "funnel"
+	AnalyticsRecordsDrilldownInputConfigReportTypeStageConversion  AnalyticsRecordsDrilldownInputConfigReportType = "stageConversion"
+	AnalyticsRecordsDrilldownInputConfigReportTypeForecast         AnalyticsRecordsDrilldownInputConfigReportType = "forecast"
+	AnalyticsRecordsDrilldownInputConfigReportTypeForecastUpcoming AnalyticsRecordsDrilldownInputConfigReportType = "forecastUpcoming"
+	AnalyticsRecordsDrilldownInputConfigReportTypeStageflow        AnalyticsRecordsDrilldownInputConfigReportType = "stageflow"
+	AnalyticsRecordsDrilldownInputConfigReportTypeTeamOverview     AnalyticsRecordsDrilldownInputConfigReportType = "teamOverview"
+	AnalyticsRecordsDrilldownInputConfigReportTypeFollowup         AnalyticsRecordsDrilldownInputConfigReportType = "followup"
+	AnalyticsRecordsDrilldownInputConfigReportTypeLossBreakdown    AnalyticsRecordsDrilldownInputConfigReportType = "lossBreakdown"
+	AnalyticsRecordsDrilldownInputConfigReportTypeLeadTime         AnalyticsRecordsDrilldownInputConfigReportType = "leadTime"
+	AnalyticsRecordsDrilldownInputConfigReportTypeMeetingHandoff   AnalyticsRecordsDrilldownInputConfigReportType = "meetingHandoff"
+	AnalyticsRecordsDrilldownInputConfigReportTypeRecovered        AnalyticsRecordsDrilldownInputConfigReportType = "recovered"
+	AnalyticsRecordsDrilldownInputConfigReportTypeCohortProgress   AnalyticsRecordsDrilldownInputConfigReportType = "cohortProgress"
+	AnalyticsRecordsDrilldownInputConfigReportTypeCohortOutcome    AnalyticsRecordsDrilldownInputConfigReportType = "cohortOutcome"
+	AnalyticsRecordsDrilldownInputConfigReportTypeCohortCycle      AnalyticsRecordsDrilldownInputConfigReportType = "cohortCycle"
+	AnalyticsRecordsDrilldownInputConfigReportTypeUntilReply       AnalyticsRecordsDrilldownInputConfigReportType = "untilReply"
+)
+
+// AnalyticsRecordsDrilldownInputConfigSegmentBy is the type of
+// [AnalyticsRecordsDrilldownInputConfig.SegmentBy].
+type AnalyticsRecordsDrilldownInputConfigSegmentBy string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigSegmentBy].
+const (
+	AnalyticsRecordsDrilldownInputConfigSegmentByNone                AnalyticsRecordsDrilldownInputConfigSegmentBy = "none"
+	AnalyticsRecordsDrilldownInputConfigSegmentByStatus              AnalyticsRecordsDrilldownInputConfigSegmentBy = "status"
+	AnalyticsRecordsDrilldownInputConfigSegmentByPipeline            AnalyticsRecordsDrilldownInputConfigSegmentBy = "pipeline"
+	AnalyticsRecordsDrilldownInputConfigSegmentByStage               AnalyticsRecordsDrilldownInputConfigSegmentBy = "stage"
+	AnalyticsRecordsDrilldownInputConfigSegmentByAttendant           AnalyticsRecordsDrilldownInputConfigSegmentBy = "attendant"
+	AnalyticsRecordsDrilldownInputConfigSegmentByScheduler           AnalyticsRecordsDrilldownInputConfigSegmentBy = "scheduler"
+	AnalyticsRecordsDrilldownInputConfigSegmentByAppointmentSchedule AnalyticsRecordsDrilldownInputConfigSegmentBy = "appointmentSchedule"
+	AnalyticsRecordsDrilldownInputConfigSegmentByTemperature         AnalyticsRecordsDrilldownInputConfigSegmentBy = "temperature"
+	AnalyticsRecordsDrilldownInputConfigSegmentByPriority            AnalyticsRecordsDrilldownInputConfigSegmentBy = "priority"
+	AnalyticsRecordsDrilldownInputConfigSegmentByType                AnalyticsRecordsDrilldownInputConfigSegmentBy = "type"
+	AnalyticsRecordsDrilldownInputConfigSegmentByOrigin              AnalyticsRecordsDrilldownInputConfigSegmentBy = "origin"
+	AnalyticsRecordsDrilldownInputConfigSegmentByProduct             AnalyticsRecordsDrilldownInputConfigSegmentBy = "product"
+	AnalyticsRecordsDrilldownInputConfigSegmentByLossReason          AnalyticsRecordsDrilldownInputConfigSegmentBy = "lossReason"
+	AnalyticsRecordsDrilldownInputConfigSegmentByContactReason       AnalyticsRecordsDrilldownInputConfigSegmentBy = "contactReason"
+	AnalyticsRecordsDrilldownInputConfigSegmentByCustomField         AnalyticsRecordsDrilldownInputConfigSegmentBy = "customField"
+	AnalyticsRecordsDrilldownInputConfigSegmentByTag                 AnalyticsRecordsDrilldownInputConfigSegmentBy = "tag"
+	AnalyticsRecordsDrilldownInputConfigSegmentByCardTag             AnalyticsRecordsDrilldownInputConfigSegmentBy = "cardTag"
+	AnalyticsRecordsDrilldownInputConfigSegmentByUtmSource           AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmSource"
+	AnalyticsRecordsDrilldownInputConfigSegmentByUtmMedium           AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmMedium"
+	AnalyticsRecordsDrilldownInputConfigSegmentByUtmCampaign         AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmCampaign"
+	AnalyticsRecordsDrilldownInputConfigSegmentByUtmContent          AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmContent"
+	AnalyticsRecordsDrilldownInputConfigSegmentByUtmTerm             AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmTerm"
+	AnalyticsRecordsDrilldownInputConfigSegmentByCaptureLink         AnalyticsRecordsDrilldownInputConfigSegmentBy = "captureLink"
+	AnalyticsRecordsDrilldownInputConfigSegmentByPaymentMethod       AnalyticsRecordsDrilldownInputConfigSegmentBy = "paymentMethod"
+	AnalyticsRecordsDrilldownInputConfigSegmentByRecoveryKind        AnalyticsRecordsDrilldownInputConfigSegmentBy = "recoveryKind"
+	AnalyticsRecordsDrilldownInputConfigSegmentByPlatform            AnalyticsRecordsDrilldownInputConfigSegmentBy = "platform"
+	AnalyticsRecordsDrilldownInputConfigSegmentByAffiliate           AnalyticsRecordsDrilldownInputConfigSegmentBy = "affiliate"
+	AnalyticsRecordsDrilldownInputConfigSegmentByDomain              AnalyticsRecordsDrilldownInputConfigSegmentBy = "domain"
+	AnalyticsRecordsDrilldownInputConfigSegmentByPage                AnalyticsRecordsDrilldownInputConfigSegmentBy = "page"
+	AnalyticsRecordsDrilldownInputConfigSegmentByFunnel              AnalyticsRecordsDrilldownInputConfigSegmentBy = "funnel"
+	AnalyticsRecordsDrilldownInputConfigSegmentByQuiz                AnalyticsRecordsDrilldownInputConfigSegmentBy = "quiz"
+	AnalyticsRecordsDrilldownInputConfigSegmentByWebinar             AnalyticsRecordsDrilldownInputConfigSegmentBy = "webinar"
+	AnalyticsRecordsDrilldownInputConfigSegmentByChatbot             AnalyticsRecordsDrilldownInputConfigSegmentBy = "chatbot"
+	AnalyticsRecordsDrilldownInputConfigSegmentByFlow                AnalyticsRecordsDrilldownInputConfigSegmentBy = "flow"
+	AnalyticsRecordsDrilldownInputConfigSegmentByBroadcast           AnalyticsRecordsDrilldownInputConfigSegmentBy = "broadcast"
+	AnalyticsRecordsDrilldownInputConfigSegmentByChannel             AnalyticsRecordsDrilldownInputConfigSegmentBy = "channel"
+)
+
+// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem is an element of
+// [AnalyticsRecordsDrilldownInputConfig.TeamFieldColumns].
+type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem struct {
+	ID            string                                                            `json:"id"`
+	Label         string                                                            `json:"label"`
+	Entity        AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity    `json:"entity"`
+	CustomFieldID string                                                            `json:"customFieldId"`
+	Aggregate     AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate `json:"aggregate"`
+	Value         *string                                                           `json:"value,omitzero"`
+	DealBase      *AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase `json:"dealBase,omitzero"`
+	Money         *bool                                                             `json:"money,omitzero"`
+}
+
+// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate is the type of
+// [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem.Aggregate].
+type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate].
+const (
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregateCount AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate = "count"
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregateSum   AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate = "sum"
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregateAvg   AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate = "avg"
+)
+
+// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase is the type of
+// [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem.DealBase].
+type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase].
+const (
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBaseCreated AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase = "created"
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBaseWon     AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase = "won"
+)
+
+// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity is the type of
+// [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem.Entity].
+type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity].
+const (
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntityLead        AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity = "lead"
+	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntityOpportunity AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity = "opportunity"
+)
+
+// AnalyticsRecordsDrilldownInputConfigViewBy is the type of
+// [AnalyticsRecordsDrilldownInputConfig.ViewBy].
+type AnalyticsRecordsDrilldownInputConfigViewBy string
+
+// Values of [AnalyticsRecordsDrilldownInputConfigViewBy].
+const (
+	AnalyticsRecordsDrilldownInputConfigViewByCreated           AnalyticsRecordsDrilldownInputConfigViewBy = "created"
+	AnalyticsRecordsDrilldownInputConfigViewByWon               AnalyticsRecordsDrilldownInputConfigViewBy = "won"
+	AnalyticsRecordsDrilldownInputConfigViewByLost              AnalyticsRecordsDrilldownInputConfigViewBy = "lost"
+	AnalyticsRecordsDrilldownInputConfigViewByScheduled         AnalyticsRecordsDrilldownInputConfigViewBy = "scheduled"
+	AnalyticsRecordsDrilldownInputConfigViewByAwaiting          AnalyticsRecordsDrilldownInputConfigViewBy = "awaiting"
+	AnalyticsRecordsDrilldownInputConfigViewByHeld              AnalyticsRecordsDrilldownInputConfigViewBy = "held"
+	AnalyticsRecordsDrilldownInputConfigViewByNoShow            AnalyticsRecordsDrilldownInputConfigViewBy = "noShow"
+	AnalyticsRecordsDrilldownInputConfigViewByMeetingOutcomes   AnalyticsRecordsDrilldownInputConfigViewBy = "meetingOutcomes"
+	AnalyticsRecordsDrilldownInputConfigViewByPaid              AnalyticsRecordsDrilldownInputConfigViewBy = "paid"
+	AnalyticsRecordsDrilldownInputConfigViewByRefunded          AnalyticsRecordsDrilldownInputConfigViewBy = "refunded"
+	AnalyticsRecordsDrilldownInputConfigViewByChargedBack       AnalyticsRecordsDrilldownInputConfigViewBy = "chargedBack"
+	AnalyticsRecordsDrilldownInputConfigViewByCanceled          AnalyticsRecordsDrilldownInputConfigViewBy = "canceled"
+	AnalyticsRecordsDrilldownInputConfigViewByFailed            AnalyticsRecordsDrilldownInputConfigViewBy = "failed"
+	AnalyticsRecordsDrilldownInputConfigViewByPending           AnalyticsRecordsDrilldownInputConfigViewBy = "pending"
+	AnalyticsRecordsDrilldownInputConfigViewByAbandoned         AnalyticsRecordsDrilldownInputConfigViewBy = "abandoned"
+	AnalyticsRecordsDrilldownInputConfigViewByCommission        AnalyticsRecordsDrilldownInputConfigViewBy = "commission"
+	AnalyticsRecordsDrilldownInputConfigViewByVisitors          AnalyticsRecordsDrilldownInputConfigViewBy = "visitors"
+	AnalyticsRecordsDrilldownInputConfigViewBySessions          AnalyticsRecordsDrilldownInputConfigViewBy = "sessions"
+	AnalyticsRecordsDrilldownInputConfigViewByConverted         AnalyticsRecordsDrilldownInputConfigViewBy = "converted"
+	AnalyticsRecordsDrilldownInputConfigViewByStarted           AnalyticsRecordsDrilldownInputConfigViewBy = "started"
+	AnalyticsRecordsDrilldownInputConfigViewByFinished          AnalyticsRecordsDrilldownInputConfigViewBy = "finished"
+	AnalyticsRecordsDrilldownInputConfigViewBySent              AnalyticsRecordsDrilldownInputConfigViewBy = "sent"
+	AnalyticsRecordsDrilldownInputConfigViewByDelivered         AnalyticsRecordsDrilldownInputConfigViewBy = "delivered"
+	AnalyticsRecordsDrilldownInputConfigViewByOpened            AnalyticsRecordsDrilldownInputConfigViewBy = "opened"
+	AnalyticsRecordsDrilldownInputConfigViewByClicked           AnalyticsRecordsDrilldownInputConfigViewBy = "clicked"
+	AnalyticsRecordsDrilldownInputConfigViewByReceived          AnalyticsRecordsDrilldownInputConfigViewBy = "received"
+	AnalyticsRecordsDrilldownInputConfigViewByResolved          AnalyticsRecordsDrilldownInputConfigViewBy = "resolved"
+	AnalyticsRecordsDrilldownInputConfigViewByPublished         AnalyticsRecordsDrilldownInputConfigViewBy = "published"
+	AnalyticsRecordsDrilldownInputConfigViewByViews             AnalyticsRecordsDrilldownInputConfigViewBy = "views"
+	AnalyticsRecordsDrilldownInputConfigViewByEngagement        AnalyticsRecordsDrilldownInputConfigViewBy = "engagement"
+	AnalyticsRecordsDrilldownInputConfigViewByInteractions      AnalyticsRecordsDrilldownInputConfigViewBy = "interactions"
+	AnalyticsRecordsDrilldownInputConfigViewByFirstResponse     AnalyticsRecordsDrilldownInputConfigViewBy = "firstResponse"
+	AnalyticsRecordsDrilldownInputConfigViewByResolution        AnalyticsRecordsDrilldownInputConfigViewBy = "resolution"
+	AnalyticsRecordsDrilldownInputConfigViewByQueueWait         AnalyticsRecordsDrilldownInputConfigViewBy = "queueWait"
+	AnalyticsRecordsDrilldownInputConfigViewByReplyInterval     AnalyticsRecordsDrilldownInputConfigViewBy = "replyInterval"
+	AnalyticsRecordsDrilldownInputConfigViewByUntilReply        AnalyticsRecordsDrilldownInputConfigViewBy = "untilReply"
+	AnalyticsRecordsDrilldownInputConfigViewByCreditsUntilReply AnalyticsRecordsDrilldownInputConfigViewBy = "creditsUntilReply"
+	AnalyticsRecordsDrilldownInputConfigViewByUnanswered        AnalyticsRecordsDrilldownInputConfigViewBy = "unanswered"
+)
+
+// AnalyticsRecordsDrilldownOutput is the response of [AnalyticsService.RecordsDrilldown].
+type AnalyticsRecordsDrilldownOutput struct {
+	Rows  []AnalyticsRecordsDrilldownOutputRowsItem `json:"rows"`
+	Money bool                                      `json:"money"`
+	Meta  AnalyticsRecordsDrilldownOutputMeta       `json:"meta"`
+}
+
+// AnalyticsRecordsDrilldownOutputMeta is the type of [AnalyticsRecordsDrilldownOutput.Meta].
+type AnalyticsRecordsDrilldownOutputMeta struct {
+	CountItens int64 `json:"countItens"`
+	CountPages int64 `json:"countPages"`
+	PerPage    int64 `json:"perPage"`
+}
+
+// AnalyticsRecordsDrilldownOutputRowsItem is an element of [AnalyticsRecordsDrilldownOutput.Rows].
+type AnalyticsRecordsDrilldownOutputRowsItem struct {
+	ID       string     `json:"id"`
+	At       *time.Time `json:"at"`
+	Title    string     `json:"title"`
+	Subtitle *string    `json:"subtitle"`
+	Value    *float64   `json:"value"`
+	Status   *string    `json:"status"`
+	LeadID   *string    `json:"leadId"`
+}
 
 // AnalyticsResourceCountsOutput is the response of [AnalyticsService.ResourceCounts].
 type AnalyticsResourceCountsOutput struct {

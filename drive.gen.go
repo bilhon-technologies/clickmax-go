@@ -13,6 +13,54 @@ type DriveService struct {
 	client *Client
 }
 
+// Comment on a Drive file.
+//
+// Adds a plain-text comment (`body`, 1–4000 characters, trimmed; only whitespace → 422
+// `DRIVE_COMMENT_EMPTY`) to a file as the current user. Requires commenter or higher on the file — a
+// `reader` gets 403 `DRIVE_FORBIDDEN`. Comments cannot be edited afterwards and are visible to
+// everyone who can see the file; the first 120 characters go into the file's activity trail. Not
+// idempotent: calling twice posts two comments.
+//
+// Calls POST /drive/comments-add.
+func (s *DriveService) CommentsAdd(ctx context.Context, body DriveCommentsAddInput, opts ...Option) (*DriveCommentsAddOutput, error) {
+	var out DriveCommentsAddOutput
+	if err := s.client.do(ctx, "POST", "/drive/comments-add", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Delete a comment on a Drive file.
+//
+// Deletes a comment for everyone; there is no restore. The author may delete their own comment and a
+// space `owner` (or the workspace owner) may delete anyone's; editors cannot delete other people's
+// comments (403 `DRIVE_FORBIDDEN`). 404 `DRIVE_COMMENT_NOT_FOUND` if it is already gone or the caller
+// cannot see the file. Never delete someone else's comment without the user asking for exactly that.
+//
+// Calls DELETE /drive/comments-delete.
+func (s *DriveService) CommentsDelete(ctx context.Context, body DriveCommentsDeleteInput, opts ...Option) (*DriveCommentsDeleteOutput, error) {
+	var out DriveCommentsDeleteOutput
+	if err := s.client.do(ctx, "DELETE", "/drive/comments-delete", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List comments on a Drive file.
+//
+// Comments on a FILE (folders have none), oldest first: `body`, `author` and dates. Plain text: no
+// threads, edits or mentions. Requires view access; 404 if the file is in the trash or the caller
+// cannot see it.
+//
+// Calls GET /drive/comments-list.
+func (s *DriveService) CommentsList(ctx context.Context, params DriveCommentsListParams, opts ...Option) (*DriveCommentsListOutput, error) {
+	var out DriveCommentsListOutput
+	if err := s.client.do(ctx, "GET", "/drive/comments-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // List my favorite Drive items.
 //
 // Folders and files the user starred (favorites are per person), most recently starred first,
@@ -40,6 +88,45 @@ func (s *DriveService) FavoritesList(ctx context.Context, params DriveFavoritesL
 func (s *DriveService) FavoritesSet(ctx context.Context, body DriveFavoritesSetInput, opts ...Option) (*DriveFavoritesSetOutput, error) {
 	var out DriveFavoritesSetOutput
 	if err := s.client.do(ctx, "POST", "/drive/favorites-set", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Who has access to a Drive item.
+//
+// The 'Who has access' list of a folder or file: one entry per person with the `role` GRANTED to them.
+// `inherited: false` = a direct share on this item (`shareId` is set and `drive_shares_revoke` removes
+// it, with `sharedBy`/`sharedAt`). `inherited: true` = comes from the space (`inheritedFrom: 'space'`:
+// its members, the owner of a personal space, the workspace owner) or from a shared parent folder
+// (`inheritedFrom: 'folder'` + `inheritedFromName`) and can only be changed there. A direct entry
+// beats an inherited one; among inherited ones the highest role wins. Roles are the granted ones,
+// before the seat cap: a viewer-seat person listed as `editor` still acts as `reader`. Everyone in the
+// workspace can read the 'Plataforma' space and is not listed. Requires view access; 404 if the caller
+// cannot see the item.
+//
+// Calls GET /drive/items-access.
+func (s *DriveService) ItemsAccess(ctx context.Context, params DriveItemsAccessParams, opts ...Option) (*DriveItemsAccessOutput, error) {
+	var out DriveItemsAccessOutput
+	if err := s.client.do(ctx, "GET", "/drive/items-access", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List the activity of a Drive item.
+//
+// Audit trail of ONE folder or file, newest first (`limit` 1–200, default 50). Each entry has
+// `action` (`created` | `uploaded` | `renamed` | `moved` | `shared` | `unshared` | `commented` |
+// `trashed` | `restored`), the `actor` (id, name, email) and a free-form `meta` with the detail (old
+// and new name, destination, role granted, comment preview). Views and downloads are not logged here
+// (they are per person, in `drive_recents_list`), and a folder's trail does not include what happened
+// to the items inside it — query those individually. Requires view access.
+//
+// Calls GET /drive/items-activity.
+func (s *DriveService) ItemsActivity(ctx context.Context, params DriveItemsActivityParams, opts ...Option) (*DriveItemsActivityOutput, error) {
+	var out DriveItemsActivityOutput
+	if err := s.client.do(ctx, "GET", "/drive/items-activity", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -81,6 +168,30 @@ func (s *DriveService) FavoritesSet(ctx context.Context, body DriveFavoritesSetI
 func (s *DriveService) Overview(ctx context.Context, opts ...Option) (*DriveOverviewOutput, error) {
 	var out DriveOverviewOutput
 	if err := s.client.do(ctx, "GET", "/drive/overview", nil, nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// A person's Drive card.
+//
+// The Drive card of ONE person (the hover card on an item's owner): `person` (id, name, email,
+// imageUrl), `workspaceRole` (`owner` | `admin` | `member`; null = no longer in the workspace or
+// invitation still pending — their files stay), `memberSince` (null in the same cases), `stats` —
+// `files` (finished uploads they created, outside the trash), `bytes` (sum of those sizes, decimal
+// string), `folders` (folders they created), `lastUploadAt` —, `sharedSpaces` (team spaces with
+// their `role` in each) and `recentFiles` (their 4 newest files, full Drive rows). EVERYTHING is cut
+// to what the CALLER can see: counts, bytes, spaces and recent files only include items and spaces
+// visible to the caller, so `files: 0` can mean "nothing I can see", never a workspace total, and
+// other people's private 'Meu drive' never counts. `sharedSpaces` is empty when the person has no
+// active role. 404 `DRIVE_PERSON_NOT_FOUND` for someone who never had a seat in this workspace. Needs
+// Drive read access. To list a person's files beyond the 4 recent ones use `drive_search` with
+// `ownerId`; for their CRM work profile use `workspace_members_get`.
+//
+// Calls GET /drive/people-get.
+func (s *DriveService) PeopleGet(ctx context.Context, params DrivePeopleGetParams, opts ...Option) (*DrivePeopleGetOutput, error) {
+	var out DrivePeopleGetOutput
+	if err := s.client.do(ctx, "GET", "/drive/people-get", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -129,6 +240,70 @@ func (s *DriveService) Search(ctx context.Context, params DriveSearchParams, opt
 	return &out, nil
 }
 
+// Share a Drive folder or file with a person.
+//
+// Shares ONE folder or file with ONE named person of the workspace: pass exactly one of `folderId` /
+// `fileId` (422 `DRIVE_SHARE_TARGET_INVALID` otherwise), the `userId` and a `role` of `reader` |
+// `commenter` | `editor`. `owner` is refused (422 `DRIVE_SHARE_ROLE_INVALID`) — ownership is a space
+// role; use `drive_spaces_members_add`. Sharing a folder covers everything inside it, including files
+// added later; sharing a file covers only that file. The person then finds it under
+// `drive_shares_with_me`. There is NO public or anyone-with-the-link mode: access is always to a named
+// person who must be the workspace owner or an ACTIVE workspace member (422
+// `DRIVE_USER_NOT_IN_WORKSPACE`); sharing with yourself is refused (422 `DRIVE_SHARE_SELF`). Get
+// `userId` from `workspace_members_list` (`id`), `drive_spaces_members_list` or the `personId` of
+// `attendants_list`. Requires editor or owner on the item — a reader or commenter cannot re-share
+// (403 `DRIVE_FORBIDDEN`). An item in the trash cannot be shared (404), and neither can items of a
+// Google-backed space (422 `DRIVE_SHARE_NATIVE_ONLY`). Re-sharing with the same person UPDATES their
+// role (upsert). The role is added to whatever access the person already has — the more permissive
+// wins — and is capped by their workspace seat (viewer, guest, finance_only and attendant seats stay
+// `reader`). Because it exposes data to a third person, confirm the item, the person and the role with
+// the user before calling. Returns the share row; its `id` is the `shareId` for `drive_shares_revoke`.
+//
+// Calls POST /drive/shares-create.
+func (s *DriveService) SharesCreate(ctx context.Context, body DriveSharesCreateInput, opts ...Option) (*DriveSharesCreateOutput, error) {
+	var out DriveSharesCreateOutput
+	if err := s.client.do(ctx, "POST", "/drive/shares-create", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Revoke a direct share on a Drive item.
+//
+// Removes ONE direct share by `shareId`. The person keeps any access that comes from elsewhere (space
+// membership, a share on a parent folder), and the item itself is untouched — it can be shared
+// again. Same permission as sharing: editor or owner on the item. Not idempotent: 404
+// `DRIVE_SHARE_NOT_FOUND` once it is gone. Only DIRECT shares can be revoked here (`inherited: false`
+// in `drive_items_access`). Inherited access is changed at its origin: `drive_spaces_members_remove` /
+// `drive_spaces_members_update` for space access, or the share on the parent folder.
+//
+// Calls POST /drive/shares-revoke.
+func (s *DriveService) SharesRevoke(ctx context.Context, body DriveSharesRevokeInput, opts ...Option) (*DriveSharesRevokeOutput, error) {
+	var out DriveSharesRevokeOutput
+	if err := s.client.do(ctx, "POST", "/drive/shares-revoke", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List items shared with me.
+//
+// Folders and files other people shared DIRECTLY with the user, newest first, paginated with
+// `page`/`perPage` (default 10). Each row has `shareId`, the granted `role`, `sharedAt`, `sharedBy`
+// and exactly one of `folder` / `file` (with `location`; use its `spaceId` to open a shared folder
+// with `drive_files_browse`). It does not list what is inside shared folders (browse into them), the
+// spaces the user is a member of (`drive_spaces_list`) or trashed items. `meta.countItens` is the
+// total, the number shown on the sidebar 'Compartilhados comigo' badge.
+//
+// Calls GET /drive/shares-with-me.
+func (s *DriveService) SharesWithMe(ctx context.Context, params DriveSharesWithMeParams, opts ...Option) (*DriveSharesWithMeOutput, error) {
+	var out DriveSharesWithMeOutput
+	if err := s.client.do(ctx, "GET", "/drive/shares-with-me", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Drive storage usage and quota.
 //
 // Workspace-wide storage card (NOT per space or person; any workspace member can read it). `usedBytes`
@@ -152,6 +327,85 @@ func (s *DriveService) StorageUsage(ctx context.Context, opts ...Option) (*Drive
 		return nil, err
 	}
 	return &out, nil
+}
+
+// DriveCommentsAddInput is the request body of [DriveService.CommentsAdd].
+type DriveCommentsAddInput struct {
+	// File id, from `drive_files_browse` or `drive_search`.
+	FileID string `json:"fileId"`
+	Body   string `json:"body"`
+}
+
+// DriveCommentsAddOutput is the response of [DriveService.CommentsAdd].
+type DriveCommentsAddOutput struct {
+	ID          string                        `json:"id"`
+	WorkspaceID string                        `json:"workspaceId"`
+	FileID      string                        `json:"fileId"`
+	AuthorID    *string                       `json:"authorId,omitzero"`
+	Body        string                        `json:"body"`
+	CreatedAt   time.Time                     `json:"createdAt"`
+	UpdatedAt   time.Time                     `json:"updatedAt"`
+	DeletedAt   *time.Time                    `json:"deletedAt,omitzero"`
+	Author      *DriveCommentsAddOutputAuthor `json:"author,omitzero"`
+}
+
+// DriveCommentsAddOutputAuthor is the type of [DriveCommentsAddOutput.Author].
+type DriveCommentsAddOutputAuthor struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveCommentsDeleteInput is the request body of [DriveService.CommentsDelete].
+type DriveCommentsDeleteInput struct {
+	// File id, from `drive_files_browse` or `drive_search`.
+	FileID string `json:"fileId"`
+	// Comment id, from `drive_comments_list`.
+	CommentID string `json:"commentId"`
+}
+
+// DriveCommentsDeleteOutput is the response of [DriveService.CommentsDelete].
+type DriveCommentsDeleteOutput struct {
+	Ok bool `json:"ok"`
+}
+
+// DriveCommentsListOutput is the response of [DriveService.CommentsList].
+type DriveCommentsListOutput struct {
+	Data []DriveCommentsListOutputDataItem `json:"data"`
+}
+
+// DriveCommentsListOutputDataItem is an element of [DriveCommentsListOutput.Data].
+type DriveCommentsListOutputDataItem struct {
+	ID          string                                 `json:"id"`
+	WorkspaceID string                                 `json:"workspaceId"`
+	FileID      string                                 `json:"fileId"`
+	AuthorID    *string                                `json:"authorId,omitzero"`
+	Body        string                                 `json:"body"`
+	CreatedAt   time.Time                              `json:"createdAt"`
+	UpdatedAt   time.Time                              `json:"updatedAt"`
+	DeletedAt   *time.Time                             `json:"deletedAt,omitzero"`
+	Author      *DriveCommentsListOutputDataItemAuthor `json:"author,omitzero"`
+}
+
+// DriveCommentsListOutputDataItemAuthor is the type of [DriveCommentsListOutputDataItem.Author].
+type DriveCommentsListOutputDataItemAuthor struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveCommentsListParams holds the query parameters of [DriveService.CommentsList].
+type DriveCommentsListParams struct {
+	// File id, from `drive_files_browse` or `drive_search`.
+	FileID string
+}
+
+func (p DriveCommentsListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "fileId", &p.FileID)
+	return v
 }
 
 // DriveFavoritesListOutput is the response of [DriveService.FavoritesList].
@@ -489,6 +743,157 @@ type DriveFavoritesSetOutput struct {
 	IsFavorite bool `json:"isFavorite"`
 }
 
+// DriveItemsAccessOutput is the response of [DriveService.ItemsAccess].
+type DriveItemsAccessOutput struct {
+	Data []DriveItemsAccessOutputDataItem `json:"data"`
+}
+
+// DriveItemsAccessOutputDataItem is an element of [DriveItemsAccessOutput.Data].
+type DriveItemsAccessOutputDataItem struct {
+	User              DriveItemsAccessOutputDataItemUser           `json:"user"`
+	Role              DriveItemsAccessOutputDataItemRole           `json:"role"`
+	Inherited         bool                                         `json:"inherited"`
+	InheritedFrom     *DriveItemsAccessOutputDataItemInheritedFrom `json:"inheritedFrom,omitzero"`
+	InheritedFromID   *string                                      `json:"inheritedFromId,omitzero"`
+	InheritedFromName *string                                      `json:"inheritedFromName,omitzero"`
+	ShareID           *string                                      `json:"shareId,omitzero"`
+	SharedBy          *DriveItemsAccessOutputDataItemSharedBy      `json:"sharedBy,omitzero"`
+	SharedAt          *time.Time                                   `json:"sharedAt,omitzero"`
+}
+
+// DriveItemsAccessOutputDataItemInheritedFrom is the type of
+// [DriveItemsAccessOutputDataItem.InheritedFrom].
+type DriveItemsAccessOutputDataItemInheritedFrom string
+
+// Values of [DriveItemsAccessOutputDataItemInheritedFrom].
+const (
+	DriveItemsAccessOutputDataItemInheritedFromSpace  DriveItemsAccessOutputDataItemInheritedFrom = "space"
+	DriveItemsAccessOutputDataItemInheritedFromFolder DriveItemsAccessOutputDataItemInheritedFrom = "folder"
+)
+
+// DriveItemsAccessOutputDataItemRole is the type of [DriveItemsAccessOutputDataItem.Role].
+type DriveItemsAccessOutputDataItemRole string
+
+// Values of [DriveItemsAccessOutputDataItemRole].
+const (
+	DriveItemsAccessOutputDataItemRoleReader    DriveItemsAccessOutputDataItemRole = "reader"
+	DriveItemsAccessOutputDataItemRoleCommenter DriveItemsAccessOutputDataItemRole = "commenter"
+	DriveItemsAccessOutputDataItemRoleEditor    DriveItemsAccessOutputDataItemRole = "editor"
+	DriveItemsAccessOutputDataItemRoleOwner     DriveItemsAccessOutputDataItemRole = "owner"
+)
+
+// DriveItemsAccessOutputDataItemSharedBy is the type of [DriveItemsAccessOutputDataItem.SharedBy].
+type DriveItemsAccessOutputDataItemSharedBy struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveItemsAccessOutputDataItemUser is the type of [DriveItemsAccessOutputDataItem.User].
+type DriveItemsAccessOutputDataItemUser struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveItemsAccessParams holds the query parameters of [DriveService.ItemsAccess].
+type DriveItemsAccessParams struct {
+	// Item type: `folder` or `file`. Matches `kind` in list rows.
+	Kind DriveItemsAccessParamsKind
+	// Folder or file id.
+	ID string
+}
+
+func (p DriveItemsAccessParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "kind", (*string)(&p.Kind))
+	addString(v, "id", &p.ID)
+	return v
+}
+
+// DriveItemsAccessParamsKind is the type of [DriveItemsAccessParams.Kind].
+//
+// Item type: `folder` or `file`. Matches `kind` in list rows.
+type DriveItemsAccessParamsKind string
+
+// Values of [DriveItemsAccessParamsKind].
+const (
+	DriveItemsAccessParamsKindFolder DriveItemsAccessParamsKind = "folder"
+	DriveItemsAccessParamsKindFile   DriveItemsAccessParamsKind = "file"
+)
+
+// DriveItemsActivityOutput is the response of [DriveService.ItemsActivity].
+type DriveItemsActivityOutput struct {
+	Data []DriveItemsActivityOutputDataItem `json:"data"`
+}
+
+// DriveItemsActivityOutputDataItem is an element of [DriveItemsActivityOutput.Data].
+type DriveItemsActivityOutputDataItem struct {
+	ID          string                                 `json:"id"`
+	WorkspaceID string                                 `json:"workspaceId"`
+	FolderID    *string                                `json:"folderId,omitzero"`
+	FileID      *string                                `json:"fileId,omitzero"`
+	ActorID     *string                                `json:"actorId,omitzero"`
+	Action      DriveItemsActivityOutputDataItemAction `json:"action"`
+	Meta        any                                    `json:"meta,omitzero"`
+	CreatedAt   time.Time                              `json:"createdAt"`
+	Actor       *DriveItemsActivityOutputDataItemActor `json:"actor,omitzero"`
+}
+
+// DriveItemsActivityOutputDataItemAction is the type of [DriveItemsActivityOutputDataItem.Action].
+type DriveItemsActivityOutputDataItemAction string
+
+// Values of [DriveItemsActivityOutputDataItemAction].
+const (
+	DriveItemsActivityOutputDataItemActionCreated   DriveItemsActivityOutputDataItemAction = "created"
+	DriveItemsActivityOutputDataItemActionUploaded  DriveItemsActivityOutputDataItemAction = "uploaded"
+	DriveItemsActivityOutputDataItemActionRenamed   DriveItemsActivityOutputDataItemAction = "renamed"
+	DriveItemsActivityOutputDataItemActionMoved     DriveItemsActivityOutputDataItemAction = "moved"
+	DriveItemsActivityOutputDataItemActionShared    DriveItemsActivityOutputDataItemAction = "shared"
+	DriveItemsActivityOutputDataItemActionUnshared  DriveItemsActivityOutputDataItemAction = "unshared"
+	DriveItemsActivityOutputDataItemActionCommented DriveItemsActivityOutputDataItemAction = "commented"
+	DriveItemsActivityOutputDataItemActionTrashed   DriveItemsActivityOutputDataItemAction = "trashed"
+	DriveItemsActivityOutputDataItemActionRestored  DriveItemsActivityOutputDataItemAction = "restored"
+)
+
+// DriveItemsActivityOutputDataItemActor is the type of [DriveItemsActivityOutputDataItem.Actor].
+type DriveItemsActivityOutputDataItemActor struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveItemsActivityParams holds the query parameters of [DriveService.ItemsActivity].
+type DriveItemsActivityParams struct {
+	// Item type: `folder` or `file`. Matches `kind` in list rows.
+	Kind DriveItemsActivityParamsKind
+	// Folder or file id.
+	ID    string
+	Limit *int64
+}
+
+func (p DriveItemsActivityParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "kind", (*string)(&p.Kind))
+	addString(v, "id", &p.ID)
+	addInt(v, "limit", p.Limit)
+	return v
+}
+
+// DriveItemsActivityParamsKind is the type of [DriveItemsActivityParams.Kind].
+//
+// Item type: `folder` or `file`. Matches `kind` in list rows.
+type DriveItemsActivityParamsKind string
+
+// Values of [DriveItemsActivityParamsKind].
+const (
+	DriveItemsActivityParamsKindFolder DriveItemsActivityParamsKind = "folder"
+	DriveItemsActivityParamsKindFile   DriveItemsActivityParamsKind = "file"
+)
+
 // DriveOverviewOutput is the response of [DriveService.Overview].
 type DriveOverviewOutput struct {
 	GreetingName string                           `json:"greetingName"`
@@ -778,6 +1183,243 @@ const (
 	DriveOverviewOutputStorageLevelCritical DriveOverviewOutputStorageLevel = "critical"
 	DriveOverviewOutputStorageLevelExceeded DriveOverviewOutputStorageLevel = "exceeded"
 )
+
+// DrivePeopleGetOutput is the response of [DriveService.PeopleGet].
+type DrivePeopleGetOutput struct {
+	Person        DrivePeopleGetOutputPerson             `json:"person"`
+	WorkspaceRole *DrivePeopleGetOutputWorkspaceRole     `json:"workspaceRole,omitzero"`
+	MemberSince   *time.Time                             `json:"memberSince,omitzero"`
+	Stats         DrivePeopleGetOutputStats              `json:"stats"`
+	SharedSpaces  []DrivePeopleGetOutputSharedSpacesItem `json:"sharedSpaces"`
+	RecentFiles   []DrivePeopleGetOutputRecentFilesItem  `json:"recentFiles"`
+}
+
+// DrivePeopleGetOutputPerson is the type of [DrivePeopleGetOutput.Person].
+type DrivePeopleGetOutputPerson struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DrivePeopleGetOutputRecentFilesItem is an element of [DrivePeopleGetOutput.RecentFiles].
+type DrivePeopleGetOutputRecentFilesItem struct {
+	ID                   string                                             `json:"id"`
+	WorkspaceID          string                                             `json:"workspaceId"`
+	SpaceID              string                                             `json:"spaceId"`
+	FolderID             *string                                            `json:"folderId,omitzero"`
+	Name                 string                                             `json:"name"`
+	MimeType             string                                             `json:"mimeType"`
+	Alt                  *string                                            `json:"alt,omitzero"`
+	Size                 string                                             `json:"size"`
+	Origin               DrivePeopleGetOutputRecentFilesItemOrigin          `json:"origin"`
+	StorageCategory      DrivePeopleGetOutputRecentFilesItemStorageCategory `json:"storageCategory"`
+	OriginID             *string                                            `json:"originId,omitzero"`
+	Provider             DrivePeopleGetOutputRecentFilesItemProvider        `json:"provider"`
+	ExternalID           string                                             `json:"externalId"`
+	ThumbnailExternalID  *string                                            `json:"thumbnailExternalId,omitzero"`
+	ProviderConnectionID *string                                            `json:"providerConnectionId,omitzero"`
+	ImportedFromProvider bool                                               `json:"importedFromProvider"`
+	Status               DrivePeopleGetOutputRecentFilesItemStatus          `json:"status"`
+	OrphanedAt           *time.Time                                         `json:"orphanedAt,omitzero"`
+	OrphanReason         *DrivePeopleGetOutputRecentFilesItemOrphanReason   `json:"orphanReason,omitzero"`
+	CreatedByID          *string                                            `json:"createdById,omitzero"`
+	CreatedAt            time.Time                                          `json:"createdAt"`
+	UpdatedAt            time.Time                                          `json:"updatedAt"`
+	DeletedAt            *time.Time                                         `json:"deletedAt,omitzero"`
+	DeletedByID          *string                                            `json:"deletedById,omitzero"`
+	TrashedViaFolderID   *string                                            `json:"trashedViaFolderId,omitzero"`
+	Owner                *DrivePeopleGetOutputRecentFilesItemOwner          `json:"owner,omitzero"`
+	Location             DrivePeopleGetOutputRecentFilesItemLocation        `json:"location"`
+	IsFavorite           bool                                               `json:"isFavorite"`
+	ThumbnailURL         *string                                            `json:"thumbnailUrl,omitzero"`
+	PublicURL            *string                                            `json:"publicUrl,omitzero"`
+}
+
+// DrivePeopleGetOutputRecentFilesItemLocation is the type of
+// [DrivePeopleGetOutputRecentFilesItem.Location].
+type DrivePeopleGetOutputRecentFilesItemLocation struct {
+	SpaceID    string                                                `json:"spaceId"`
+	SpaceName  string                                                `json:"spaceName"`
+	SpaceKind  DrivePeopleGetOutputRecentFilesItemLocationSpaceKind  `json:"spaceKind"`
+	SpaceColor DrivePeopleGetOutputRecentFilesItemLocationSpaceColor `json:"spaceColor"`
+	Path       []DrivePeopleGetOutputRecentFilesItemLocationPathItem `json:"path"`
+}
+
+// DrivePeopleGetOutputRecentFilesItemLocationPathItem is an element of
+// [DrivePeopleGetOutputRecentFilesItemLocation.Path].
+type DrivePeopleGetOutputRecentFilesItemLocationPathItem struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// DrivePeopleGetOutputRecentFilesItemLocationSpaceColor is the type of
+// [DrivePeopleGetOutputRecentFilesItemLocation.SpaceColor].
+type DrivePeopleGetOutputRecentFilesItemLocationSpaceColor string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemLocationSpaceColor].
+const (
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceColorAzure    DrivePeopleGetOutputRecentFilesItemLocationSpaceColor = "azure"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceColorAcid     DrivePeopleGetOutputRecentFilesItemLocationSpaceColor = "acid"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceColorCadmium  DrivePeopleGetOutputRecentFilesItemLocationSpaceColor = "cadmium"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceColorPurplish DrivePeopleGetOutputRecentFilesItemLocationSpaceColor = "purplish"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceColorTorch    DrivePeopleGetOutputRecentFilesItemLocationSpaceColor = "torch"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceColorNeutral  DrivePeopleGetOutputRecentFilesItemLocationSpaceColor = "neutral"
+)
+
+// DrivePeopleGetOutputRecentFilesItemLocationSpaceKind is the type of
+// [DrivePeopleGetOutputRecentFilesItemLocation.SpaceKind].
+type DrivePeopleGetOutputRecentFilesItemLocationSpaceKind string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemLocationSpaceKind].
+const (
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceKindPersonal DrivePeopleGetOutputRecentFilesItemLocationSpaceKind = "personal"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceKindTeam     DrivePeopleGetOutputRecentFilesItemLocationSpaceKind = "team"
+	DrivePeopleGetOutputRecentFilesItemLocationSpaceKindSystem   DrivePeopleGetOutputRecentFilesItemLocationSpaceKind = "system"
+)
+
+// DrivePeopleGetOutputRecentFilesItemOrigin is the type of
+// [DrivePeopleGetOutputRecentFilesItem.Origin].
+type DrivePeopleGetOutputRecentFilesItemOrigin string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemOrigin].
+const (
+	DrivePeopleGetOutputRecentFilesItemOriginUpload                DrivePeopleGetOutputRecentFilesItemOrigin = "upload"
+	DrivePeopleGetOutputRecentFilesItemOriginOpportunityAttachment DrivePeopleGetOutputRecentFilesItemOrigin = "opportunity_attachment"
+	DrivePeopleGetOutputRecentFilesItemOriginTaskAttachment        DrivePeopleGetOutputRecentFilesItemOrigin = "task_attachment"
+	DrivePeopleGetOutputRecentFilesItemOriginMeetingRecording      DrivePeopleGetOutputRecentFilesItemOrigin = "meeting_recording"
+	DrivePeopleGetOutputRecentFilesItemOriginFormSubmission        DrivePeopleGetOutputRecentFilesItemOrigin = "form_submission"
+	DrivePeopleGetOutputRecentFilesItemOriginPageAsset             DrivePeopleGetOutputRecentFilesItemOrigin = "page_asset"
+	DrivePeopleGetOutputRecentFilesItemOriginProposalDocument      DrivePeopleGetOutputRecentFilesItemOrigin = "proposal_document"
+	DrivePeopleGetOutputRecentFilesItemOriginProductDeliverable    DrivePeopleGetOutputRecentFilesItemOrigin = "product_deliverable"
+	DrivePeopleGetOutputRecentFilesItemOriginMessageMedia          DrivePeopleGetOutputRecentFilesItemOrigin = "message_media"
+	DrivePeopleGetOutputRecentFilesItemOriginCommunityMedia        DrivePeopleGetOutputRecentFilesItemOrigin = "community_media"
+	DrivePeopleGetOutputRecentFilesItemOriginLessonAttachment      DrivePeopleGetOutputRecentFilesItemOrigin = "lesson_attachment"
+	DrivePeopleGetOutputRecentFilesItemOriginEmailAsset            DrivePeopleGetOutputRecentFilesItemOrigin = "email_asset"
+	DrivePeopleGetOutputRecentFilesItemOriginNoteImage             DrivePeopleGetOutputRecentFilesItemOrigin = "note_image"
+	DrivePeopleGetOutputRecentFilesItemOriginSupportAttachment     DrivePeopleGetOutputRecentFilesItemOrigin = "support_attachment"
+	DrivePeopleGetOutputRecentFilesItemOriginSocialPostMedia       DrivePeopleGetOutputRecentFilesItemOrigin = "social_post_media"
+	DrivePeopleGetOutputRecentFilesItemOriginAdAsset               DrivePeopleGetOutputRecentFilesItemOrigin = "ad_asset"
+)
+
+// DrivePeopleGetOutputRecentFilesItemOrphanReason is the type of
+// [DrivePeopleGetOutputRecentFilesItem.OrphanReason].
+type DrivePeopleGetOutputRecentFilesItemOrphanReason string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemOrphanReason].
+const (
+	DrivePeopleGetOutputRecentFilesItemOrphanReasonConnectionRevoked DrivePeopleGetOutputRecentFilesItemOrphanReason = "connection_revoked"
+	DrivePeopleGetOutputRecentFilesItemOrphanReasonDeletedAtProvider DrivePeopleGetOutputRecentFilesItemOrphanReason = "deleted_at_provider"
+	DrivePeopleGetOutputRecentFilesItemOrphanReasonPermissionLost    DrivePeopleGetOutputRecentFilesItemOrphanReason = "permission_lost"
+)
+
+// DrivePeopleGetOutputRecentFilesItemOwner is the type of [DrivePeopleGetOutputRecentFilesItem.Owner].
+type DrivePeopleGetOutputRecentFilesItemOwner struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DrivePeopleGetOutputRecentFilesItemProvider is the type of
+// [DrivePeopleGetOutputRecentFilesItem.Provider].
+type DrivePeopleGetOutputRecentFilesItemProvider string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemProvider].
+const (
+	DrivePeopleGetOutputRecentFilesItemProviderS3          DrivePeopleGetOutputRecentFilesItemProvider = "s3"
+	DrivePeopleGetOutputRecentFilesItemProviderGoogleDrive DrivePeopleGetOutputRecentFilesItemProvider = "google_drive"
+)
+
+// DrivePeopleGetOutputRecentFilesItemStatus is the type of
+// [DrivePeopleGetOutputRecentFilesItem.Status].
+type DrivePeopleGetOutputRecentFilesItemStatus string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemStatus].
+const (
+	DrivePeopleGetOutputRecentFilesItemStatusPending  DrivePeopleGetOutputRecentFilesItemStatus = "pending"
+	DrivePeopleGetOutputRecentFilesItemStatusReady    DrivePeopleGetOutputRecentFilesItemStatus = "ready"
+	DrivePeopleGetOutputRecentFilesItemStatusOrphaned DrivePeopleGetOutputRecentFilesItemStatus = "orphaned"
+)
+
+// DrivePeopleGetOutputRecentFilesItemStorageCategory is the type of
+// [DrivePeopleGetOutputRecentFilesItem.StorageCategory].
+type DrivePeopleGetOutputRecentFilesItemStorageCategory string
+
+// Values of [DrivePeopleGetOutputRecentFilesItemStorageCategory].
+const (
+	DrivePeopleGetOutputRecentFilesItemStorageCategoryCreatives         DrivePeopleGetOutputRecentFilesItemStorageCategory = "creatives"
+	DrivePeopleGetOutputRecentFilesItemStorageCategoryDocuments         DrivePeopleGetOutputRecentFilesItemStorageCategory = "documents"
+	DrivePeopleGetOutputRecentFilesItemStorageCategorySalesAssets       DrivePeopleGetOutputRecentFilesItemStorageCategory = "sales_assets"
+	DrivePeopleGetOutputRecentFilesItemStorageCategoryContractsInvoices DrivePeopleGetOutputRecentFilesItemStorageCategory = "contracts_invoices"
+	DrivePeopleGetOutputRecentFilesItemStorageCategoryOther             DrivePeopleGetOutputRecentFilesItemStorageCategory = "other"
+)
+
+// DrivePeopleGetOutputSharedSpacesItem is an element of [DrivePeopleGetOutput.SharedSpaces].
+type DrivePeopleGetOutputSharedSpacesItem struct {
+	ID    string                                    `json:"id"`
+	Name  string                                    `json:"name"`
+	Color DrivePeopleGetOutputSharedSpacesItemColor `json:"color"`
+	Role  DrivePeopleGetOutputSharedSpacesItemRole  `json:"role"`
+}
+
+// DrivePeopleGetOutputSharedSpacesItemColor is the type of
+// [DrivePeopleGetOutputSharedSpacesItem.Color].
+type DrivePeopleGetOutputSharedSpacesItemColor string
+
+// Values of [DrivePeopleGetOutputSharedSpacesItemColor].
+const (
+	DrivePeopleGetOutputSharedSpacesItemColorAzure    DrivePeopleGetOutputSharedSpacesItemColor = "azure"
+	DrivePeopleGetOutputSharedSpacesItemColorAcid     DrivePeopleGetOutputSharedSpacesItemColor = "acid"
+	DrivePeopleGetOutputSharedSpacesItemColorCadmium  DrivePeopleGetOutputSharedSpacesItemColor = "cadmium"
+	DrivePeopleGetOutputSharedSpacesItemColorPurplish DrivePeopleGetOutputSharedSpacesItemColor = "purplish"
+	DrivePeopleGetOutputSharedSpacesItemColorTorch    DrivePeopleGetOutputSharedSpacesItemColor = "torch"
+	DrivePeopleGetOutputSharedSpacesItemColorNeutral  DrivePeopleGetOutputSharedSpacesItemColor = "neutral"
+)
+
+// DrivePeopleGetOutputSharedSpacesItemRole is the type of [DrivePeopleGetOutputSharedSpacesItem.Role].
+type DrivePeopleGetOutputSharedSpacesItemRole string
+
+// Values of [DrivePeopleGetOutputSharedSpacesItemRole].
+const (
+	DrivePeopleGetOutputSharedSpacesItemRoleReader    DrivePeopleGetOutputSharedSpacesItemRole = "reader"
+	DrivePeopleGetOutputSharedSpacesItemRoleCommenter DrivePeopleGetOutputSharedSpacesItemRole = "commenter"
+	DrivePeopleGetOutputSharedSpacesItemRoleEditor    DrivePeopleGetOutputSharedSpacesItemRole = "editor"
+	DrivePeopleGetOutputSharedSpacesItemRoleOwner     DrivePeopleGetOutputSharedSpacesItemRole = "owner"
+)
+
+// DrivePeopleGetOutputStats is the type of [DrivePeopleGetOutput.Stats].
+type DrivePeopleGetOutputStats struct {
+	Files        int64      `json:"files"`
+	Bytes        string     `json:"bytes"`
+	Folders      int64      `json:"folders"`
+	LastUploadAt *time.Time `json:"lastUploadAt,omitzero"`
+}
+
+// DrivePeopleGetOutputWorkspaceRole is the type of [DrivePeopleGetOutput.WorkspaceRole].
+type DrivePeopleGetOutputWorkspaceRole string
+
+// Values of [DrivePeopleGetOutputWorkspaceRole].
+const (
+	DrivePeopleGetOutputWorkspaceRoleOwner      DrivePeopleGetOutputWorkspaceRole = "owner"
+	DrivePeopleGetOutputWorkspaceRoleAdmin      DrivePeopleGetOutputWorkspaceRole = "admin"
+	DrivePeopleGetOutputWorkspaceRoleMember     DrivePeopleGetOutputWorkspaceRole = "member"
+	DrivePeopleGetOutputWorkspaceRoleIntegrator DrivePeopleGetOutputWorkspaceRole = "integrator"
+)
+
+// DrivePeopleGetParams holds the query parameters of [DriveService.PeopleGet].
+type DrivePeopleGetParams struct {
+	// User id of the person: `id` in `workspace_members_list`, `user.id` in
+	// `drive_spaces_members_list`, `owner.id` of a Drive row, or `personId` in `attendants_list`
+	// (never the attendant `id`).
+	UserID string
+}
+
+func (p DrivePeopleGetParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "userId", &p.UserID)
+	return v
+}
 
 // DriveRecentsListOutput is the response of [DriveService.RecentsList].
 type DriveRecentsListOutput struct {
@@ -1287,6 +1929,396 @@ const (
 	DriveSearchParamsTypePage         DriveSearchParamsType = "page"
 	DriveSearchParamsTypeOther        DriveSearchParamsType = "other"
 )
+
+// DriveSharesCreateInput is the request body of [DriveService.SharesCreate].
+type DriveSharesCreateInput struct {
+	FolderID Nullable[string]           `json:"folderId,omitzero"`
+	FileID   Nullable[string]           `json:"fileId,omitzero"`
+	UserID   string                     `json:"userId"`
+	Role     DriveSharesCreateInputRole `json:"role"`
+}
+
+// DriveSharesCreateInputRole is the type of [DriveSharesCreateInput.Role].
+type DriveSharesCreateInputRole string
+
+// Values of [DriveSharesCreateInputRole].
+const (
+	DriveSharesCreateInputRoleReader    DriveSharesCreateInputRole = "reader"
+	DriveSharesCreateInputRoleCommenter DriveSharesCreateInputRole = "commenter"
+	DriveSharesCreateInputRoleEditor    DriveSharesCreateInputRole = "editor"
+	DriveSharesCreateInputRoleOwner     DriveSharesCreateInputRole = "owner"
+)
+
+// DriveSharesCreateOutput is the response of [DriveService.SharesCreate].
+type DriveSharesCreateOutput struct {
+	ID          string                           `json:"id"`
+	WorkspaceID string                           `json:"workspaceId"`
+	FolderID    *string                          `json:"folderId,omitzero"`
+	FileID      *string                          `json:"fileId,omitzero"`
+	UserID      string                           `json:"userId"`
+	Role        DriveSharesCreateOutputRole      `json:"role"`
+	SharedByID  *string                          `json:"sharedById,omitzero"`
+	CreatedAt   time.Time                        `json:"createdAt"`
+	UpdatedAt   time.Time                        `json:"updatedAt"`
+	User        DriveSharesCreateOutputUser      `json:"user"`
+	SharedBy    *DriveSharesCreateOutputSharedBy `json:"sharedBy,omitzero"`
+}
+
+// DriveSharesCreateOutputRole is the type of [DriveSharesCreateOutput.Role].
+type DriveSharesCreateOutputRole string
+
+// Values of [DriveSharesCreateOutputRole].
+const (
+	DriveSharesCreateOutputRoleReader    DriveSharesCreateOutputRole = "reader"
+	DriveSharesCreateOutputRoleCommenter DriveSharesCreateOutputRole = "commenter"
+	DriveSharesCreateOutputRoleEditor    DriveSharesCreateOutputRole = "editor"
+	DriveSharesCreateOutputRoleOwner     DriveSharesCreateOutputRole = "owner"
+)
+
+// DriveSharesCreateOutputSharedBy is the type of [DriveSharesCreateOutput.SharedBy].
+type DriveSharesCreateOutputSharedBy struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveSharesCreateOutputUser is the type of [DriveSharesCreateOutput.User].
+type DriveSharesCreateOutputUser struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveSharesRevokeInput is the request body of [DriveService.SharesRevoke].
+type DriveSharesRevokeInput struct {
+	// Share id: `id` returned by `drive_shares_create`, or `shareId` of a `drive_items_access` entry
+	// with `inherited: false`.
+	ShareID string `json:"shareId"`
+}
+
+// DriveSharesRevokeOutput is the response of [DriveService.SharesRevoke].
+type DriveSharesRevokeOutput struct {
+	Ok bool `json:"ok"`
+}
+
+// DriveSharesWithMeOutput is the response of [DriveService.SharesWithMe].
+type DriveSharesWithMeOutput struct {
+	Data []DriveSharesWithMeOutputDataItem `json:"data"`
+	Meta DriveSharesWithMeOutputMeta       `json:"meta"`
+}
+
+// DriveSharesWithMeOutputDataItem is an element of [DriveSharesWithMeOutput.Data].
+type DriveSharesWithMeOutputDataItem struct {
+	ShareID  string                                   `json:"shareId"`
+	Role     DriveSharesWithMeOutputDataItemRole      `json:"role"`
+	SharedAt time.Time                                `json:"sharedAt"`
+	SharedBy *DriveSharesWithMeOutputDataItemSharedBy `json:"sharedBy,omitzero"`
+	Folder   *DriveSharesWithMeOutputDataItemFolder   `json:"folder,omitzero"`
+	File     *DriveSharesWithMeOutputDataItemFile     `json:"file,omitzero"`
+}
+
+// DriveSharesWithMeOutputDataItemFile is the type of [DriveSharesWithMeOutputDataItem.File].
+type DriveSharesWithMeOutputDataItemFile struct {
+	ID                   string                                             `json:"id"`
+	WorkspaceID          string                                             `json:"workspaceId"`
+	SpaceID              string                                             `json:"spaceId"`
+	FolderID             *string                                            `json:"folderId,omitzero"`
+	Name                 string                                             `json:"name"`
+	MimeType             string                                             `json:"mimeType"`
+	Alt                  *string                                            `json:"alt,omitzero"`
+	Size                 string                                             `json:"size"`
+	Origin               DriveSharesWithMeOutputDataItemFileOrigin          `json:"origin"`
+	StorageCategory      DriveSharesWithMeOutputDataItemFileStorageCategory `json:"storageCategory"`
+	OriginID             *string                                            `json:"originId,omitzero"`
+	Provider             DriveSharesWithMeOutputDataItemFileProvider        `json:"provider"`
+	ExternalID           string                                             `json:"externalId"`
+	ThumbnailExternalID  *string                                            `json:"thumbnailExternalId,omitzero"`
+	ProviderConnectionID *string                                            `json:"providerConnectionId,omitzero"`
+	ImportedFromProvider bool                                               `json:"importedFromProvider"`
+	Status               DriveSharesWithMeOutputDataItemFileStatus          `json:"status"`
+	OrphanedAt           *time.Time                                         `json:"orphanedAt,omitzero"`
+	OrphanReason         *DriveSharesWithMeOutputDataItemFileOrphanReason   `json:"orphanReason,omitzero"`
+	CreatedByID          *string                                            `json:"createdById,omitzero"`
+	CreatedAt            time.Time                                          `json:"createdAt"`
+	UpdatedAt            time.Time                                          `json:"updatedAt"`
+	DeletedAt            *time.Time                                         `json:"deletedAt,omitzero"`
+	DeletedByID          *string                                            `json:"deletedById,omitzero"`
+	TrashedViaFolderID   *string                                            `json:"trashedViaFolderId,omitzero"`
+	Owner                *DriveSharesWithMeOutputDataItemFileOwner          `json:"owner,omitzero"`
+	Location             DriveSharesWithMeOutputDataItemFileLocation        `json:"location"`
+	IsFavorite           bool                                               `json:"isFavorite"`
+	ThumbnailURL         *string                                            `json:"thumbnailUrl,omitzero"`
+	PublicURL            *string                                            `json:"publicUrl,omitzero"`
+}
+
+// DriveSharesWithMeOutputDataItemFileLocation is the type of
+// [DriveSharesWithMeOutputDataItemFile.Location].
+type DriveSharesWithMeOutputDataItemFileLocation struct {
+	SpaceID    string                                                `json:"spaceId"`
+	SpaceName  string                                                `json:"spaceName"`
+	SpaceKind  DriveSharesWithMeOutputDataItemFileLocationSpaceKind  `json:"spaceKind"`
+	SpaceColor DriveSharesWithMeOutputDataItemFileLocationSpaceColor `json:"spaceColor"`
+	Path       []DriveSharesWithMeOutputDataItemFileLocationPathItem `json:"path"`
+}
+
+// DriveSharesWithMeOutputDataItemFileLocationPathItem is an element of
+// [DriveSharesWithMeOutputDataItemFileLocation.Path].
+type DriveSharesWithMeOutputDataItemFileLocationPathItem struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// DriveSharesWithMeOutputDataItemFileLocationSpaceColor is the type of
+// [DriveSharesWithMeOutputDataItemFileLocation.SpaceColor].
+type DriveSharesWithMeOutputDataItemFileLocationSpaceColor string
+
+// Values of [DriveSharesWithMeOutputDataItemFileLocationSpaceColor].
+const (
+	DriveSharesWithMeOutputDataItemFileLocationSpaceColorAzure    DriveSharesWithMeOutputDataItemFileLocationSpaceColor = "azure"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceColorAcid     DriveSharesWithMeOutputDataItemFileLocationSpaceColor = "acid"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceColorCadmium  DriveSharesWithMeOutputDataItemFileLocationSpaceColor = "cadmium"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceColorPurplish DriveSharesWithMeOutputDataItemFileLocationSpaceColor = "purplish"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceColorTorch    DriveSharesWithMeOutputDataItemFileLocationSpaceColor = "torch"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceColorNeutral  DriveSharesWithMeOutputDataItemFileLocationSpaceColor = "neutral"
+)
+
+// DriveSharesWithMeOutputDataItemFileLocationSpaceKind is the type of
+// [DriveSharesWithMeOutputDataItemFileLocation.SpaceKind].
+type DriveSharesWithMeOutputDataItemFileLocationSpaceKind string
+
+// Values of [DriveSharesWithMeOutputDataItemFileLocationSpaceKind].
+const (
+	DriveSharesWithMeOutputDataItemFileLocationSpaceKindPersonal DriveSharesWithMeOutputDataItemFileLocationSpaceKind = "personal"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceKindTeam     DriveSharesWithMeOutputDataItemFileLocationSpaceKind = "team"
+	DriveSharesWithMeOutputDataItemFileLocationSpaceKindSystem   DriveSharesWithMeOutputDataItemFileLocationSpaceKind = "system"
+)
+
+// DriveSharesWithMeOutputDataItemFileOrigin is the type of
+// [DriveSharesWithMeOutputDataItemFile.Origin].
+type DriveSharesWithMeOutputDataItemFileOrigin string
+
+// Values of [DriveSharesWithMeOutputDataItemFileOrigin].
+const (
+	DriveSharesWithMeOutputDataItemFileOriginUpload                DriveSharesWithMeOutputDataItemFileOrigin = "upload"
+	DriveSharesWithMeOutputDataItemFileOriginOpportunityAttachment DriveSharesWithMeOutputDataItemFileOrigin = "opportunity_attachment"
+	DriveSharesWithMeOutputDataItemFileOriginTaskAttachment        DriveSharesWithMeOutputDataItemFileOrigin = "task_attachment"
+	DriveSharesWithMeOutputDataItemFileOriginMeetingRecording      DriveSharesWithMeOutputDataItemFileOrigin = "meeting_recording"
+	DriveSharesWithMeOutputDataItemFileOriginFormSubmission        DriveSharesWithMeOutputDataItemFileOrigin = "form_submission"
+	DriveSharesWithMeOutputDataItemFileOriginPageAsset             DriveSharesWithMeOutputDataItemFileOrigin = "page_asset"
+	DriveSharesWithMeOutputDataItemFileOriginProposalDocument      DriveSharesWithMeOutputDataItemFileOrigin = "proposal_document"
+	DriveSharesWithMeOutputDataItemFileOriginProductDeliverable    DriveSharesWithMeOutputDataItemFileOrigin = "product_deliverable"
+	DriveSharesWithMeOutputDataItemFileOriginMessageMedia          DriveSharesWithMeOutputDataItemFileOrigin = "message_media"
+	DriveSharesWithMeOutputDataItemFileOriginCommunityMedia        DriveSharesWithMeOutputDataItemFileOrigin = "community_media"
+	DriveSharesWithMeOutputDataItemFileOriginLessonAttachment      DriveSharesWithMeOutputDataItemFileOrigin = "lesson_attachment"
+	DriveSharesWithMeOutputDataItemFileOriginEmailAsset            DriveSharesWithMeOutputDataItemFileOrigin = "email_asset"
+	DriveSharesWithMeOutputDataItemFileOriginNoteImage             DriveSharesWithMeOutputDataItemFileOrigin = "note_image"
+	DriveSharesWithMeOutputDataItemFileOriginSupportAttachment     DriveSharesWithMeOutputDataItemFileOrigin = "support_attachment"
+	DriveSharesWithMeOutputDataItemFileOriginSocialPostMedia       DriveSharesWithMeOutputDataItemFileOrigin = "social_post_media"
+	DriveSharesWithMeOutputDataItemFileOriginAdAsset               DriveSharesWithMeOutputDataItemFileOrigin = "ad_asset"
+)
+
+// DriveSharesWithMeOutputDataItemFileOrphanReason is the type of
+// [DriveSharesWithMeOutputDataItemFile.OrphanReason].
+type DriveSharesWithMeOutputDataItemFileOrphanReason string
+
+// Values of [DriveSharesWithMeOutputDataItemFileOrphanReason].
+const (
+	DriveSharesWithMeOutputDataItemFileOrphanReasonConnectionRevoked DriveSharesWithMeOutputDataItemFileOrphanReason = "connection_revoked"
+	DriveSharesWithMeOutputDataItemFileOrphanReasonDeletedAtProvider DriveSharesWithMeOutputDataItemFileOrphanReason = "deleted_at_provider"
+	DriveSharesWithMeOutputDataItemFileOrphanReasonPermissionLost    DriveSharesWithMeOutputDataItemFileOrphanReason = "permission_lost"
+)
+
+// DriveSharesWithMeOutputDataItemFileOwner is the type of [DriveSharesWithMeOutputDataItemFile.Owner].
+type DriveSharesWithMeOutputDataItemFileOwner struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveSharesWithMeOutputDataItemFileProvider is the type of
+// [DriveSharesWithMeOutputDataItemFile.Provider].
+type DriveSharesWithMeOutputDataItemFileProvider string
+
+// Values of [DriveSharesWithMeOutputDataItemFileProvider].
+const (
+	DriveSharesWithMeOutputDataItemFileProviderS3          DriveSharesWithMeOutputDataItemFileProvider = "s3"
+	DriveSharesWithMeOutputDataItemFileProviderGoogleDrive DriveSharesWithMeOutputDataItemFileProvider = "google_drive"
+)
+
+// DriveSharesWithMeOutputDataItemFileStatus is the type of
+// [DriveSharesWithMeOutputDataItemFile.Status].
+type DriveSharesWithMeOutputDataItemFileStatus string
+
+// Values of [DriveSharesWithMeOutputDataItemFileStatus].
+const (
+	DriveSharesWithMeOutputDataItemFileStatusPending  DriveSharesWithMeOutputDataItemFileStatus = "pending"
+	DriveSharesWithMeOutputDataItemFileStatusReady    DriveSharesWithMeOutputDataItemFileStatus = "ready"
+	DriveSharesWithMeOutputDataItemFileStatusOrphaned DriveSharesWithMeOutputDataItemFileStatus = "orphaned"
+)
+
+// DriveSharesWithMeOutputDataItemFileStorageCategory is the type of
+// [DriveSharesWithMeOutputDataItemFile.StorageCategory].
+type DriveSharesWithMeOutputDataItemFileStorageCategory string
+
+// Values of [DriveSharesWithMeOutputDataItemFileStorageCategory].
+const (
+	DriveSharesWithMeOutputDataItemFileStorageCategoryCreatives         DriveSharesWithMeOutputDataItemFileStorageCategory = "creatives"
+	DriveSharesWithMeOutputDataItemFileStorageCategoryDocuments         DriveSharesWithMeOutputDataItemFileStorageCategory = "documents"
+	DriveSharesWithMeOutputDataItemFileStorageCategorySalesAssets       DriveSharesWithMeOutputDataItemFileStorageCategory = "sales_assets"
+	DriveSharesWithMeOutputDataItemFileStorageCategoryContractsInvoices DriveSharesWithMeOutputDataItemFileStorageCategory = "contracts_invoices"
+	DriveSharesWithMeOutputDataItemFileStorageCategoryOther             DriveSharesWithMeOutputDataItemFileStorageCategory = "other"
+)
+
+// DriveSharesWithMeOutputDataItemFolder is the type of [DriveSharesWithMeOutputDataItem.Folder].
+type DriveSharesWithMeOutputDataItemFolder struct {
+	ID                   string                                             `json:"id"`
+	WorkspaceID          string                                             `json:"workspaceId"`
+	SpaceID              string                                             `json:"spaceId"`
+	ParentID             *string                                            `json:"parentId,omitzero"`
+	Name                 string                                             `json:"name"`
+	SystemOrigin         *DriveSharesWithMeOutputDataItemFolderSystemOrigin `json:"systemOrigin,omitzero"`
+	ProjectID            *string                                            `json:"projectId,omitzero"`
+	ExternalID           *string                                            `json:"externalId,omitzero"`
+	ImportedFromProvider bool                                               `json:"importedFromProvider"`
+	CreatedByID          *string                                            `json:"createdById,omitzero"`
+	CreatedAt            time.Time                                          `json:"createdAt"`
+	UpdatedAt            time.Time                                          `json:"updatedAt"`
+	DeletedAt            *time.Time                                         `json:"deletedAt,omitzero"`
+	DeletedByID          *string                                            `json:"deletedById,omitzero"`
+	TrashedViaFolderID   *string                                            `json:"trashedViaFolderId,omitzero"`
+	Owner                *DriveSharesWithMeOutputDataItemFolderOwner        `json:"owner,omitzero"`
+	Location             DriveSharesWithMeOutputDataItemFolderLocation      `json:"location"`
+	IsFavorite           bool                                               `json:"isFavorite"`
+	PublicOrigin         *DriveSharesWithMeOutputDataItemFolderPublicOrigin `json:"publicOrigin,omitzero"`
+}
+
+// DriveSharesWithMeOutputDataItemFolderLocation is the type of
+// [DriveSharesWithMeOutputDataItemFolder.Location].
+type DriveSharesWithMeOutputDataItemFolderLocation struct {
+	SpaceID    string                                                  `json:"spaceId"`
+	SpaceName  string                                                  `json:"spaceName"`
+	SpaceKind  DriveSharesWithMeOutputDataItemFolderLocationSpaceKind  `json:"spaceKind"`
+	SpaceColor DriveSharesWithMeOutputDataItemFolderLocationSpaceColor `json:"spaceColor"`
+	Path       []DriveSharesWithMeOutputDataItemFolderLocationPathItem `json:"path"`
+}
+
+// DriveSharesWithMeOutputDataItemFolderLocationPathItem is an element of
+// [DriveSharesWithMeOutputDataItemFolderLocation.Path].
+type DriveSharesWithMeOutputDataItemFolderLocationPathItem struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// DriveSharesWithMeOutputDataItemFolderLocationSpaceColor is the type of
+// [DriveSharesWithMeOutputDataItemFolderLocation.SpaceColor].
+type DriveSharesWithMeOutputDataItemFolderLocationSpaceColor string
+
+// Values of [DriveSharesWithMeOutputDataItemFolderLocationSpaceColor].
+const (
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceColorAzure    DriveSharesWithMeOutputDataItemFolderLocationSpaceColor = "azure"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceColorAcid     DriveSharesWithMeOutputDataItemFolderLocationSpaceColor = "acid"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceColorCadmium  DriveSharesWithMeOutputDataItemFolderLocationSpaceColor = "cadmium"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceColorPurplish DriveSharesWithMeOutputDataItemFolderLocationSpaceColor = "purplish"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceColorTorch    DriveSharesWithMeOutputDataItemFolderLocationSpaceColor = "torch"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceColorNeutral  DriveSharesWithMeOutputDataItemFolderLocationSpaceColor = "neutral"
+)
+
+// DriveSharesWithMeOutputDataItemFolderLocationSpaceKind is the type of
+// [DriveSharesWithMeOutputDataItemFolderLocation.SpaceKind].
+type DriveSharesWithMeOutputDataItemFolderLocationSpaceKind string
+
+// Values of [DriveSharesWithMeOutputDataItemFolderLocationSpaceKind].
+const (
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceKindPersonal DriveSharesWithMeOutputDataItemFolderLocationSpaceKind = "personal"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceKindTeam     DriveSharesWithMeOutputDataItemFolderLocationSpaceKind = "team"
+	DriveSharesWithMeOutputDataItemFolderLocationSpaceKindSystem   DriveSharesWithMeOutputDataItemFolderLocationSpaceKind = "system"
+)
+
+// DriveSharesWithMeOutputDataItemFolderOwner is the type of
+// [DriveSharesWithMeOutputDataItemFolder.Owner].
+type DriveSharesWithMeOutputDataItemFolderOwner struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveSharesWithMeOutputDataItemFolderPublicOrigin is the type of
+// [DriveSharesWithMeOutputDataItemFolder.PublicOrigin].
+type DriveSharesWithMeOutputDataItemFolderPublicOrigin string
+
+// Values of [DriveSharesWithMeOutputDataItemFolderPublicOrigin].
+const (
+	DriveSharesWithMeOutputDataItemFolderPublicOriginPageAsset  DriveSharesWithMeOutputDataItemFolderPublicOrigin = "page_asset"
+	DriveSharesWithMeOutputDataItemFolderPublicOriginEmailAsset DriveSharesWithMeOutputDataItemFolderPublicOrigin = "email_asset"
+	DriveSharesWithMeOutputDataItemFolderPublicOriginAdAsset    DriveSharesWithMeOutputDataItemFolderPublicOrigin = "ad_asset"
+)
+
+// DriveSharesWithMeOutputDataItemFolderSystemOrigin is the type of
+// [DriveSharesWithMeOutputDataItemFolder.SystemOrigin].
+type DriveSharesWithMeOutputDataItemFolderSystemOrigin string
+
+// Values of [DriveSharesWithMeOutputDataItemFolderSystemOrigin].
+const (
+	DriveSharesWithMeOutputDataItemFolderSystemOriginUpload                DriveSharesWithMeOutputDataItemFolderSystemOrigin = "upload"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginOpportunityAttachment DriveSharesWithMeOutputDataItemFolderSystemOrigin = "opportunity_attachment"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginTaskAttachment        DriveSharesWithMeOutputDataItemFolderSystemOrigin = "task_attachment"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginMeetingRecording      DriveSharesWithMeOutputDataItemFolderSystemOrigin = "meeting_recording"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginFormSubmission        DriveSharesWithMeOutputDataItemFolderSystemOrigin = "form_submission"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginPageAsset             DriveSharesWithMeOutputDataItemFolderSystemOrigin = "page_asset"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginProposalDocument      DriveSharesWithMeOutputDataItemFolderSystemOrigin = "proposal_document"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginProductDeliverable    DriveSharesWithMeOutputDataItemFolderSystemOrigin = "product_deliverable"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginMessageMedia          DriveSharesWithMeOutputDataItemFolderSystemOrigin = "message_media"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginCommunityMedia        DriveSharesWithMeOutputDataItemFolderSystemOrigin = "community_media"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginLessonAttachment      DriveSharesWithMeOutputDataItemFolderSystemOrigin = "lesson_attachment"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginEmailAsset            DriveSharesWithMeOutputDataItemFolderSystemOrigin = "email_asset"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginNoteImage             DriveSharesWithMeOutputDataItemFolderSystemOrigin = "note_image"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginSupportAttachment     DriveSharesWithMeOutputDataItemFolderSystemOrigin = "support_attachment"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginSocialPostMedia       DriveSharesWithMeOutputDataItemFolderSystemOrigin = "social_post_media"
+	DriveSharesWithMeOutputDataItemFolderSystemOriginAdAsset               DriveSharesWithMeOutputDataItemFolderSystemOrigin = "ad_asset"
+)
+
+// DriveSharesWithMeOutputDataItemRole is the type of [DriveSharesWithMeOutputDataItem.Role].
+type DriveSharesWithMeOutputDataItemRole string
+
+// Values of [DriveSharesWithMeOutputDataItemRole].
+const (
+	DriveSharesWithMeOutputDataItemRoleReader    DriveSharesWithMeOutputDataItemRole = "reader"
+	DriveSharesWithMeOutputDataItemRoleCommenter DriveSharesWithMeOutputDataItemRole = "commenter"
+	DriveSharesWithMeOutputDataItemRoleEditor    DriveSharesWithMeOutputDataItemRole = "editor"
+	DriveSharesWithMeOutputDataItemRoleOwner     DriveSharesWithMeOutputDataItemRole = "owner"
+)
+
+// DriveSharesWithMeOutputDataItemSharedBy is the type of [DriveSharesWithMeOutputDataItem.SharedBy].
+type DriveSharesWithMeOutputDataItemSharedBy struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	ImageURL *string `json:"imageUrl,omitzero"`
+}
+
+// DriveSharesWithMeOutputMeta is the type of [DriveSharesWithMeOutput.Meta].
+type DriveSharesWithMeOutputMeta struct {
+	CountItens float64 `json:"countItens"`
+	CountPages float64 `json:"countPages"`
+	PerPage    float64 `json:"perPage"`
+}
+
+// DriveSharesWithMeParams holds the query parameters of [DriveService.SharesWithMe].
+type DriveSharesWithMeParams struct {
+	Page    *float64
+	PerPage *float64
+}
+
+func (p DriveSharesWithMeParams) values() url.Values {
+	v := url.Values{}
+	addFloat(v, "page", p.Page)
+	addFloat(v, "perPage", p.PerPage)
+	return v
+}
 
 // DriveStorageUsageOutput is the response of [DriveService.StorageUsage].
 type DriveStorageUsageOutput struct {

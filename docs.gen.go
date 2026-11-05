@@ -18,10 +18,10 @@ type DocsService struct {
 // (e.g. `/faq/messaging/create-whatsapp-message-templates`). Answer support questions from this text
 // and cite `url` as the source. Only pages present in the documentation index are served.
 //
-// Calls GET /docs/page-get.
-func (s *DocsService) PageGet(ctx context.Context, params DocsPageGetParams, opts ...Option) (*DocsPageGetOutput, error) {
-	var out DocsPageGetOutput
-	if err := s.client.do(ctx, "GET", "/docs/page-get", params.values(), nil, &out, opts); err != nil {
+// Calls GET /docs/pages-get.
+func (s *DocsService) PagesGet(ctx context.Context, params DocsPagesGetParams, opts ...Option) (*DocsPagesGetOutput, error) {
+	var out DocsPagesGetOutput
+	if err := s.client.do(ctx, "GET", "/docs/pages-get", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -33,8 +33,8 @@ func (s *DocsService) PageGet(ctx context.Context, params DocsPageGetParams, opt
 // query is split into terms, so pass the user's question or its key words (e.g. "template aprovado
 // meta disparo em massa"), not an exact title. Returns the best pages with a snippet and `coverage`
 // (share of the query terms the page contains) to judge relevance; read the winner with
-// `docs_page_get` before answering. `lang` defaults to `pt-BR`. Product documentation only — it does
-// not search the workspace's own data.
+// `docs_pages_get` before answering. `lang` defaults to `pt-BR`. Product documentation only — it
+// does not search the workspace's own data.
 //
 // Calls GET /docs/search.
 func (s *DocsService) Search(ctx context.Context, params DocsSearchParams, opts ...Option) (*DocsSearchOutput, error) {
@@ -45,45 +45,45 @@ func (s *DocsService) Search(ctx context.Context, params DocsSearchParams, opts 
 	return &out, nil
 }
 
-// DocsPageGetOutput is the response of [DocsService.PageGet].
-type DocsPageGetOutput struct {
-	Title     string                  `json:"title"`
-	Path      string                  `json:"path"`
-	URL       string                  `json:"url"`
-	Markdown  string                  `json:"markdown"`
-	Format    DocsPageGetOutputFormat `json:"format"`
-	Truncated bool                    `json:"truncated"`
+// DocsPagesGetOutput is the response of [DocsService.PagesGet].
+type DocsPagesGetOutput struct {
+	Title     string                   `json:"title"`
+	Path      string                   `json:"path"`
+	URL       string                   `json:"url"`
+	Markdown  string                   `json:"markdown"`
+	Format    DocsPagesGetOutputFormat `json:"format"`
+	Truncated bool                     `json:"truncated"`
 }
 
-// DocsPageGetOutputFormat is the type of [DocsPageGetOutput.Format].
-type DocsPageGetOutputFormat string
+// DocsPagesGetOutputFormat is the type of [DocsPagesGetOutput.Format].
+type DocsPagesGetOutputFormat string
 
-// Values of [DocsPageGetOutputFormat].
+// Values of [DocsPagesGetOutputFormat].
 const (
-	DocsPageGetOutputFormatMarkdown DocsPageGetOutputFormat = "markdown"
-	DocsPageGetOutputFormatText     DocsPageGetOutputFormat = "text"
+	DocsPagesGetOutputFormatMarkdown DocsPagesGetOutputFormat = "markdown"
+	DocsPagesGetOutputFormatText     DocsPagesGetOutputFormat = "text"
 )
 
-// DocsPageGetParams holds the query parameters of [DocsService.PageGet].
-type DocsPageGetParams struct {
+// DocsPagesGetParams holds the query parameters of [DocsService.PagesGet].
+type DocsPagesGetParams struct {
 	Path string
-	Lang *DocsPageGetParamsLang
+	Lang *DocsPagesGetParamsLang
 }
 
-func (p DocsPageGetParams) values() url.Values {
+func (p DocsPagesGetParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "path", &p.Path)
 	addString(v, "lang", (*string)(p.Lang))
 	return v
 }
 
-// DocsPageGetParamsLang is the type of [DocsPageGetParams.Lang].
-type DocsPageGetParamsLang string
+// DocsPagesGetParamsLang is the type of [DocsPagesGetParams.Lang].
+type DocsPagesGetParamsLang string
 
-// Values of [DocsPageGetParamsLang].
+// Values of [DocsPagesGetParamsLang].
 const (
-	DocsPageGetParamsLangPtBr DocsPageGetParamsLang = "pt-BR"
-	DocsPageGetParamsLangEn   DocsPageGetParamsLang = "en"
+	DocsPagesGetParamsLangPtBr DocsPagesGetParamsLang = "pt-BR"
+	DocsPagesGetParamsLangEn   DocsPagesGetParamsLang = "en"
 )
 
 // DocsSearchOutput is the response of [DocsService.Search].

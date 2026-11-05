@@ -13,22 +13,6 @@ type WalletService struct {
 	client *Client
 }
 
-// Get seller readiness to sell and receive.
-//
-// Returns whether the workspace seller is ready to sell and receive: `sellerStatus` (account state)
-// and `bankAccountStatus` (receiving-account approval), plus a `reason` when pending/reproved. Use
-// this to answer whether everything is set up to start selling/receiving. Clickmax processes payments
-// natively — never suggest an external gateway.
-//
-// Calls GET /wallet/sellers-status.
-func (s *WalletService) SellersStatus(ctx context.Context, opts ...Option) (*SellersStatusOutput, error) {
-	var out SellersStatusOutput
-	if err := s.client.do(ctx, "GET", "/wallet/sellers-status", nil, nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // Get wallet balances and statement (extrato).
 //
 // Returns the seller wallet balances (available, pending/"a receber", under-review, anticipatable)
@@ -58,65 +42,6 @@ func (s *WalletService) Withdraws(ctx context.Context, params WalletWithdrawsPar
 	}
 	return &out, nil
 }
-
-// SellersStatusOutput is the response of [WalletService.SellersStatus].
-type SellersStatusOutput struct {
-	BankAccountStatus               *SellersStatusOutputBankAccountStatus             `json:"bankAccountStatus,omitzero"`
-	SellerStatus                    *SellersStatusOutputSellerStatus                  `json:"sellerStatus,omitzero"`
-	SubmittedAt                     *time.Time                                        `json:"submittedAt,omitzero"`
-	KycSubmittedAt                  *time.Time                                        `json:"kycSubmittedAt,omitzero"`
-	GatewayName                     *SellersStatusOutputGatewayName                   `json:"gatewayName,omitzero"`
-	Reason                          *string                                           `json:"reason,omitzero"`
-	BankAccountReason               *string                                           `json:"bankAccountReason,omitzero"`
-	BankAccountReasonReceiverType   *SellersStatusOutputBankAccountReasonReceiverType `json:"bankAccountReasonReceiverType,omitzero"`
-	RequiresBiometricReverification *bool                                             `json:"requiresBiometricReverification,omitzero"`
-	OnboardingResetPending          *bool                                             `json:"onboardingResetPending,omitzero"`
-	NeedsRevalidation               *bool                                             `json:"needsRevalidation,omitzero"`
-	RegistrationConfirmedAt         *time.Time                                        `json:"registrationConfirmedAt,omitzero"`
-	CanAffiliate                    *bool                                             `json:"canAffiliate,omitzero"`
-	ProfileCompleted                *bool                                             `json:"profileCompleted,omitzero"`
-}
-
-// SellersStatusOutputBankAccountReasonReceiverType is the type of
-// [SellersStatusOutput.BankAccountReasonReceiverType].
-type SellersStatusOutputBankAccountReasonReceiverType string
-
-// Values of [SellersStatusOutputBankAccountReasonReceiverType].
-const (
-	SellersStatusOutputBankAccountReasonReceiverTypePix  SellersStatusOutputBankAccountReasonReceiverType = "pix"
-	SellersStatusOutputBankAccountReasonReceiverTypeBank SellersStatusOutputBankAccountReasonReceiverType = "bank"
-)
-
-// SellersStatusOutputBankAccountStatus is the type of [SellersStatusOutput.BankAccountStatus].
-type SellersStatusOutputBankAccountStatus string
-
-// Values of [SellersStatusOutputBankAccountStatus].
-const (
-	SellersStatusOutputBankAccountStatusApproved SellersStatusOutputBankAccountStatus = "approved"
-	SellersStatusOutputBankAccountStatusPending  SellersStatusOutputBankAccountStatus = "pending"
-	SellersStatusOutputBankAccountStatusReproved SellersStatusOutputBankAccountStatus = "reproved"
-)
-
-// SellersStatusOutputGatewayName is the type of [SellersStatusOutput.GatewayName].
-type SellersStatusOutputGatewayName string
-
-// Values of [SellersStatusOutputGatewayName].
-const (
-	SellersStatusOutputGatewayNameIopay SellersStatusOutputGatewayName = "iopay"
-	SellersStatusOutputGatewayNameTicto SellersStatusOutputGatewayName = "ticto"
-)
-
-// SellersStatusOutputSellerStatus is the type of [SellersStatusOutput.SellerStatus].
-type SellersStatusOutputSellerStatus string
-
-// Values of [SellersStatusOutputSellerStatus].
-const (
-	SellersStatusOutputSellerStatusEnabled           SellersStatusOutputSellerStatus = "enabled"
-	SellersStatusOutputSellerStatusPending           SellersStatusOutputSellerStatus = "pending"
-	SellersStatusOutputSellerStatusBlocked           SellersStatusOutputSellerStatus = "blocked"
-	SellersStatusOutputSellerStatusDisabled          SellersStatusOutputSellerStatus = "disabled"
-	SellersStatusOutputSellerStatusPendingCorrection SellersStatusOutputSellerStatus = "pending_correction"
-)
 
 // WalletStatementOutput is the response of [WalletService.Statement].
 type WalletStatementOutput struct {

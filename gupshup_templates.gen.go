@@ -12,6 +12,21 @@ type GupshupTemplatesService struct {
 	client *Client
 }
 
+// Get WhatsApp template performance.
+//
+// Sent / delivered / read / clicked counts for ONE approved WhatsApp template, read from Meta.
+// `externalId` comes from `gupshup_templates_list` (only templates already submitted to Meta have
+// one).
+//
+// Calls GET /gupshup-templates/analytics.
+func (s *GupshupTemplatesService) Analytics(ctx context.Context, params GupshupTemplatesAnalyticsParams, opts ...Option) (*GupshupTemplatesAnalyticsOutput, error) {
+	var out GupshupTemplatesAnalyticsOutput
+	if err := s.client.do(ctx, "GET", "/gupshup-templates/analytics", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Draft a custom WhatsApp template.
 //
 // Saves a WhatsApp template as a local DRAFT — it is NOT sent to Meta yet (call
@@ -70,16 +85,16 @@ func (s *GupshupTemplatesService) Get(ctx context.Context, params GupshupTemplat
 // Create a WhatsApp template from Meta's library.
 //
 // Creates a workspace WhatsApp template directly from a Meta library entry (`libraryTemplateName`,
-// resolved via `gupshup_template_library_list`) — this SUBMITS to Meta immediately (unlike
+// resolved via `gupshup_templates_library_list`) — this SUBMITS to Meta immediately (unlike
 // `gupshup_templates_create`, which only drafts locally), so only call it with a `libraryTemplateName`
-// that actually came back from `gupshup_template_library_list`, never invented. `elementName` is your
+// that actually came back from `gupshup_templates_library_list`, never invented. `elementName` is your
 // workspace-local name for it (6-24 chars). `category` is restricted to `UTILITY`/`AUTHENTICATION`
 // (library scope).
 //
-// Calls DELETE /gupshup-templates/gupshup-template-library-create.
-func (s *GupshupTemplatesService) GupshupTemplateLibraryCreate(ctx context.Context, body GupshupTemplateLibraryCreateInput, opts ...Option) (*GupshupTemplateLibraryCreateOutput, error) {
-	var out GupshupTemplateLibraryCreateOutput
-	if err := s.client.do(ctx, "DELETE", "/gupshup-templates/gupshup-template-library-create", nil, body, &out, opts); err != nil {
+// Calls DELETE /gupshup-templates/library-create.
+func (s *GupshupTemplatesService) LibraryCreate(ctx context.Context, body GupshupTemplatesLibraryCreateInput, opts ...Option) (*GupshupTemplatesLibraryCreateOutput, error) {
+	var out GupshupTemplatesLibraryCreateOutput
+	if err := s.client.do(ctx, "DELETE", "/gupshup-templates/library-create", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -88,15 +103,15 @@ func (s *GupshupTemplatesService) GupshupTemplateLibraryCreate(ctx context.Conte
 // List Meta's template library.
 //
 // Meta's own pre-vetted template library (`UTILITY`/`AUTHENTICATION` only — `MARKETING` is never in
-// the library) for the given `languageCode`. Importing one with `gupshup_template_library_create`
+// the library) for the given `languageCode`. Importing one with `gupshup_templates_library_create`
 // skips the usual review wait since Meta already vetted the content. Check this before authoring a
 // template from scratch with `gupshup_templates_create` when the use case is generic (OTP, order
 // update, appointment reminder, etc.) — an exact library match is near-instant-approved.
 //
-// Calls GET /gupshup-templates/gupshup-template-library-list.
-func (s *GupshupTemplatesService) GupshupTemplateLibraryList(ctx context.Context, params GupshupTemplateLibraryListParams, opts ...Option) (*GupshupTemplateLibraryListOutput, error) {
-	var out GupshupTemplateLibraryListOutput
-	if err := s.client.do(ctx, "GET", "/gupshup-templates/gupshup-template-library-list", params.values(), nil, &out, opts); err != nil {
+// Calls GET /gupshup-templates/library-list.
+func (s *GupshupTemplatesService) LibraryList(ctx context.Context, params GupshupTemplatesLibraryListParams, opts ...Option) (*GupshupTemplatesLibraryListOutput, error) {
+	var out GupshupTemplatesLibraryListOutput
+	if err := s.client.do(ctx, "GET", "/gupshup-templates/library-list", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -134,8 +149,8 @@ func (s *GupshupTemplatesService) List(ctx context.Context, body GupshupTemplate
 // still editable).
 //
 // Calls DELETE /gupshup-templates/submit.
-func (s *GupshupTemplatesService) Submit(ctx context.Context, body GupshupTemplatesSubmitInput, opts ...Option) (*GupshupTemplateLibraryCreateOutput, error) {
-	var out GupshupTemplateLibraryCreateOutput
+func (s *GupshupTemplatesService) Submit(ctx context.Context, body GupshupTemplatesSubmitInput, opts ...Option) (*GupshupTemplatesLibraryCreateOutput, error) {
+	var out GupshupTemplatesLibraryCreateOutput
 	if err := s.client.do(ctx, "DELETE", "/gupshup-templates/submit", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -163,113 +178,34 @@ func (s *GupshupTemplatesService) Submit(ctx context.Context, body GupshupTempla
 // the user has not actually given you.
 //
 // Calls POST /gupshup-templates/update.
-func (s *GupshupTemplatesService) Update(ctx context.Context, body GupshupTemplatesUpdateInput, opts ...Option) (*GupshupTemplateLibraryCreateOutput, error) {
-	var out GupshupTemplateLibraryCreateOutput
+func (s *GupshupTemplatesService) Update(ctx context.Context, body GupshupTemplatesUpdateInput, opts ...Option) (*GupshupTemplatesLibraryCreateOutput, error) {
+	var out GupshupTemplatesLibraryCreateOutput
 	if err := s.client.do(ctx, "POST", "/gupshup-templates/update", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
-// GupshupTemplateLibraryCreateInput is the request body of
-// [GupshupTemplatesService.GupshupTemplateLibraryCreate].
-type GupshupTemplateLibraryCreateInput struct {
-	// Workspace-local template name, 6-24 characters.
-	ElementName string `json:"elementName"`
-	// Exact `elementName` of the Meta library entry to import — resolve with
-	// `gupshup_template_library_list`, never invented.
-	LibraryTemplateName string                                    `json:"libraryTemplateName"`
-	Category            GupshupTemplateLibraryCreateInputCategory `json:"category"`
-	LanguageCode        string                                    `json:"languageCode"`
-	// Raw GupShup buttons override string — leave unset for the library defaults.
-	Buttons *string `json:"buttons,omitzero"`
-	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
-	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
-	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
-	// as gupshupAppId/FLOWS-1082).
-	ChannelInstanceID *string `json:"channelInstanceId,omitzero"`
+// GupshupTemplatesAnalyticsOutput is the response of [GupshupTemplatesService.Analytics].
+type GupshupTemplatesAnalyticsOutput struct {
+	Sent      float64  `json:"sent"`
+	Delivered float64  `json:"delivered"`
+	Read      float64  `json:"read"`
+	Clicked   float64  `json:"clicked"`
+	ReadRate  *float64 `json:"readRate"`
+	ClickRate *float64 `json:"clickRate"`
 }
 
-// GupshupTemplateLibraryCreateInputCategory is the type of
-// [GupshupTemplateLibraryCreateInput.Category].
-type GupshupTemplateLibraryCreateInputCategory string
-
-// Values of [GupshupTemplateLibraryCreateInputCategory].
-const (
-	GupshupTemplateLibraryCreateInputCategoryUtility        GupshupTemplateLibraryCreateInputCategory = "UTILITY"
-	GupshupTemplateLibraryCreateInputCategoryAuthentication GupshupTemplateLibraryCreateInputCategory = "AUTHENTICATION"
-)
-
-// GupshupTemplateLibraryCreateOutput is the response of
-// [GupshupTemplatesService.GupshupTemplateLibraryCreate], [GupshupTemplatesService.Submit] and
-// [GupshupTemplatesService.Update].
-type GupshupTemplateLibraryCreateOutput struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+// GupshupTemplatesAnalyticsParams holds the query parameters of [GupshupTemplatesService.Analytics].
+type GupshupTemplatesAnalyticsParams struct {
+	ExternalID string
 }
 
-// GupshupTemplateLibraryListOutput is the response of
-// [GupshupTemplatesService.GupshupTemplateLibraryList].
-type GupshupTemplateLibraryListOutput struct {
-	Status    string                                          `json:"status"`
-	Templates []GupshupTemplateLibraryListOutputTemplatesItem `json:"templates"`
-}
-
-// GupshupTemplateLibraryListOutputTemplatesItem is an element of
-// [GupshupTemplateLibraryListOutput.Templates].
-type GupshupTemplateLibraryListOutputTemplatesItem struct {
-	ElementName  string                                                `json:"elementName"`
-	Category     GupshupTemplateLibraryListOutputTemplatesItemCategory `json:"category"`
-	LanguageCode string                                                `json:"languageCode"`
-	TemplateType *string                                               `json:"templateType,omitzero"`
-	Data         *string                                               `json:"data,omitzero"`
-	Industry     *string                                               `json:"industry,omitzero"`
-	Topic        *string                                               `json:"topic,omitzero"`
-	UseCase      *string                                               `json:"useCase,omitzero"`
-}
-
-// GupshupTemplateLibraryListOutputTemplatesItemCategory is the type of
-// [GupshupTemplateLibraryListOutputTemplatesItem.Category].
-type GupshupTemplateLibraryListOutputTemplatesItemCategory string
-
-// Values of [GupshupTemplateLibraryListOutputTemplatesItemCategory].
-const (
-	GupshupTemplateLibraryListOutputTemplatesItemCategoryUtility        GupshupTemplateLibraryListOutputTemplatesItemCategory = "UTILITY"
-	GupshupTemplateLibraryListOutputTemplatesItemCategoryAuthentication GupshupTemplateLibraryListOutputTemplatesItemCategory = "AUTHENTICATION"
-)
-
-// GupshupTemplateLibraryListParams holds the query parameters of
-// [GupshupTemplatesService.GupshupTemplateLibraryList].
-type GupshupTemplateLibraryListParams struct {
-	// Meta library only has UTILITY/AUTHENTICATION — no MARKETING library.
-	Category GupshupTemplateLibraryListParamsCategory
-	// Language code Meta uses, e.g. "pt_BR"/"en".
-	LanguageCode string
-	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
-	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
-	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
-	// as gupshupAppId/FLOWS-1082).
-	ChannelInstanceID *string
-}
-
-func (p GupshupTemplateLibraryListParams) values() url.Values {
+func (p GupshupTemplatesAnalyticsParams) values() url.Values {
 	v := url.Values{}
-	addString(v, "category", (*string)(&p.Category))
-	addString(v, "languageCode", &p.LanguageCode)
-	addString(v, "channelInstanceId", p.ChannelInstanceID)
+	addString(v, "externalId", &p.ExternalID)
 	return v
 }
-
-// GupshupTemplateLibraryListParamsCategory is the type of [GupshupTemplateLibraryListParams.Category].
-//
-// Meta library only has UTILITY/AUTHENTICATION — no MARKETING library.
-type GupshupTemplateLibraryListParamsCategory string
-
-// Values of [GupshupTemplateLibraryListParamsCategory].
-const (
-	GupshupTemplateLibraryListParamsCategoryUtility        GupshupTemplateLibraryListParamsCategory = "UTILITY"
-	GupshupTemplateLibraryListParamsCategoryAuthentication GupshupTemplateLibraryListParamsCategory = "AUTHENTICATION"
-)
 
 // GupshupTemplatesCreateInput is the request body of [GupshupTemplatesService.Create].
 type GupshupTemplatesCreateInput struct {
@@ -561,6 +497,104 @@ func (p GupshupTemplatesGetParams) values() url.Values {
 	addString(v, "id", &p.ID)
 	return v
 }
+
+// GupshupTemplatesLibraryCreateInput is the request body of [GupshupTemplatesService.LibraryCreate].
+type GupshupTemplatesLibraryCreateInput struct {
+	// Workspace-local template name, 6-24 characters.
+	ElementName string `json:"elementName"`
+	// Exact `elementName` of the Meta library entry to import — resolve with
+	// `gupshup_templates_library_list`, never invented.
+	LibraryTemplateName string                                     `json:"libraryTemplateName"`
+	Category            GupshupTemplatesLibraryCreateInputCategory `json:"category"`
+	LanguageCode        string                                     `json:"languageCode"`
+	// Raw GupShup buttons override string — leave unset for the library defaults.
+	Buttons *string `json:"buttons,omitzero"`
+	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
+	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
+	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
+	// as gupshupAppId/FLOWS-1082).
+	ChannelInstanceID *string `json:"channelInstanceId,omitzero"`
+}
+
+// GupshupTemplatesLibraryCreateInputCategory is the type of
+// [GupshupTemplatesLibraryCreateInput.Category].
+type GupshupTemplatesLibraryCreateInputCategory string
+
+// Values of [GupshupTemplatesLibraryCreateInputCategory].
+const (
+	GupshupTemplatesLibraryCreateInputCategoryUtility        GupshupTemplatesLibraryCreateInputCategory = "UTILITY"
+	GupshupTemplatesLibraryCreateInputCategoryAuthentication GupshupTemplatesLibraryCreateInputCategory = "AUTHENTICATION"
+)
+
+// GupshupTemplatesLibraryCreateOutput is the response of [GupshupTemplatesService.LibraryCreate],
+// [GupshupTemplatesService.Submit] and [GupshupTemplatesService.Update].
+type GupshupTemplatesLibraryCreateOutput struct {
+	ID     string `json:"id"`
+	Status string `json:"status"`
+}
+
+// GupshupTemplatesLibraryListOutput is the response of [GupshupTemplatesService.LibraryList].
+type GupshupTemplatesLibraryListOutput struct {
+	Status    string                                           `json:"status"`
+	Templates []GupshupTemplatesLibraryListOutputTemplatesItem `json:"templates"`
+}
+
+// GupshupTemplatesLibraryListOutputTemplatesItem is an element of
+// [GupshupTemplatesLibraryListOutput.Templates].
+type GupshupTemplatesLibraryListOutputTemplatesItem struct {
+	ElementName  string                                                 `json:"elementName"`
+	Category     GupshupTemplatesLibraryListOutputTemplatesItemCategory `json:"category"`
+	LanguageCode string                                                 `json:"languageCode"`
+	TemplateType *string                                                `json:"templateType,omitzero"`
+	Data         *string                                                `json:"data,omitzero"`
+	Industry     *string                                                `json:"industry,omitzero"`
+	Topic        *string                                                `json:"topic,omitzero"`
+	UseCase      *string                                                `json:"useCase,omitzero"`
+}
+
+// GupshupTemplatesLibraryListOutputTemplatesItemCategory is the type of
+// [GupshupTemplatesLibraryListOutputTemplatesItem.Category].
+type GupshupTemplatesLibraryListOutputTemplatesItemCategory string
+
+// Values of [GupshupTemplatesLibraryListOutputTemplatesItemCategory].
+const (
+	GupshupTemplatesLibraryListOutputTemplatesItemCategoryUtility        GupshupTemplatesLibraryListOutputTemplatesItemCategory = "UTILITY"
+	GupshupTemplatesLibraryListOutputTemplatesItemCategoryAuthentication GupshupTemplatesLibraryListOutputTemplatesItemCategory = "AUTHENTICATION"
+)
+
+// GupshupTemplatesLibraryListParams holds the query parameters of
+// [GupshupTemplatesService.LibraryList].
+type GupshupTemplatesLibraryListParams struct {
+	// Meta library only has UTILITY/AUTHENTICATION — no MARKETING library.
+	Category GupshupTemplatesLibraryListParamsCategory
+	// Language code Meta uses, e.g. "pt_BR"/"en".
+	LanguageCode string
+	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
+	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
+	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
+	// as gupshupAppId/FLOWS-1082).
+	ChannelInstanceID *string
+}
+
+func (p GupshupTemplatesLibraryListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "category", (*string)(&p.Category))
+	addString(v, "languageCode", &p.LanguageCode)
+	addString(v, "channelInstanceId", p.ChannelInstanceID)
+	return v
+}
+
+// GupshupTemplatesLibraryListParamsCategory is the type of
+// [GupshupTemplatesLibraryListParams.Category].
+//
+// Meta library only has UTILITY/AUTHENTICATION — no MARKETING library.
+type GupshupTemplatesLibraryListParamsCategory string
+
+// Values of [GupshupTemplatesLibraryListParamsCategory].
+const (
+	GupshupTemplatesLibraryListParamsCategoryUtility        GupshupTemplatesLibraryListParamsCategory = "UTILITY"
+	GupshupTemplatesLibraryListParamsCategoryAuthentication GupshupTemplatesLibraryListParamsCategory = "AUTHENTICATION"
+)
 
 // GupshupTemplatesListInput is the request body of [GupshupTemplatesService.List].
 type GupshupTemplatesListInput struct {

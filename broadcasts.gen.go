@@ -73,6 +73,40 @@ func (s *BroadcastsService) Get(ctx context.Context, params BroadcastsGetParams,
 	return &out, nil
 }
 
+// Get campaign insights.
+//
+// Deep read of ONE campaign: lifecycle timestamps, opens by hour of day (0–23, use it to pick send
+// times), most-clicked links, devices, email clients, geography, open/click rate with the delta versus
+// the previous campaign, and credit cost. Resolve `broadcastId` with `broadcasts_list`.
+//
+// Calls GET /broadcasts/insights.
+func (s *BroadcastsService) Insights(ctx context.Context, params BroadcastsInsightsParams, opts ...Option) (*BroadcastsInsightsOutput, error) {
+	var out BroadcastsInsightsOutput
+	if err := s.client.do(ctx, "GET", "/broadcasts/insights", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List campaigns with performance.
+//
+// Lists one-off mass sends (campaigns/broadcasts), newest first, with per-campaign counts (unique
+// recipients sent, delivered, opened, clicked, bounced, failed) and `rates` (open/click/bounce over
+// `sent`, the same figure the campaign screen shows). Use it to browse or inspect individual
+// campaigns, paging with `page`/`perPage` and searching with `name`. For the account's historical
+// baseline use `account_snapshot` — it is summed server-side over EVERY sent campaign; one page of
+// this list is not the history. Automation (flow) emails are NOT here — use `flows_get` with
+// analytics for those, or `messages_metrics` for everything combined.
+//
+// Calls GET /broadcasts/list.
+func (s *BroadcastsService) List(ctx context.Context, params BroadcastsListParams, opts ...Option) (*BroadcastsListOutput, error) {
+	var out BroadcastsListOutput
+	if err := s.client.do(ctx, "GET", "/broadcasts/list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Pause a sending campaign.
 //
 // Pauses a campaign that is sending; pending recipients wait until `broadcasts_resume`. Only campaigns
@@ -312,6 +346,170 @@ func (p BroadcastsGetParams) values() url.Values {
 	addBool(v, "includeHtml", p.IncludeHTML)
 	return v
 }
+
+// BroadcastsInsightsOutput is the response of [BroadcastsService.Insights].
+type BroadcastsInsightsOutput struct {
+	BroadcastID string                                    `json:"broadcastId"`
+	OpensByHour []BroadcastsInsightsOutputOpensByHourItem `json:"opensByHour"`
+	TopLinks    []BroadcastsInsightsOutputTopLinksItem    `json:"topLinks"`
+	Metrics     BroadcastsInsightsOutputMetrics           `json:"metrics"`
+	Engagement  BroadcastsInsightsOutputEngagement        `json:"engagement"`
+	Devices     []BroadcastsInsightsOutputDevicesItem     `json:"devices"`
+	Clients     []BroadcastsInsightsOutputClientsItem     `json:"clients"`
+	Geo         []BroadcastsInsightsOutputGeoItem         `json:"geo"`
+	Origins     []BroadcastsInsightsOutputOriginsItem     `json:"origins"`
+	CreditCost  BroadcastsInsightsOutputCreditCost        `json:"creditCost"`
+}
+
+// BroadcastsInsightsOutputClientsItem is an element of [BroadcastsInsightsOutput.Clients].
+type BroadcastsInsightsOutputClientsItem struct {
+	Label string  `json:"label"`
+	Count float64 `json:"count"`
+}
+
+// BroadcastsInsightsOutputCreditCost is the type of [BroadcastsInsightsOutput.CreditCost].
+type BroadcastsInsightsOutputCreditCost struct {
+	Total      float64 `json:"total"`
+	PerMessage float64 `json:"perMessage"`
+}
+
+// BroadcastsInsightsOutputDevicesItem is an element of [BroadcastsInsightsOutput.Devices].
+type BroadcastsInsightsOutputDevicesItem struct {
+	Label string  `json:"label"`
+	Count float64 `json:"count"`
+}
+
+// BroadcastsInsightsOutputEngagement is the type of [BroadcastsInsightsOutput.Engagement].
+type BroadcastsInsightsOutputEngagement struct {
+	OpenRate       float64  `json:"openRate"`
+	ClickRate      float64  `json:"clickRate"`
+	DeltaOpenRate  *float64 `json:"deltaOpenRate"`
+	DeltaClickRate *float64 `json:"deltaClickRate"`
+}
+
+// BroadcastsInsightsOutputGeoItem is an element of [BroadcastsInsightsOutput.Geo].
+type BroadcastsInsightsOutputGeoItem struct {
+	Label string  `json:"label"`
+	Count float64 `json:"count"`
+}
+
+// BroadcastsInsightsOutputMetrics is the type of [BroadcastsInsightsOutput.Metrics].
+type BroadcastsInsightsOutputMetrics struct {
+	Total     float64 `json:"total"`
+	Queued    float64 `json:"queued"`
+	Sending   float64 `json:"sending"`
+	Sent      float64 `json:"sent"`
+	Delivered float64 `json:"delivered"`
+	Opened    float64 `json:"opened"`
+	Clicked   float64 `json:"clicked"`
+	Bounced   float64 `json:"bounced"`
+	Failed    float64 `json:"failed"`
+}
+
+// BroadcastsInsightsOutputOpensByHourItem is an element of [BroadcastsInsightsOutput.OpensByHour].
+type BroadcastsInsightsOutputOpensByHourItem struct {
+	Hour  float64 `json:"hour"`
+	Count float64 `json:"count"`
+}
+
+// BroadcastsInsightsOutputOriginsItem is an element of [BroadcastsInsightsOutput.Origins].
+type BroadcastsInsightsOutputOriginsItem struct {
+	Label string  `json:"label"`
+	Count float64 `json:"count"`
+}
+
+// BroadcastsInsightsOutputTopLinksItem is an element of [BroadcastsInsightsOutput.TopLinks].
+type BroadcastsInsightsOutputTopLinksItem struct {
+	URL    string  `json:"url"`
+	Clicks float64 `json:"clicks"`
+}
+
+// BroadcastsInsightsParams holds the query parameters of [BroadcastsService.Insights].
+type BroadcastsInsightsParams struct {
+	BroadcastID string
+}
+
+func (p BroadcastsInsightsParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "broadcastId", &p.BroadcastID)
+	return v
+}
+
+// BroadcastsListOutput is the response of [BroadcastsService.List].
+type BroadcastsListOutput struct {
+	Data []BroadcastsListOutputDataItem `json:"data"`
+	Meta BroadcastsListOutputMeta       `json:"meta"`
+}
+
+// BroadcastsListOutputDataItem is an element of [BroadcastsListOutput.Data].
+type BroadcastsListOutputDataItem struct {
+	ID             string                              `json:"id"`
+	Name           *string                             `json:"name"`
+	Channel        string                              `json:"channel"`
+	Status         string                              `json:"status"`
+	ScheduledAt    *string                             `json:"scheduledAt"`
+	SentAt         *string                             `json:"sentAt"`
+	RecipientCount float64                             `json:"recipientCount"`
+	Metrics        BroadcastsListOutputDataItemMetrics `json:"metrics"`
+	Rates          BroadcastsListOutputDataItemRates   `json:"rates"`
+}
+
+// BroadcastsListOutputDataItemMetrics is the type of [BroadcastsListOutputDataItem.Metrics].
+type BroadcastsListOutputDataItemMetrics struct {
+	Total     float64 `json:"total"`
+	Queued    float64 `json:"queued"`
+	Sending   float64 `json:"sending"`
+	Sent      float64 `json:"sent"`
+	Delivered float64 `json:"delivered"`
+	Opened    float64 `json:"opened"`
+	Clicked   float64 `json:"clicked"`
+	Bounced   float64 `json:"bounced"`
+	Failed    float64 `json:"failed"`
+}
+
+// BroadcastsListOutputDataItemRates is the type of [BroadcastsListOutputDataItem.Rates].
+type BroadcastsListOutputDataItemRates struct {
+	OpenRate   *float64 `json:"openRate"`
+	ClickRate  *float64 `json:"clickRate"`
+	BounceRate *float64 `json:"bounceRate"`
+}
+
+// BroadcastsListOutputMeta is the type of [BroadcastsListOutput.Meta].
+type BroadcastsListOutputMeta struct {
+	CountItens float64 `json:"countItens"`
+	CountPages float64 `json:"countPages"`
+	PerPage    float64 `json:"perPage"`
+}
+
+// BroadcastsListParams holds the query parameters of [BroadcastsService.List].
+type BroadcastsListParams struct {
+	Page *int64
+	// 1–100, default 20.
+	PerPage *int64
+	Channel *BroadcastsListParamsChannel
+	// Case-insensitive name search.
+	Name *string
+}
+
+func (p BroadcastsListParams) values() url.Values {
+	v := url.Values{}
+	addInt(v, "page", p.Page)
+	addInt(v, "perPage", p.PerPage)
+	addString(v, "channel", (*string)(p.Channel))
+	addString(v, "name", p.Name)
+	return v
+}
+
+// BroadcastsListParamsChannel is the type of [BroadcastsListParams.Channel].
+type BroadcastsListParamsChannel string
+
+// Values of [BroadcastsListParamsChannel].
+const (
+	BroadcastsListParamsChannelEmail   BroadcastsListParamsChannel = "email"
+	BroadcastsListParamsChannelSMS     BroadcastsListParamsChannel = "sms"
+	BroadcastsListParamsChannelGupshup BroadcastsListParamsChannel = "gupshup"
+	BroadcastsListParamsChannelVoice   BroadcastsListParamsChannel = "voice"
+)
 
 // BroadcastsPauseOutput is the response of [BroadcastsService.Pause].
 type BroadcastsPauseOutput struct {

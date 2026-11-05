@@ -233,6 +233,10 @@ const (
 	PlansInvoiceSummaryOutputAddonsItemMetricAutomationTriggers          PlansInvoiceSummaryOutputAddonsItemMetric = "automation_triggers"
 	PlansInvoiceSummaryOutputAddonsItemMetricMeetMinutes                 PlansInvoiceSummaryOutputAddonsItemMetric = "meet_minutes"
 	PlansInvoiceSummaryOutputAddonsItemMetricMeetSessionMaxMinutes       PlansInvoiceSummaryOutputAddonsItemMetric = "meet_session_max_minutes"
+	PlansInvoiceSummaryOutputAddonsItemMetricWebinars                    PlansInvoiceSummaryOutputAddonsItemMetric = "webinars"
+	PlansInvoiceSummaryOutputAddonsItemMetricSocial                      PlansInvoiceSummaryOutputAddonsItemMetric = "social"
+	PlansInvoiceSummaryOutputAddonsItemMetricWebchat                     PlansInvoiceSummaryOutputAddonsItemMetric = "webchat"
+	PlansInvoiceSummaryOutputAddonsItemMetricForms                       PlansInvoiceSummaryOutputAddonsItemMetric = "forms"
 	PlansInvoiceSummaryOutputAddonsItemMetricCredits                     PlansInvoiceSummaryOutputAddonsItemMetric = "credits"
 	PlansInvoiceSummaryOutputAddonsItemMetricAICredits                   PlansInvoiceSummaryOutputAddonsItemMetric = "ai_credits"
 	PlansInvoiceSummaryOutputAddonsItemMetricAIStandardAllowance         PlansInvoiceSummaryOutputAddonsItemMetric = "ai_standard_allowance"
@@ -359,6 +363,10 @@ const (
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricAutomationTriggers          PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "automation_triggers"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricMeetMinutes                 PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "meet_minutes"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricMeetSessionMaxMinutes       PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "meet_session_max_minutes"
+	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricWebinars                    PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "webinars"
+	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricSocial                      PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "social"
+	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricWebchat                     PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "webchat"
+	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricForms                       PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "forms"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricCredits                     PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "credits"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricAICredits                   PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "ai_credits"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricAIStandardAllowance         PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "ai_standard_allowance"
@@ -389,8 +397,21 @@ type PlansTransactionHistoryOutputDataItemPlan struct {
 // PlansUpgradeListOutput is the response of [PlansService.UpgradeList].
 type PlansUpgradeListOutput struct {
 	HighestAnnualDiscountPercentage float64                           `json:"highestAnnualDiscountPercentage"`
+	Archetype                       PlansUpgradeListOutputArchetype   `json:"archetype"`
 	Plans                           []PlansUpgradeListOutputPlansItem `json:"plans"`
 }
+
+// PlansUpgradeListOutputArchetype is the type of [PlansUpgradeListOutput.Archetype].
+type PlansUpgradeListOutputArchetype string
+
+// Values of [PlansUpgradeListOutputArchetype].
+const (
+	PlansUpgradeListOutputArchetypeFunnel     PlansUpgradeListOutputArchetype = "funnel"
+	PlansUpgradeListOutputArchetypeAutomation PlansUpgradeListOutputArchetype = "automation"
+	PlansUpgradeListOutputArchetypeService    PlansUpgradeListOutputArchetype = "service"
+	PlansUpgradeListOutputArchetypeSales      PlansUpgradeListOutputArchetype = "sales"
+	PlansUpgradeListOutputArchetypeRetention  PlansUpgradeListOutputArchetype = "retention"
+)
 
 // PlansUpgradeListOutputPlansItem is an element of [PlansUpgradeListOutput.Plans].
 type PlansUpgradeListOutputPlansItem struct {
@@ -399,6 +420,7 @@ type PlansUpgradeListOutputPlansItem struct {
 	Description   *string                                      `json:"description,omitzero"`
 	Hash          string                                       `json:"hash"`
 	Tier          int64                                        `json:"tier"`
+	Archetype     *PlansUpgradeListOutputPlansItemArchetype    `json:"archetype,omitzero"`
 	Recurrence    PlansUpgradeListOutputPlansItemRecurrence    `json:"recurrence"`
 	Price         float64                                      `json:"price"`
 	PricePerMonth float64                                      `json:"pricePerMonth"`
@@ -407,13 +429,26 @@ type PlansUpgradeListOutputPlansItem struct {
 	Metrics       []PlansUpgradeListOutputPlansItemMetricsItem `json:"metrics"`
 }
 
+// PlansUpgradeListOutputPlansItemArchetype is the type of [PlansUpgradeListOutputPlansItem.Archetype].
+type PlansUpgradeListOutputPlansItemArchetype string
+
+// Values of [PlansUpgradeListOutputPlansItemArchetype].
+const (
+	PlansUpgradeListOutputPlansItemArchetypeFunnel     PlansUpgradeListOutputPlansItemArchetype = "funnel"
+	PlansUpgradeListOutputPlansItemArchetypeAutomation PlansUpgradeListOutputPlansItemArchetype = "automation"
+	PlansUpgradeListOutputPlansItemArchetypeService    PlansUpgradeListOutputPlansItemArchetype = "service"
+	PlansUpgradeListOutputPlansItemArchetypeSales      PlansUpgradeListOutputPlansItemArchetype = "sales"
+	PlansUpgradeListOutputPlansItemArchetypeRetention  PlansUpgradeListOutputPlansItemArchetype = "retention"
+)
+
 // PlansUpgradeListOutputPlansItemMetricsItem is an element of
 // [PlansUpgradeListOutputPlansItem.Metrics].
 type PlansUpgradeListOutputPlansItemMetricsItem struct {
-	Metric      PlansUpgradeListOutputPlansItemMetricsItemMetric `json:"metric"`
-	Kind        *PlansUpgradeListOutputPlansItemMetricsItemKind  `json:"kind,omitzero"`
-	Limit       *float64                                         `json:"limit,omitzero"`
-	IsUnlimited *bool                                            `json:"isUnlimited,omitzero"`
+	Metric            PlansUpgradeListOutputPlansItemMetricsItemMetric `json:"metric"`
+	Kind              *PlansUpgradeListOutputPlansItemMetricsItemKind  `json:"kind,omitzero"`
+	Limit             *float64                                         `json:"limit,omitzero"`
+	IsUnlimited       *bool                                            `json:"isUnlimited,omitzero"`
+	UnlocksAfterTrial bool                                             `json:"unlocksAfterTrial"`
 }
 
 // PlansUpgradeListOutputPlansItemMetricsItemKind is the type of
@@ -457,6 +492,10 @@ const (
 	PlansUpgradeListOutputPlansItemMetricsItemMetricAutomationTriggers          PlansUpgradeListOutputPlansItemMetricsItemMetric = "automation_triggers"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricMeetMinutes                 PlansUpgradeListOutputPlansItemMetricsItemMetric = "meet_minutes"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricMeetSessionMaxMinutes       PlansUpgradeListOutputPlansItemMetricsItemMetric = "meet_session_max_minutes"
+	PlansUpgradeListOutputPlansItemMetricsItemMetricWebinars                    PlansUpgradeListOutputPlansItemMetricsItemMetric = "webinars"
+	PlansUpgradeListOutputPlansItemMetricsItemMetricSocial                      PlansUpgradeListOutputPlansItemMetricsItemMetric = "social"
+	PlansUpgradeListOutputPlansItemMetricsItemMetricWebchat                     PlansUpgradeListOutputPlansItemMetricsItemMetric = "webchat"
+	PlansUpgradeListOutputPlansItemMetricsItemMetricForms                       PlansUpgradeListOutputPlansItemMetricsItemMetric = "forms"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricCredits                     PlansUpgradeListOutputPlansItemMetricsItemMetric = "credits"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricAICredits                   PlansUpgradeListOutputPlansItemMetricsItemMetric = "ai_credits"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricAIStandardAllowance         PlansUpgradeListOutputPlansItemMetricsItemMetric = "ai_standard_allowance"
@@ -491,6 +530,7 @@ type PlansUserMetricsOutputDataItem struct {
 	ExtraLimit     float64                              `json:"extraLimit"`
 	Remaining      *float64                             `json:"remaining,omitzero"`
 	UsedPercentage *float64                             `json:"usedPercentage,omitzero"`
+	TrialEndsAt    *time.Time                           `json:"trialEndsAt,omitzero"`
 	From           PlansUserMetricsOutputDataItemFrom   `json:"from"`
 }
 
@@ -552,6 +592,10 @@ const (
 	PlansUserMetricsOutputDataItemMetricAutomationTriggers          PlansUserMetricsOutputDataItemMetric = "automation_triggers"
 	PlansUserMetricsOutputDataItemMetricMeetMinutes                 PlansUserMetricsOutputDataItemMetric = "meet_minutes"
 	PlansUserMetricsOutputDataItemMetricMeetSessionMaxMinutes       PlansUserMetricsOutputDataItemMetric = "meet_session_max_minutes"
+	PlansUserMetricsOutputDataItemMetricWebinars                    PlansUserMetricsOutputDataItemMetric = "webinars"
+	PlansUserMetricsOutputDataItemMetricSocial                      PlansUserMetricsOutputDataItemMetric = "social"
+	PlansUserMetricsOutputDataItemMetricWebchat                     PlansUserMetricsOutputDataItemMetric = "webchat"
+	PlansUserMetricsOutputDataItemMetricForms                       PlansUserMetricsOutputDataItemMetric = "forms"
 	PlansUserMetricsOutputDataItemMetricCredits                     PlansUserMetricsOutputDataItemMetric = "credits"
 	PlansUserMetricsOutputDataItemMetricAICredits                   PlansUserMetricsOutputDataItemMetric = "ai_credits"
 	PlansUserMetricsOutputDataItemMetricAIStandardAllowance         PlansUserMetricsOutputDataItemMetric = "ai_standard_allowance"
@@ -576,6 +620,7 @@ type PlansUserSummaryOutputMetricsItem struct {
 	ExtraLimit     float64                                 `json:"extraLimit"`
 	Remaining      *float64                                `json:"remaining,omitzero"`
 	UsedPercentage *float64                                `json:"usedPercentage,omitzero"`
+	TrialEndsAt    *time.Time                              `json:"trialEndsAt,omitzero"`
 	From           PlansUserSummaryOutputMetricsItemFrom   `json:"from"`
 }
 
@@ -639,6 +684,10 @@ const (
 	PlansUserSummaryOutputMetricsItemMetricAutomationTriggers          PlansUserSummaryOutputMetricsItemMetric = "automation_triggers"
 	PlansUserSummaryOutputMetricsItemMetricMeetMinutes                 PlansUserSummaryOutputMetricsItemMetric = "meet_minutes"
 	PlansUserSummaryOutputMetricsItemMetricMeetSessionMaxMinutes       PlansUserSummaryOutputMetricsItemMetric = "meet_session_max_minutes"
+	PlansUserSummaryOutputMetricsItemMetricWebinars                    PlansUserSummaryOutputMetricsItemMetric = "webinars"
+	PlansUserSummaryOutputMetricsItemMetricSocial                      PlansUserSummaryOutputMetricsItemMetric = "social"
+	PlansUserSummaryOutputMetricsItemMetricWebchat                     PlansUserSummaryOutputMetricsItemMetric = "webchat"
+	PlansUserSummaryOutputMetricsItemMetricForms                       PlansUserSummaryOutputMetricsItemMetric = "forms"
 	PlansUserSummaryOutputMetricsItemMetricCredits                     PlansUserSummaryOutputMetricsItemMetric = "credits"
 	PlansUserSummaryOutputMetricsItemMetricAICredits                   PlansUserSummaryOutputMetricsItemMetric = "ai_credits"
 	PlansUserSummaryOutputMetricsItemMetricAIStandardAllowance         PlansUserSummaryOutputMetricsItemMetric = "ai_standard_allowance"

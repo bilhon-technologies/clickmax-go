@@ -37,7 +37,7 @@ func (s *PagesService) Clone(ctx context.Context, body PagesCloneInput, opts ...
 // "checkout"` + `templateId` (a checkout template) + `offerId`: the backend copies the template and
 // automatically binds that offer into the page checkout block(s) — no manual content editing needed.
 // Pass `funnelId` to attach the page to a funnel; then link it to a funnel node with
-// `funnels_node_connect_page`. CLASSIFICATION RULE: use this ONLY for pages Clickmax will build/host.
+// `funnels_nodes_connect_page`. CLASSIFICATION RULE: use this ONLY for pages Clickmax will build/host.
 // If the page ALREADY EXISTS at a public URL on a domain that is NOT connected in Clickmax (Framer,
 // Webflow, the user's own site, any third-party domain), you MUST use `pages_create_external` —
 // never this tool: a builder page for a URL you did not build is empty and breaks the capture-script
@@ -60,7 +60,7 @@ func (s *PagesService) Create(ctx context.Context, body PagesCreateInput, opts .
 // page that already lives at a URL on a domain NOT connected in Clickmax (Framer/Webflow/custom
 // HTML/the user's own site) — such pages use the Clickmax Browser SDK, not the visual builder.
 // Prefer this over `pages_create` whenever the user gives you an existing page URL you did not build
-// in Clickmax. After creating it, link it to a funnel node with `funnels_node_connect_page`
+// in Clickmax. After creating it, link it to a funnel node with `funnels_nodes_connect_page`
 // (auto-wires the redirect) and hand the install snippets from `pages_get_external_script`.
 //
 // Calls POST /pages/create-external.
@@ -117,8 +117,8 @@ func (s *PagesService) GenerationContextGet(ctx context.Context, body PagesGener
 // fields. Use before mutations or script generation.
 //
 // Calls GET /pages/get.
-func (s *PagesService) Get(ctx context.Context, params PagesGetParams, opts ...Option) (*CheckoutGetOutput, error) {
-	var out CheckoutGetOutput
+func (s *PagesService) Get(ctx context.Context, params PagesGetParams, opts ...Option) (*CheckoutsGetOutput, error) {
+	var out CheckoutsGetOutput
 	if err := s.client.do(ctx, "GET", "/pages/get", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
@@ -256,12 +256,15 @@ func (s *PagesService) ImagesSearch(ctx context.Context, params PagesImagesSearc
 // href="#<id>" matching an element with that exact, unique id — the runtime scrolls to it. Mobile
 // toggle button is injected automatically — do not hand-write it.
 //
-// VTURB VIDEO: VTurb video: <div data-cx-vturb="<videoId>"></div> — the server resolves this into
-// the real <vturb-smartplayer>, whose player script the published page loads on its own (a <script>
-// tag hand-written by the author is always stripped and never boots the player). The videoId must
-// already exist as a VTurb player on this workspace. Watch-gate: put data-vturb-timer="<seconds>" plus
-// data-cx-show/data-cx-hide (comma-separated element ids) on the same marker — it stays as the
-// player wrapper, so the runtime reads them there.
+// VTURB VIDEO: VTurb video: <div data-cx-vturb="<videoId>" data-cx-vturb-script="<player.js
+// url>"></div> — the server resolves this into the real <vturb-smartplayer>, whose player script the
+// published page loads on its own (a <script> tag hand-written by the author is always stripped and
+// never boots the player). Both values come from the embed code the user pastes: videoId = the id of
+// its <vturb-smartplayer> (or legacy <div id="vid_...">), copied as is; data-cx-vturb-script = its
+// https://scripts.converteai.net/.../player.js src. Without data-cx-vturb-script, the videoId must
+// already exist as a VTurb player of the workspace's connected Vturb account. Watch-gate: put
+// data-vturb-timer="<seconds>" plus data-cx-show/data-cx-hide (comma-separated element ids) on the
+// same marker — it stays as the player wrapper, so the runtime reads them there.
 //
 // VIDEO WATCH-GATE: VIDEO WATCH-GATE (optional): on a YouTube/Panda <iframe
 // data-provider="youtube|panda" id="unique-id" data-video-id="..." data-timer="HH:MM:SS">, add
@@ -363,16 +366,19 @@ func (s *PagesService) ImportHTML(ctx context.Context, body PagesImportHTMLInput
 // nesting <div class="cm-has-dropdown"><div class="cm-submenu">...</div></div>. In-page links use
 // href="#<id>" matching an element with that exact, unique id — the runtime scrolls to it. Mobile
 // toggle button is injected automatically — do not hand-write it. VTurb video: <div
-// data-cx-vturb="<videoId>"></div> — the server resolves this into the real <vturb-smartplayer>,
-// whose player script the published page loads on its own (a <script> tag hand-written by the author
-// is always stripped and never boots the player). The videoId must already exist as a VTurb player on
-// this workspace. Watch-gate: put data-vturb-timer="<seconds>" plus data-cx-show/data-cx-hide
-// (comma-separated element ids) on the same marker — it stays as the player wrapper, so the runtime
-// reads them there. VIDEO WATCH-GATE (optional): on a YouTube/Panda <iframe
-// data-provider="youtube|panda" id="unique-id" data-video-id="..." data-timer="HH:MM:SS">, add
-// data-cx-show/data-cx-hide (comma-separated element ids) to reveal/hide content once the timer
-// elapses. Use data-cx-show/data-cx-hide, the legacy component-to-show/component-to-hide are kept only
-// for pages built by hand in the editor.
+// data-cx-vturb="<videoId>" data-cx-vturb-script="<player.js url>"></div> — the server resolves this
+// into the real <vturb-smartplayer>, whose player script the published page loads on its own (a
+// <script> tag hand-written by the author is always stripped and never boots the player). Both values
+// come from the embed code the user pastes: videoId = the id of its <vturb-smartplayer> (or legacy
+// <div id="vid_...">), copied as is; data-cx-vturb-script = its
+// https://scripts.converteai.net/.../player.js src. Without data-cx-vturb-script, the videoId must
+// already exist as a VTurb player of the workspace's connected Vturb account. Watch-gate: put
+// data-vturb-timer="<seconds>" plus data-cx-show/data-cx-hide (comma-separated element ids) on the
+// same marker — it stays as the player wrapper, so the runtime reads them there. VIDEO WATCH-GATE
+// (optional): on a YouTube/Panda <iframe data-provider="youtube|panda" id="unique-id"
+// data-video-id="..." data-timer="HH:MM:SS">, add data-cx-show/data-cx-hide (comma-separated element
+// ids) to reveal/hide content once the timer elapses. Use data-cx-show/data-cx-hide, the legacy
+// component-to-show/component-to-hide are kept only for pages built by hand in the editor.
 //
 // Calls POST /pages/import-html-draft.
 func (s *PagesService) ImportHTMLDraft(ctx context.Context, body PagesImportHTMLDraftInput, opts ...Option) (*PagesImportHTMLOutput, error) {
@@ -392,38 +398,6 @@ func (s *PagesService) ImportHTMLDraft(ctx context.Context, body PagesImportHTML
 func (s *PagesService) List(ctx context.Context, params PagesListParams, opts ...Option) (*PagesListOutput, error) {
 	var out PagesListOutput
 	if err := s.client.do(ctx, "GET", "/pages/list", params.values(), nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// Get a page design.
-//
-// Gets one page design by id or slug with its full DESIGN.md (`content`: YAML tokens + prose rules).
-// Pass the same slug as `designIdOrSlug` in the page manifest so the page receives the design palette
-// and type.
-//
-// Calls GET /pages/page-designs-get.
-func (s *PagesService) PageDesignsGet(ctx context.Context, params PageDesignsGetParams, opts ...Option) (*PageDesignsGetOutput, error) {
-	var out PageDesignsGetOutput
-	if err := s.client.do(ctx, "GET", "/pages/page-designs-get", params.values(), nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// List page designs.
-//
-// Lists the published page design languages visible to the workspace as a summary (`slug`, `title`,
-// `description`, `tags`, `coverImageUrl`, `palette` hex list, `fonts` the page will render,
-// `resolvedFonts` pairing each brand font the design declares with the available font used in its
-// place) — enough to pick one. The full DESIGN.md is NOT here: call `page_designs_get` for the
-// chosen slug.
-//
-// Calls GET /pages/page-designs-list.
-func (s *PagesService) PageDesignsList(ctx context.Context, opts ...Option) (*PageDesignsListOutput, error) {
-	var out PageDesignsListOutput
-	if err := s.client.do(ctx, "GET", "/pages/page-designs-list", nil, nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -537,84 +511,6 @@ func (s *PagesService) ValidateHTML(ctx context.Context, body PagesValidateHTMLI
 	}
 	return &out, nil
 }
-
-// PageDesignsGetOutput is the response of [PagesService.PageDesignsGet].
-type PageDesignsGetOutput struct {
-	ID            string                     `json:"id"`
-	Slug          string                     `json:"slug"`
-	Title         string                     `json:"title"`
-	Description   string                     `json:"description"`
-	Content       string                     `json:"content"`
-	OwnerID       *string                    `json:"ownerId,omitzero"`
-	BrandID       *string                    `json:"brandId,omitzero"`
-	Tags          []string                   `json:"tags"`
-	CoverImageURL *string                    `json:"coverImageUrl,omitzero"`
-	Status        PageDesignsGetOutputStatus `json:"status"`
-	CreatedAt     time.Time                  `json:"createdAt"`
-	UpdatedAt     time.Time                  `json:"updatedAt"`
-}
-
-// PageDesignsGetOutputStatus is the type of [PageDesignsGetOutput.Status].
-type PageDesignsGetOutputStatus string
-
-// Values of [PageDesignsGetOutputStatus].
-const (
-	PageDesignsGetOutputStatusDraft     PageDesignsGetOutputStatus = "draft"
-	PageDesignsGetOutputStatusPublished PageDesignsGetOutputStatus = "published"
-	PageDesignsGetOutputStatusArchived  PageDesignsGetOutputStatus = "archived"
-)
-
-// PageDesignsGetParams holds the query parameters of [PagesService.PageDesignsGet].
-type PageDesignsGetParams struct {
-	IDOrSlug string
-}
-
-func (p PageDesignsGetParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "idOrSlug", &p.IDOrSlug)
-	return v
-}
-
-// PageDesignsListOutput is the response of [PagesService.PageDesignsList].
-type PageDesignsListOutput struct {
-	Data []PageDesignsListOutputDataItem `json:"data"`
-}
-
-// PageDesignsListOutputDataItem is an element of [PageDesignsListOutput.Data].
-//
-// A published page design visible to the workspace, without its DESIGN.md content
-type PageDesignsListOutputDataItem struct {
-	ID            string                                           `json:"id"`
-	Slug          string                                           `json:"slug"`
-	Title         string                                           `json:"title"`
-	Description   string                                           `json:"description"`
-	Tags          []string                                         `json:"tags"`
-	CoverImageURL *string                                          `json:"coverImageUrl,omitzero"`
-	Palette       []string                                         `json:"palette"`
-	Fonts         []string                                         `json:"fonts"`
-	ResolvedFonts []PageDesignsListOutputDataItemResolvedFontsItem `json:"resolvedFonts"`
-}
-
-// PageDesignsListOutputDataItemResolvedFontsItem is an element of
-// [PageDesignsListOutputDataItem.ResolvedFonts].
-type PageDesignsListOutputDataItemResolvedFontsItem struct {
-	Family         string                                                   `json:"family"`
-	OriginalFamily string                                                   `json:"originalFamily"`
-	Resolution     PageDesignsListOutputDataItemResolvedFontsItemResolution `json:"resolution"`
-}
-
-// PageDesignsListOutputDataItemResolvedFontsItemResolution is the type of
-// [PageDesignsListOutputDataItemResolvedFontsItem.Resolution].
-type PageDesignsListOutputDataItemResolvedFontsItemResolution string
-
-// Values of [PageDesignsListOutputDataItemResolvedFontsItemResolution].
-const (
-	PageDesignsListOutputDataItemResolvedFontsItemResolutionAllowed    PageDesignsListOutputDataItemResolvedFontsItemResolution = "allowed"
-	PageDesignsListOutputDataItemResolvedFontsItemResolutionSystem     PageDesignsListOutputDataItemResolvedFontsItemResolution = "system"
-	PageDesignsListOutputDataItemResolvedFontsItemResolutionSubstitute PageDesignsListOutputDataItemResolvedFontsItemResolution = "substitute"
-	PageDesignsListOutputDataItemResolvedFontsItemResolutionStack      PageDesignsListOutputDataItemResolvedFontsItemResolution = "stack"
-	PageDesignsListOutputDataItemResolvedFontsItemResolutionCategory   PageDesignsListOutputDataItemResolvedFontsItemResolution = "category"
-)
 
 // PagesCloneInput is the request body of [PagesService.Clone].
 type PagesCloneInput struct {
@@ -1895,6 +1791,7 @@ type PagesListOutputDataItemTriggerMapElementsItem struct {
 	Content       *string                                                     `json:"content,omitzero"`
 	Triggers      []PagesListOutputDataItemTriggerMapElementsItemTriggersItem `json:"triggers"`
 	Annotated     *bool                                                       `json:"annotated,omitzero"`
+	Href          *string                                                     `json:"href,omitzero"`
 	Component     *string                                                     `json:"component,omitzero"`
 	EntityID      *string                                                     `json:"entityId,omitzero"`
 }

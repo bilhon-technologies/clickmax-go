@@ -135,16 +135,17 @@ func (s *ScheduledCallsService) ManageLink(ctx context.Context, params Scheduled
 // omitted keeps it — changing the card never changes the playbook). A new time or a new attendant is
 // re-validated against the attendant who will hold the meeting AFTER the patch — schedulable seat
 // role and a free slot of their agenda (400 `ROLE_NOT_SCHEDULABLE` / `SLOT_NOT_AVAILABLE`),
-// dismissible with `allowOutsideAvailability: true`. Unlike booking, the patch does NOT check overlap
-// with other appointments, so a reschedule or handover can land on top of another meeting; check
-// `scheduled_calls_list` first when that matters. Changing the attendant moves the Google Calendar
-// event from the previous attendant to the new one and, when the meeting has a Meet room, the new
-// attendant becomes its host; the calendar sync is best-effort — a failure is logged and does NOT
-// fail the call, so Clickmax can be updated while the calendar copy lags. Changing the time or the
-// status publishes the matching lifecycle event (rescheduled, confirmed, completed, no-show) that flow
-// triggers listen to. To CANCEL, use `scheduled_calls_cancel` rather than setting `status` here, so
-// the cancellation reason and the calendar removal are handled. A plain attendant session can only
-// edit its own meetings and those of its pipeline peers.
+// dismissible with `allowOutsideAvailability: true`. A new time or attendant that overlaps another
+// appointment of that attendant (timed tasks do not block meeting edits) is refused with 409
+// `SCHEDULING_TIME_CONFLICT` (the body lists the `conflicts`), dismissible with `allowConflict: true`
+// when the overlap is intended. Changing the attendant moves the Google Calendar event from the
+// previous attendant to the new one and, when the meeting has a Meet room, the new attendant becomes
+// its host; the calendar sync is best-effort — a failure is logged and does NOT fail the call, so
+// Clickmax can be updated while the calendar copy lags. Changing the time or the status publishes the
+// matching lifecycle event (rescheduled, confirmed, completed, no-show) that flow triggers listen to.
+// To CANCEL, use `scheduled_calls_cancel` rather than setting `status` here, so the cancellation
+// reason and the calendar removal are handled. A plain attendant session can only edit its own
+// meetings and those of its pipeline peers.
 //
 // Calls POST /scheduled-calls/update.
 func (s *ScheduledCallsService) Update(ctx context.Context, body ScheduledCallsUpdateInput, opts ...Option) (*ScheduledCallsUpdateOutput, error) {
@@ -1336,6 +1337,7 @@ type ScheduledCallsUpdateInput struct {
 	PlaybookID               Nullable[string]                 `json:"playbookId,omitzero"`
 	AttendantID              *string                          `json:"attendantId,omitzero"`
 	AllowOutsideAvailability *bool                            `json:"allowOutsideAvailability,omitzero"`
+	AllowConflict            *bool                            `json:"allowConflict,omitzero"`
 }
 
 // ScheduledCallsUpdateInputStatus is the type of [ScheduledCallsUpdateInput.Status].

@@ -12,37 +12,6 @@ type AnalyticsDashboardsService struct {
 	client *Client
 }
 
-// List the records behind an Insights number.
-//
-// Opens the RECORDS behind one number of an Insights widget, for the non-CRM entities: `sale`,
-// `subscription`, `salesRecovery`, `externalSale`, `externalRecovery`, `affiliate`, `visitor`, `flow`,
-// `broadcast`, `message`, `livechat`, `call`, `social`, `customObject` (needs `objectId`). CRM
-// entities (`deal`, `lead`, `activity`, `meeting`) and unsupported metrics answer 422
-// `DRILLDOWN_NOT_SUPPORTED` (also the "Outros"/other slice, which is not a set). `config` = the widget
-// EFFECTIVE config, the same one `analytics_dashboards_run` used: the widget fields (`entity`,
-// `reportType`, `measure`, `viewBy`, `interval`, `segmentBy`, `chartType` and its scope fields) with
-// `filters` = the dashboard shared `filters` (the widget own scope wins: `scopeAttendantIds` replace
-// `attendantIds`, a stage widget `pipelineId` replaces `pipelineIds`) and the dashboard `conditions`
-// when set — otherwise the list will not match the number. `bucketKey` = the `bucketKey` of the
-// clicked point (a period, or the item in a ranking) and `segmentKey` = the series `key`, both exactly
-// as the run returned them; omit both for the whole set behind the headline number (the full period;
-// for a rate, its base; for a snapshot, what is active now). Returns `rows` (`id`, `at`, `title`,
-// `subtitle`, `value` in cents when `money` is true, `status` already translated, `leadId` when there
-// is a contact) + `meta` (`countItens`, `countPages`, `perPage`); page with `page` and `perPage`
-// (1-200, default 50). Each entity needs its module read permission (sales for
-// sales/subscriptions/recovery/affiliates, contacts for visitors, flows, broadcasts for campaigns and
-// sends, conversations for live chat, calls for calls, social posts for social) — 403 otherwise;
-// sends and live chat are also limited to the connected accounts the user can access.
-//
-// Calls POST /analytics-dashboards/analytics-records-drilldown.
-func (s *AnalyticsDashboardsService) AnalyticsRecordsDrilldown(ctx context.Context, body AnalyticsRecordsDrilldownInput, opts ...Option) (*AnalyticsRecordsDrilldownOutput, error) {
-	var out AnalyticsRecordsDrilldownOutput
-	if err := s.client.do(ctx, "POST", "/analytics-dashboards/analytics-records-drilldown", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // Get the dashboard widget and template catalog.
 //
 // Lists the widget presets and dashboard templates available for Insights dashboards, plus the
@@ -77,8 +46,9 @@ func (s *AnalyticsDashboardsService) Compose(ctx context.Context, body Analytics
 // Create a dashboard.
 //
 // Creates a dashboard from an explicit config of widgets and shared filters. This full `config` is the
-// ONLY path that carries the meeting/lead-time options the widget-level tools (`compose`,
-// `widget_add`, `widget_update`) do not accept — `meetingAttendantField` (`attendant` = who
+// ONLY path that carries the meeting/lead-time options the widget-level tools
+// (`analytics_dashboards_compose`, `analytics_dashboards_widgets_add`,
+// `analytics_dashboards_widgets_update`) do not accept — `meetingAttendantField` (`attendant` = who
 // conducts, `scheduler` = who booked), `distinctByOpportunity`, `leadTimeDateFrom`/`leadTimeDateTo`
 // and `businessDaysOnly`.
 //
@@ -191,10 +161,10 @@ func (s *AnalyticsDashboardsService) Update(ctx context.Context, body AnalyticsD
 // `attendant` (the record responsible) | `customField` (+ `customFieldId` of a field OF THAT OBJECT),
 // plus `objectId`. Returns the updated dashboard.
 //
-// Calls POST /analytics-dashboards/widget-add.
-func (s *AnalyticsDashboardsService) WidgetAdd(ctx context.Context, body AnalyticsDashboardsWidgetAddInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
+// Calls POST /analytics-dashboards/widgets-add.
+func (s *AnalyticsDashboardsService) WidgetsAdd(ctx context.Context, body AnalyticsDashboardsWidgetsAddInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
 	var out AnalyticsDashboardsCreateFromTemplateOutput
-	if err := s.client.do(ctx, "POST", "/analytics-dashboards/widget-add", nil, body, &out, opts); err != nil {
+	if err := s.client.do(ctx, "POST", "/analytics-dashboards/widgets-add", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -204,10 +174,10 @@ func (s *AnalyticsDashboardsService) WidgetAdd(ctx context.Context, body Analyti
 //
 // Moves a widget to a new 0-based `position` in the dashboard grid. Returns the updated dashboard.
 //
-// Calls POST /analytics-dashboards/widget-move.
-func (s *AnalyticsDashboardsService) WidgetMove(ctx context.Context, body AnalyticsDashboardsWidgetMoveInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
+// Calls POST /analytics-dashboards/widgets-move.
+func (s *AnalyticsDashboardsService) WidgetsMove(ctx context.Context, body AnalyticsDashboardsWidgetsMoveInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
 	var out AnalyticsDashboardsCreateFromTemplateOutput
-	if err := s.client.do(ctx, "POST", "/analytics-dashboards/widget-move", nil, body, &out, opts); err != nil {
+	if err := s.client.do(ctx, "POST", "/analytics-dashboards/widgets-move", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -217,10 +187,10 @@ func (s *AnalyticsDashboardsService) WidgetMove(ctx context.Context, body Analyt
 //
 // Removes one widget from a dashboard. Returns the updated dashboard.
 //
-// Calls DELETE /analytics-dashboards/widget-remove.
-func (s *AnalyticsDashboardsService) WidgetRemove(ctx context.Context, body AnalyticsDashboardsWidgetRemoveInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
+// Calls DELETE /analytics-dashboards/widgets-remove.
+func (s *AnalyticsDashboardsService) WidgetsRemove(ctx context.Context, body AnalyticsDashboardsWidgetsRemoveInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
 	var out AnalyticsDashboardsCreateFromTemplateOutput
-	if err := s.client.do(ctx, "DELETE", "/analytics-dashboards/widget-remove", nil, body, &out, opts); err != nil {
+	if err := s.client.do(ctx, "DELETE", "/analytics-dashboards/widgets-remove", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -231,10 +201,10 @@ func (s *AnalyticsDashboardsService) WidgetRemove(ctx context.Context, body Anal
 // Partially updates one widget of a dashboard — only the sent keys change, including `size`,
 // `heading`, `customFieldId`, `tagIds` and `objectId`. Returns the updated dashboard.
 //
-// Calls POST /analytics-dashboards/widget-update.
-func (s *AnalyticsDashboardsService) WidgetUpdate(ctx context.Context, body AnalyticsDashboardsWidgetUpdateInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
+// Calls POST /analytics-dashboards/widgets-update.
+func (s *AnalyticsDashboardsService) WidgetsUpdate(ctx context.Context, body AnalyticsDashboardsWidgetsUpdateInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
 	var out AnalyticsDashboardsCreateFromTemplateOutput
-	if err := s.client.do(ctx, "POST", "/analytics-dashboards/widget-update", nil, body, &out, opts); err != nil {
+	if err := s.client.do(ctx, "POST", "/analytics-dashboards/widgets-update", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -384,6 +354,7 @@ const (
 	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportTypeCohortProgress   AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportType = "cohortProgress"
 	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportTypeCohortOutcome    AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportType = "cohortOutcome"
 	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportTypeCohortCycle      AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportType = "cohortCycle"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportTypeUntilReply       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemReportType = "untilReply"
 )
 
 // AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemSegmentBy is the type of
@@ -443,40 +414,44 @@ type AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy string
 
 // Values of [AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy].
 const (
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCreated         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "created"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByWon             AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "won"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByLost            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "lost"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByScheduled       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "scheduled"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByAwaiting        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "awaiting"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByHeld            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "held"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByNoShow          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "noShow"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByMeetingOutcomes AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "meetingOutcomes"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByPaid            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "paid"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByRefunded        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "refunded"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByChargedBack     AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "chargedBack"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCanceled        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "canceled"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByFailed          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "failed"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByPending         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "pending"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByAbandoned       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "abandoned"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCommission      AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "commission"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByVisitors        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "visitors"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBySessions        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "sessions"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByConverted       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "converted"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByStarted         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "started"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByFinished        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "finished"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBySent            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "sent"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByDelivered       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "delivered"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByOpened          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "opened"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByClicked         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "clicked"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByReceived        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "received"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByResolved        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "resolved"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByPublished       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "published"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByViews           AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "views"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByEngagement      AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "engagement"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByInteractions    AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "interactions"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByFirstResponse   AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "firstResponse"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByResolution      AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "resolution"
-	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByQueueWait       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCreated           AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "created"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByWon               AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "won"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByLost              AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "lost"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByScheduled         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "scheduled"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByAwaiting          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "awaiting"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByHeld              AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "held"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByNoShow            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "noShow"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByMeetingOutcomes   AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "meetingOutcomes"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByPaid              AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "paid"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByRefunded          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "refunded"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByChargedBack       AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "chargedBack"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCanceled          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "canceled"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByFailed            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "failed"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByPending           AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "pending"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByAbandoned         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "abandoned"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCommission        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "commission"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByVisitors          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "visitors"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBySessions          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "sessions"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByConverted         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "converted"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByStarted           AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "started"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByFinished          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "finished"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBySent              AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "sent"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByDelivered         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "delivered"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByOpened            AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "opened"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByClicked           AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "clicked"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByReceived          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "received"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByResolved          AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "resolved"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByPublished         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "published"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByViews             AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "views"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByEngagement        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "engagement"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByInteractions      AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "interactions"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByFirstResponse     AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "firstResponse"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByResolution        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "resolution"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByQueueWait         AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByReplyInterval     AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "replyInterval"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByUntilReply        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "untilReply"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByCreditsUntilReply AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "creditsUntilReply"
+	AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewByUnanswered        AnalyticsDashboardsCatalogOutputTemplatesItemWidgetsItemViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsCatalogOutputWidgetsItem is an element of
@@ -600,6 +575,7 @@ const (
 	AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportTypeCohortProgress   AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportType = "cohortProgress"
 	AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportTypeCohortOutcome    AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportType = "cohortOutcome"
 	AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportTypeCohortCycle      AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportType = "cohortCycle"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportTypeUntilReply       AnalyticsDashboardsCatalogOutputWidgetsItemConfigReportType = "untilReply"
 )
 
 // AnalyticsDashboardsCatalogOutputWidgetsItemConfigSegmentBy is the type of
@@ -652,40 +628,44 @@ type AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy string
 
 // Values of [AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy].
 const (
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCreated         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "created"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByWon             AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "won"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByLost            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "lost"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByScheduled       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "scheduled"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByAwaiting        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "awaiting"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByHeld            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "held"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByNoShow          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "noShow"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByMeetingOutcomes AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "meetingOutcomes"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByPaid            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "paid"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByRefunded        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "refunded"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByChargedBack     AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "chargedBack"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCanceled        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "canceled"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByFailed          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "failed"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByPending         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "pending"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByAbandoned       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "abandoned"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCommission      AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "commission"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByVisitors        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "visitors"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBySessions        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "sessions"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByConverted       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "converted"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByStarted         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "started"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByFinished        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "finished"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBySent            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "sent"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByDelivered       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "delivered"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByOpened          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "opened"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByClicked         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "clicked"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByReceived        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "received"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByResolved        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "resolved"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByPublished       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "published"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByViews           AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "views"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByEngagement      AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "engagement"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByInteractions    AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "interactions"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByFirstResponse   AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "firstResponse"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByResolution      AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "resolution"
-	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByQueueWait       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "queueWait"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCreated           AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "created"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByWon               AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "won"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByLost              AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "lost"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByScheduled         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "scheduled"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByAwaiting          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "awaiting"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByHeld              AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "held"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByNoShow            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "noShow"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByMeetingOutcomes   AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "meetingOutcomes"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByPaid              AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "paid"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByRefunded          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "refunded"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByChargedBack       AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "chargedBack"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCanceled          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "canceled"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByFailed            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "failed"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByPending           AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "pending"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByAbandoned         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "abandoned"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCommission        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "commission"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByVisitors          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "visitors"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBySessions          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "sessions"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByConverted         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "converted"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByStarted           AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "started"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByFinished          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "finished"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBySent              AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "sent"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByDelivered         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "delivered"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByOpened            AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "opened"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByClicked           AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "clicked"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByReceived          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "received"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByResolved          AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "resolved"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByPublished         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "published"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByViews             AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "views"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByEngagement        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "engagement"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByInteractions      AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "interactions"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByFirstResponse     AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "firstResponse"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByResolution        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "resolution"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByQueueWait         AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "queueWait"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByReplyInterval     AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "replyInterval"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByUntilReply        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "untilReply"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByCreditsUntilReply AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "creditsUntilReply"
+	AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewByUnanswered        AnalyticsDashboardsCatalogOutputWidgetsItemConfigViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsComposeInput is the request body of [AnalyticsDashboardsService.Compose].
@@ -1014,6 +994,7 @@ const (
 	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportTypeCohortProgress   AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportType = "cohortProgress"
 	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportTypeCohortOutcome    AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportType = "cohortOutcome"
 	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportTypeCohortCycle      AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportType = "cohortCycle"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportTypeUntilReply       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetReportType = "untilReply"
 )
 
 // AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetSegmentBy is the type of
@@ -1066,40 +1047,44 @@ type AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy string
 
 // Values of [AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy].
 const (
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCreated         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "created"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByWon             AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "won"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByLost            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "lost"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByScheduled       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "scheduled"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByAwaiting        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "awaiting"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByHeld            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "held"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByNoShow          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "noShow"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByMeetingOutcomes AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "meetingOutcomes"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByPaid            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "paid"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByRefunded        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "refunded"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByChargedBack     AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "chargedBack"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCanceled        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "canceled"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByFailed          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "failed"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByPending         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "pending"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByAbandoned       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "abandoned"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCommission      AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "commission"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByVisitors        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "visitors"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBySessions        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "sessions"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByConverted       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "converted"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByStarted         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "started"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByFinished        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "finished"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBySent            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "sent"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByDelivered       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "delivered"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByOpened          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "opened"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByClicked         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "clicked"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByReceived        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "received"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByResolved        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "resolved"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByPublished       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "published"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByViews           AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "views"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByEngagement      AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "engagement"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByInteractions    AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "interactions"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByFirstResponse   AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "firstResponse"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByResolution      AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "resolution"
-	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByQueueWait       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "queueWait"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCreated           AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "created"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByWon               AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "won"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByLost              AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "lost"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByScheduled         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "scheduled"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByAwaiting          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "awaiting"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByHeld              AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "held"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByNoShow            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "noShow"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByMeetingOutcomes   AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "meetingOutcomes"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByPaid              AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "paid"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByRefunded          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "refunded"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByChargedBack       AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "chargedBack"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCanceled          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "canceled"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByFailed            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "failed"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByPending           AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "pending"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByAbandoned         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "abandoned"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCommission        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "commission"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByVisitors          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "visitors"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBySessions          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "sessions"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByConverted         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "converted"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByStarted           AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "started"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByFinished          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "finished"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBySent              AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "sent"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByDelivered         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "delivered"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByOpened            AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "opened"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByClicked           AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "clicked"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByReceived          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "received"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByResolved          AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "resolved"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByPublished         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "published"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByViews             AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "views"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByEngagement        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "engagement"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByInteractions      AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "interactions"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByFirstResponse     AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "firstResponse"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByResolution        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "resolution"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByQueueWait         AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "queueWait"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByReplyInterval     AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "replyInterval"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByUntilReply        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "untilReply"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByCreditsUntilReply AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "creditsUntilReply"
+	AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewByUnanswered        AnalyticsDashboardsComposeInputSectionsItemWidgetsItemWidgetViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsCreateFromTemplateInput is the request body of
@@ -1113,8 +1098,8 @@ type AnalyticsDashboardsCreateFromTemplateInput struct {
 // AnalyticsDashboardsCreateFromTemplateOutput is the response of [AnalyticsDashboardsService.Compose],
 // [AnalyticsDashboardsService.Create], [AnalyticsDashboardsService.CreateFromTemplate],
 // [AnalyticsDashboardsService.SettingsUpdate], [AnalyticsDashboardsService.Update],
-// [AnalyticsDashboardsService.WidgetAdd], [AnalyticsDashboardsService.WidgetMove],
-// [AnalyticsDashboardsService.WidgetRemove] and [AnalyticsDashboardsService.WidgetUpdate].
+// [AnalyticsDashboardsService.WidgetsAdd], [AnalyticsDashboardsService.WidgetsMove],
+// [AnalyticsDashboardsService.WidgetsRemove] and [AnalyticsDashboardsService.WidgetsUpdate].
 type AnalyticsDashboardsCreateFromTemplateOutput struct {
 	ID        string                                            `json:"id"`
 	Name      string                                            `json:"name"`
@@ -1366,6 +1351,9 @@ type AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItem struct {
 	LeadTimeDateFrom          *time.Time                                                                         `json:"leadTimeDateFrom,omitzero"`
 	LeadTimeDateTo            *time.Time                                                                         `json:"leadTimeDateTo,omitzero"`
 	BusinessDaysOnly          *bool                                                                              `json:"businessDaysOnly,omitzero"`
+	DurationStat              *AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat          `json:"durationStat,omitzero"`
+	ReplySender               *AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender           `json:"replySender,omitzero"`
+	BusinessHoursOnly         *bool                                                                              `json:"businessHoursOnly,omitzero"`
 	ScopeAttendantIDs         []string                                                                           `json:"scopeAttendantIds,omitzero"`
 	TeamColumns               []string                                                                           `json:"teamColumns,omitzero"`
 	TeamFormulas              []AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemTeamFormulasItem     `json:"teamFormulas,omitzero"`
@@ -1408,6 +1396,17 @@ const (
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemChartTypeTable    AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemChartType = "table"
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemChartTypePace     AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemChartType = "pace"
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemChartTypeTracking AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemChartType = "tracking"
+)
+
+// AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat is the type of
+// [AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItem.DurationStat].
+type AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat string
+
+// Values of [AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat].
+const (
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStatAvg    AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat = "avg"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStatMedian AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat = "median"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStatP90    AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemDurationStat = "p90"
 )
 
 // AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemEntity is the type of
@@ -1468,6 +1467,17 @@ const (
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemMeetingAttendantFieldScheduler AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemMeetingAttendantField = "scheduler"
 )
 
+// AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender is the type of
+// [AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItem.ReplySender].
+type AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender string
+
+// Values of [AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender].
+const (
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySenderHuman AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender = "human"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySenderAI    AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender = "ai"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySenderAll   AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReplySender = "all"
+)
+
 // AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportType is the type of
 // [AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItem.ReportType].
 type AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportType string
@@ -1497,6 +1507,7 @@ const (
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportTypeCohortProgress   AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportType = "cohortProgress"
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportTypeCohortOutcome    AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportType = "cohortOutcome"
 	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportTypeCohortCycle      AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportType = "cohortCycle"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportTypeUntilReply       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemReportType = "untilReply"
 )
 
 // AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemSegmentBy is the type of
@@ -1636,40 +1647,44 @@ type AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy string
 
 // Values of [AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy].
 const (
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCreated         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "created"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByWon             AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "won"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByLost            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "lost"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByScheduled       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "scheduled"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByAwaiting        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "awaiting"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByHeld            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "held"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByNoShow          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "noShow"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByMeetingOutcomes AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "meetingOutcomes"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByPaid            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "paid"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByRefunded        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "refunded"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByChargedBack     AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "chargedBack"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCanceled        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "canceled"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByFailed          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "failed"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByPending         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "pending"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByAbandoned       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "abandoned"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCommission      AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "commission"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByVisitors        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "visitors"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBySessions        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "sessions"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByConverted       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "converted"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByStarted         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "started"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByFinished        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "finished"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBySent            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "sent"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByDelivered       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "delivered"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByOpened          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "opened"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByClicked         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "clicked"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByReceived        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "received"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByResolved        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "resolved"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByPublished       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "published"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByViews           AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "views"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByEngagement      AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "engagement"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByInteractions    AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "interactions"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByFirstResponse   AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "firstResponse"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByResolution      AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "resolution"
-	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByQueueWait       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCreated           AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "created"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByWon               AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "won"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByLost              AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "lost"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByScheduled         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "scheduled"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByAwaiting          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "awaiting"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByHeld              AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "held"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByNoShow            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "noShow"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByMeetingOutcomes   AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "meetingOutcomes"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByPaid              AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "paid"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByRefunded          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "refunded"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByChargedBack       AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "chargedBack"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCanceled          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "canceled"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByFailed            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "failed"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByPending           AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "pending"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByAbandoned         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "abandoned"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCommission        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "commission"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByVisitors          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "visitors"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBySessions          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "sessions"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByConverted         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "converted"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByStarted           AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "started"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByFinished          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "finished"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBySent              AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "sent"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByDelivered         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "delivered"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByOpened            AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "opened"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByClicked           AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "clicked"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByReceived          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "received"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByResolved          AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "resolved"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByPublished         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "published"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByViews             AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "views"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByEngagement        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "engagement"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByInteractions      AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "interactions"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByFirstResponse     AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "firstResponse"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByResolution        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "resolution"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByQueueWait         AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByReplyInterval     AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "replyInterval"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByUntilReply        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "untilReply"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByCreditsUntilReply AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "creditsUntilReply"
+	AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewByUnanswered        AnalyticsDashboardsCreateFromTemplateOutputConfigWidgetsItemViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsCreateInput is the request body of [AnalyticsDashboardsService.Create].
@@ -1916,6 +1931,9 @@ type AnalyticsDashboardsCreateInputConfigWidgetsItem struct {
 	LeadTimeDateFrom          Nullable[time.Time]                                                   `json:"leadTimeDateFrom,omitzero"`
 	LeadTimeDateTo            Nullable[time.Time]                                                   `json:"leadTimeDateTo,omitzero"`
 	BusinessDaysOnly          *bool                                                                 `json:"businessDaysOnly,omitzero"`
+	DurationStat              *AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat          `json:"durationStat,omitzero"`
+	ReplySender               *AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender           `json:"replySender,omitzero"`
+	BusinessHoursOnly         *bool                                                                 `json:"businessHoursOnly,omitzero"`
 	ScopeAttendantIDs         []string                                                              `json:"scopeAttendantIds,omitzero"`
 	TeamColumns               []string                                                              `json:"teamColumns,omitzero"`
 	TeamFormulas              []AnalyticsDashboardsCreateInputConfigWidgetsItemTeamFormulasItem     `json:"teamFormulas,omitzero"`
@@ -1958,6 +1976,17 @@ const (
 	AnalyticsDashboardsCreateInputConfigWidgetsItemChartTypeTable    AnalyticsDashboardsCreateInputConfigWidgetsItemChartType = "table"
 	AnalyticsDashboardsCreateInputConfigWidgetsItemChartTypePace     AnalyticsDashboardsCreateInputConfigWidgetsItemChartType = "pace"
 	AnalyticsDashboardsCreateInputConfigWidgetsItemChartTypeTracking AnalyticsDashboardsCreateInputConfigWidgetsItemChartType = "tracking"
+)
+
+// AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat is the type of
+// [AnalyticsDashboardsCreateInputConfigWidgetsItem.DurationStat].
+type AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat string
+
+// Values of [AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat].
+const (
+	AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStatAvg    AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat = "avg"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStatMedian AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat = "median"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStatP90    AnalyticsDashboardsCreateInputConfigWidgetsItemDurationStat = "p90"
 )
 
 // AnalyticsDashboardsCreateInputConfigWidgetsItemEntity is the type of
@@ -2018,6 +2047,17 @@ const (
 	AnalyticsDashboardsCreateInputConfigWidgetsItemMeetingAttendantFieldScheduler AnalyticsDashboardsCreateInputConfigWidgetsItemMeetingAttendantField = "scheduler"
 )
 
+// AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender is the type of
+// [AnalyticsDashboardsCreateInputConfigWidgetsItem.ReplySender].
+type AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender string
+
+// Values of [AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender].
+const (
+	AnalyticsDashboardsCreateInputConfigWidgetsItemReplySenderHuman AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender = "human"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemReplySenderAI    AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender = "ai"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemReplySenderAll   AnalyticsDashboardsCreateInputConfigWidgetsItemReplySender = "all"
+)
+
 // AnalyticsDashboardsCreateInputConfigWidgetsItemReportType is the type of
 // [AnalyticsDashboardsCreateInputConfigWidgetsItem.ReportType].
 type AnalyticsDashboardsCreateInputConfigWidgetsItemReportType string
@@ -2047,6 +2087,7 @@ const (
 	AnalyticsDashboardsCreateInputConfigWidgetsItemReportTypeCohortProgress   AnalyticsDashboardsCreateInputConfigWidgetsItemReportType = "cohortProgress"
 	AnalyticsDashboardsCreateInputConfigWidgetsItemReportTypeCohortOutcome    AnalyticsDashboardsCreateInputConfigWidgetsItemReportType = "cohortOutcome"
 	AnalyticsDashboardsCreateInputConfigWidgetsItemReportTypeCohortCycle      AnalyticsDashboardsCreateInputConfigWidgetsItemReportType = "cohortCycle"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemReportTypeUntilReply       AnalyticsDashboardsCreateInputConfigWidgetsItemReportType = "untilReply"
 )
 
 // AnalyticsDashboardsCreateInputConfigWidgetsItemSegmentBy is the type of
@@ -2185,40 +2226,44 @@ type AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy string
 
 // Values of [AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy].
 const (
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCreated         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "created"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByWon             AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "won"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByLost            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "lost"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByScheduled       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "scheduled"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByAwaiting        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "awaiting"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByHeld            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "held"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByNoShow          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "noShow"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByMeetingOutcomes AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "meetingOutcomes"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByPaid            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "paid"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByRefunded        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "refunded"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByChargedBack     AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "chargedBack"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCanceled        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "canceled"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByFailed          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "failed"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByPending         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "pending"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByAbandoned       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "abandoned"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCommission      AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "commission"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByVisitors        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "visitors"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewBySessions        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "sessions"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByConverted       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "converted"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByStarted         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "started"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByFinished        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "finished"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewBySent            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "sent"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByDelivered       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "delivered"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByOpened          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "opened"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByClicked         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "clicked"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByReceived        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "received"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByResolved        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "resolved"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByPublished       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "published"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByViews           AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "views"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByEngagement      AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "engagement"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByInteractions    AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "interactions"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByFirstResponse   AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "firstResponse"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByResolution      AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "resolution"
-	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByQueueWait       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCreated           AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "created"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByWon               AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "won"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByLost              AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "lost"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByScheduled         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "scheduled"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByAwaiting          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "awaiting"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByHeld              AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "held"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByNoShow            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "noShow"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByMeetingOutcomes   AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "meetingOutcomes"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByPaid              AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "paid"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByRefunded          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "refunded"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByChargedBack       AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "chargedBack"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCanceled          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "canceled"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByFailed            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "failed"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByPending           AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "pending"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByAbandoned         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "abandoned"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCommission        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "commission"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByVisitors          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "visitors"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewBySessions          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "sessions"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByConverted         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "converted"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByStarted           AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "started"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByFinished          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "finished"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewBySent              AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "sent"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByDelivered         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "delivered"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByOpened            AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "opened"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByClicked           AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "clicked"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByReceived          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "received"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByResolved          AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "resolved"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByPublished         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "published"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByViews             AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "views"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByEngagement        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "engagement"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByInteractions      AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "interactions"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByFirstResponse     AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "firstResponse"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByResolution        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "resolution"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByQueueWait         AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByReplyInterval     AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "replyInterval"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByUntilReply        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "untilReply"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByCreditsUntilReply AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "creditsUntilReply"
+	AnalyticsDashboardsCreateInputConfigWidgetsItemViewByUnanswered        AnalyticsDashboardsCreateInputConfigWidgetsItemViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsDeleteInput is the request body of [AnalyticsDashboardsService.Delete].
@@ -2491,6 +2536,9 @@ type AnalyticsDashboardsListOutputDataItemConfigWidgetsItem struct {
 	LeadTimeDateFrom          *time.Time                                                                   `json:"leadTimeDateFrom,omitzero"`
 	LeadTimeDateTo            *time.Time                                                                   `json:"leadTimeDateTo,omitzero"`
 	BusinessDaysOnly          *bool                                                                        `json:"businessDaysOnly,omitzero"`
+	DurationStat              *AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat          `json:"durationStat,omitzero"`
+	ReplySender               *AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender           `json:"replySender,omitzero"`
+	BusinessHoursOnly         *bool                                                                        `json:"businessHoursOnly,omitzero"`
 	ScopeAttendantIDs         []string                                                                     `json:"scopeAttendantIds,omitzero"`
 	TeamColumns               []string                                                                     `json:"teamColumns,omitzero"`
 	TeamFormulas              []AnalyticsDashboardsListOutputDataItemConfigWidgetsItemTeamFormulasItem     `json:"teamFormulas,omitzero"`
@@ -2533,6 +2581,17 @@ const (
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemChartTypeTable    AnalyticsDashboardsListOutputDataItemConfigWidgetsItemChartType = "table"
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemChartTypePace     AnalyticsDashboardsListOutputDataItemConfigWidgetsItemChartType = "pace"
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemChartTypeTracking AnalyticsDashboardsListOutputDataItemConfigWidgetsItemChartType = "tracking"
+)
+
+// AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat is the type of
+// [AnalyticsDashboardsListOutputDataItemConfigWidgetsItem.DurationStat].
+type AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat string
+
+// Values of [AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat].
+const (
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStatAvg    AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat = "avg"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStatMedian AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat = "median"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStatP90    AnalyticsDashboardsListOutputDataItemConfigWidgetsItemDurationStat = "p90"
 )
 
 // AnalyticsDashboardsListOutputDataItemConfigWidgetsItemEntity is the type of
@@ -2593,6 +2652,17 @@ const (
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemMeetingAttendantFieldScheduler AnalyticsDashboardsListOutputDataItemConfigWidgetsItemMeetingAttendantField = "scheduler"
 )
 
+// AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender is the type of
+// [AnalyticsDashboardsListOutputDataItemConfigWidgetsItem.ReplySender].
+type AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender string
+
+// Values of [AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender].
+const (
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySenderHuman AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender = "human"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySenderAI    AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender = "ai"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySenderAll   AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReplySender = "all"
+)
+
 // AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportType is the type of
 // [AnalyticsDashboardsListOutputDataItemConfigWidgetsItem.ReportType].
 type AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportType string
@@ -2622,6 +2692,7 @@ const (
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportTypeCohortProgress   AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportType = "cohortProgress"
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportTypeCohortOutcome    AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportType = "cohortOutcome"
 	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportTypeCohortCycle      AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportType = "cohortCycle"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportTypeUntilReply       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemReportType = "untilReply"
 )
 
 // AnalyticsDashboardsListOutputDataItemConfigWidgetsItemSegmentBy is the type of
@@ -2760,40 +2831,44 @@ type AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy string
 
 // Values of [AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy].
 const (
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCreated         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "created"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByWon             AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "won"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByLost            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "lost"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByScheduled       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "scheduled"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByAwaiting        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "awaiting"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByHeld            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "held"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByNoShow          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "noShow"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByMeetingOutcomes AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "meetingOutcomes"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByPaid            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "paid"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByRefunded        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "refunded"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByChargedBack     AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "chargedBack"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCanceled        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "canceled"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByFailed          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "failed"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByPending         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "pending"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByAbandoned       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "abandoned"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCommission      AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "commission"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByVisitors        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "visitors"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBySessions        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "sessions"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByConverted       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "converted"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByStarted         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "started"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByFinished        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "finished"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBySent            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "sent"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByDelivered       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "delivered"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByOpened          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "opened"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByClicked         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "clicked"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByReceived        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "received"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByResolved        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "resolved"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByPublished       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "published"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByViews           AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "views"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByEngagement      AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "engagement"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByInteractions    AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "interactions"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByFirstResponse   AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "firstResponse"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByResolution      AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "resolution"
-	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByQueueWait       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCreated           AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "created"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByWon               AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "won"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByLost              AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "lost"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByScheduled         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "scheduled"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByAwaiting          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "awaiting"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByHeld              AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "held"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByNoShow            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "noShow"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByMeetingOutcomes   AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "meetingOutcomes"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByPaid              AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "paid"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByRefunded          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "refunded"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByChargedBack       AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "chargedBack"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCanceled          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "canceled"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByFailed            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "failed"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByPending           AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "pending"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByAbandoned         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "abandoned"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCommission        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "commission"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByVisitors          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "visitors"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBySessions          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "sessions"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByConverted         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "converted"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByStarted           AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "started"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByFinished          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "finished"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBySent              AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "sent"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByDelivered         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "delivered"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByOpened            AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "opened"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByClicked           AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "clicked"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByReceived          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "received"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByResolved          AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "resolved"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByPublished         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "published"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByViews             AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "views"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByEngagement        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "engagement"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByInteractions      AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "interactions"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByFirstResponse     AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "firstResponse"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByResolution        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "resolution"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByQueueWait         AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByReplyInterval     AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "replyInterval"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByUntilReply        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "untilReply"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByCreditsUntilReply AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "creditsUntilReply"
+	AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewByUnanswered        AnalyticsDashboardsListOutputDataItemConfigWidgetsItemViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsListOutputDataItemCreatedBy is the type of
@@ -3093,6 +3168,9 @@ type AnalyticsDashboardsRunInputConfigWidgetsItem struct {
 	LeadTimeDateFrom          Nullable[time.Time]                                                `json:"leadTimeDateFrom,omitzero"`
 	LeadTimeDateTo            Nullable[time.Time]                                                `json:"leadTimeDateTo,omitzero"`
 	BusinessDaysOnly          *bool                                                              `json:"businessDaysOnly,omitzero"`
+	DurationStat              *AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat          `json:"durationStat,omitzero"`
+	ReplySender               *AnalyticsDashboardsRunInputConfigWidgetsItemReplySender           `json:"replySender,omitzero"`
+	BusinessHoursOnly         *bool                                                              `json:"businessHoursOnly,omitzero"`
 	ScopeAttendantIDs         []string                                                           `json:"scopeAttendantIds,omitzero"`
 	TeamColumns               []string                                                           `json:"teamColumns,omitzero"`
 	TeamFormulas              []AnalyticsDashboardsRunInputConfigWidgetsItemTeamFormulasItem     `json:"teamFormulas,omitzero"`
@@ -3135,6 +3213,17 @@ const (
 	AnalyticsDashboardsRunInputConfigWidgetsItemChartTypeTable    AnalyticsDashboardsRunInputConfigWidgetsItemChartType = "table"
 	AnalyticsDashboardsRunInputConfigWidgetsItemChartTypePace     AnalyticsDashboardsRunInputConfigWidgetsItemChartType = "pace"
 	AnalyticsDashboardsRunInputConfigWidgetsItemChartTypeTracking AnalyticsDashboardsRunInputConfigWidgetsItemChartType = "tracking"
+)
+
+// AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat is the type of
+// [AnalyticsDashboardsRunInputConfigWidgetsItem.DurationStat].
+type AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat string
+
+// Values of [AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat].
+const (
+	AnalyticsDashboardsRunInputConfigWidgetsItemDurationStatAvg    AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat = "avg"
+	AnalyticsDashboardsRunInputConfigWidgetsItemDurationStatMedian AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat = "median"
+	AnalyticsDashboardsRunInputConfigWidgetsItemDurationStatP90    AnalyticsDashboardsRunInputConfigWidgetsItemDurationStat = "p90"
 )
 
 // AnalyticsDashboardsRunInputConfigWidgetsItemEntity is the type of
@@ -3195,6 +3284,17 @@ const (
 	AnalyticsDashboardsRunInputConfigWidgetsItemMeetingAttendantFieldScheduler AnalyticsDashboardsRunInputConfigWidgetsItemMeetingAttendantField = "scheduler"
 )
 
+// AnalyticsDashboardsRunInputConfigWidgetsItemReplySender is the type of
+// [AnalyticsDashboardsRunInputConfigWidgetsItem.ReplySender].
+type AnalyticsDashboardsRunInputConfigWidgetsItemReplySender string
+
+// Values of [AnalyticsDashboardsRunInputConfigWidgetsItemReplySender].
+const (
+	AnalyticsDashboardsRunInputConfigWidgetsItemReplySenderHuman AnalyticsDashboardsRunInputConfigWidgetsItemReplySender = "human"
+	AnalyticsDashboardsRunInputConfigWidgetsItemReplySenderAI    AnalyticsDashboardsRunInputConfigWidgetsItemReplySender = "ai"
+	AnalyticsDashboardsRunInputConfigWidgetsItemReplySenderAll   AnalyticsDashboardsRunInputConfigWidgetsItemReplySender = "all"
+)
+
 // AnalyticsDashboardsRunInputConfigWidgetsItemReportType is the type of
 // [AnalyticsDashboardsRunInputConfigWidgetsItem.ReportType].
 type AnalyticsDashboardsRunInputConfigWidgetsItemReportType string
@@ -3224,6 +3324,7 @@ const (
 	AnalyticsDashboardsRunInputConfigWidgetsItemReportTypeCohortProgress   AnalyticsDashboardsRunInputConfigWidgetsItemReportType = "cohortProgress"
 	AnalyticsDashboardsRunInputConfigWidgetsItemReportTypeCohortOutcome    AnalyticsDashboardsRunInputConfigWidgetsItemReportType = "cohortOutcome"
 	AnalyticsDashboardsRunInputConfigWidgetsItemReportTypeCohortCycle      AnalyticsDashboardsRunInputConfigWidgetsItemReportType = "cohortCycle"
+	AnalyticsDashboardsRunInputConfigWidgetsItemReportTypeUntilReply       AnalyticsDashboardsRunInputConfigWidgetsItemReportType = "untilReply"
 )
 
 // AnalyticsDashboardsRunInputConfigWidgetsItemSegmentBy is the type of
@@ -3362,40 +3463,44 @@ type AnalyticsDashboardsRunInputConfigWidgetsItemViewBy string
 
 // Values of [AnalyticsDashboardsRunInputConfigWidgetsItemViewBy].
 const (
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCreated         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "created"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByWon             AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "won"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByLost            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "lost"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByScheduled       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "scheduled"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByAwaiting        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "awaiting"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByHeld            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "held"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByNoShow          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "noShow"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByMeetingOutcomes AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "meetingOutcomes"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByPaid            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "paid"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByRefunded        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "refunded"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByChargedBack     AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "chargedBack"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCanceled        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "canceled"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByFailed          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "failed"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByPending         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "pending"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByAbandoned       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "abandoned"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCommission      AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "commission"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByVisitors        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "visitors"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewBySessions        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "sessions"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByConverted       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "converted"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByStarted         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "started"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByFinished        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "finished"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewBySent            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "sent"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByDelivered       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "delivered"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByOpened          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "opened"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByClicked         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "clicked"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByReceived        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "received"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByResolved        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "resolved"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByPublished       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "published"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByViews           AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "views"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByEngagement      AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "engagement"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByInteractions    AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "interactions"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByFirstResponse   AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "firstResponse"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByResolution      AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "resolution"
-	AnalyticsDashboardsRunInputConfigWidgetsItemViewByQueueWait       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCreated           AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "created"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByWon               AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "won"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByLost              AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "lost"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByScheduled         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "scheduled"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByAwaiting          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "awaiting"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByHeld              AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "held"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByNoShow            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "noShow"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByMeetingOutcomes   AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "meetingOutcomes"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByPaid              AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "paid"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByRefunded          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "refunded"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByChargedBack       AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "chargedBack"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCanceled          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "canceled"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByFailed            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "failed"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByPending           AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "pending"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByAbandoned         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "abandoned"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCommission        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "commission"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByVisitors          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "visitors"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewBySessions          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "sessions"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByConverted         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "converted"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByStarted           AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "started"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByFinished          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "finished"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewBySent              AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "sent"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByDelivered         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "delivered"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByOpened            AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "opened"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByClicked           AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "clicked"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByReceived          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "received"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByResolved          AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "resolved"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByPublished         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "published"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByViews             AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "views"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByEngagement        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "engagement"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByInteractions      AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "interactions"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByFirstResponse     AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "firstResponse"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByResolution        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "resolution"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByQueueWait         AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByReplyInterval     AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "replyInterval"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByUntilReply        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "untilReply"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByCreditsUntilReply AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "creditsUntilReply"
+	AnalyticsDashboardsRunInputConfigWidgetsItemViewByUnanswered        AnalyticsDashboardsRunInputConfigWidgetsItemViewBy = "unanswered"
 )
 
 // AnalyticsDashboardsRunOutput is the response of [AnalyticsDashboardsService.Run].
@@ -3982,6 +4087,9 @@ type AnalyticsDashboardsUpdateInputConfigWidgetsItem struct {
 	LeadTimeDateFrom          Nullable[time.Time]                                                   `json:"leadTimeDateFrom,omitzero"`
 	LeadTimeDateTo            Nullable[time.Time]                                                   `json:"leadTimeDateTo,omitzero"`
 	BusinessDaysOnly          *bool                                                                 `json:"businessDaysOnly,omitzero"`
+	DurationStat              *AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat          `json:"durationStat,omitzero"`
+	ReplySender               *AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender           `json:"replySender,omitzero"`
+	BusinessHoursOnly         *bool                                                                 `json:"businessHoursOnly,omitzero"`
 	ScopeAttendantIDs         []string                                                              `json:"scopeAttendantIds,omitzero"`
 	TeamColumns               []string                                                              `json:"teamColumns,omitzero"`
 	TeamFormulas              []AnalyticsDashboardsUpdateInputConfigWidgetsItemTeamFormulasItem     `json:"teamFormulas,omitzero"`
@@ -4024,6 +4132,17 @@ const (
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemChartTypeTable    AnalyticsDashboardsUpdateInputConfigWidgetsItemChartType = "table"
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemChartTypePace     AnalyticsDashboardsUpdateInputConfigWidgetsItemChartType = "pace"
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemChartTypeTracking AnalyticsDashboardsUpdateInputConfigWidgetsItemChartType = "tracking"
+)
+
+// AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat is the type of
+// [AnalyticsDashboardsUpdateInputConfigWidgetsItem.DurationStat].
+type AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat string
+
+// Values of [AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat].
+const (
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStatAvg    AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat = "avg"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStatMedian AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat = "median"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStatP90    AnalyticsDashboardsUpdateInputConfigWidgetsItemDurationStat = "p90"
 )
 
 // AnalyticsDashboardsUpdateInputConfigWidgetsItemEntity is the type of
@@ -4084,6 +4203,17 @@ const (
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemMeetingAttendantFieldScheduler AnalyticsDashboardsUpdateInputConfigWidgetsItemMeetingAttendantField = "scheduler"
 )
 
+// AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender is the type of
+// [AnalyticsDashboardsUpdateInputConfigWidgetsItem.ReplySender].
+type AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender string
+
+// Values of [AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender].
+const (
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySenderHuman AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender = "human"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySenderAI    AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender = "ai"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySenderAll   AnalyticsDashboardsUpdateInputConfigWidgetsItemReplySender = "all"
+)
+
 // AnalyticsDashboardsUpdateInputConfigWidgetsItemReportType is the type of
 // [AnalyticsDashboardsUpdateInputConfigWidgetsItem.ReportType].
 type AnalyticsDashboardsUpdateInputConfigWidgetsItemReportType string
@@ -4113,6 +4243,7 @@ const (
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemReportTypeCohortProgress   AnalyticsDashboardsUpdateInputConfigWidgetsItemReportType = "cohortProgress"
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemReportTypeCohortOutcome    AnalyticsDashboardsUpdateInputConfigWidgetsItemReportType = "cohortOutcome"
 	AnalyticsDashboardsUpdateInputConfigWidgetsItemReportTypeCohortCycle      AnalyticsDashboardsUpdateInputConfigWidgetsItemReportType = "cohortCycle"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemReportTypeUntilReply       AnalyticsDashboardsUpdateInputConfigWidgetsItemReportType = "untilReply"
 )
 
 // AnalyticsDashboardsUpdateInputConfigWidgetsItemSegmentBy is the type of
@@ -4251,945 +4382,500 @@ type AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy string
 
 // Values of [AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy].
 const (
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCreated         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "created"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByWon             AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "won"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByLost            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "lost"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByScheduled       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "scheduled"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByAwaiting        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "awaiting"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByHeld            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "held"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByNoShow          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "noShow"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByMeetingOutcomes AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "meetingOutcomes"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByPaid            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "paid"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByRefunded        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "refunded"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByChargedBack     AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "chargedBack"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCanceled        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "canceled"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByFailed          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "failed"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByPending         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "pending"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByAbandoned       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "abandoned"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCommission      AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "commission"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByVisitors        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "visitors"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBySessions        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "sessions"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByConverted       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "converted"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByStarted         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "started"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByFinished        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "finished"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBySent            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "sent"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByDelivered       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "delivered"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByOpened          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "opened"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByClicked         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "clicked"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByReceived        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "received"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByResolved        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "resolved"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByPublished       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "published"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByViews           AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "views"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByEngagement      AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "engagement"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByInteractions    AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "interactions"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByFirstResponse   AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "firstResponse"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByResolution      AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "resolution"
-	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByQueueWait       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCreated           AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "created"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByWon               AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "won"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByLost              AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "lost"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByScheduled         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "scheduled"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByAwaiting          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "awaiting"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByHeld              AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "held"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByNoShow            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "noShow"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByMeetingOutcomes   AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "meetingOutcomes"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByPaid              AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "paid"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByRefunded          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "refunded"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByChargedBack       AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "chargedBack"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCanceled          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "canceled"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByFailed            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "failed"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByPending           AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "pending"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByAbandoned         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "abandoned"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCommission        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "commission"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByVisitors          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "visitors"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBySessions          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "sessions"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByConverted         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "converted"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByStarted           AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "started"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByFinished          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "finished"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBySent              AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "sent"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByDelivered         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "delivered"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByOpened            AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "opened"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByClicked           AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "clicked"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByReceived          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "received"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByResolved          AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "resolved"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByPublished         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "published"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByViews             AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "views"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByEngagement        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "engagement"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByInteractions      AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "interactions"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByFirstResponse     AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "firstResponse"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByResolution        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "resolution"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByQueueWait         AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "queueWait"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByReplyInterval     AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "replyInterval"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByUntilReply        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "untilReply"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByCreditsUntilReply AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "creditsUntilReply"
+	AnalyticsDashboardsUpdateInputConfigWidgetsItemViewByUnanswered        AnalyticsDashboardsUpdateInputConfigWidgetsItemViewBy = "unanswered"
 )
 
-// AnalyticsDashboardsWidgetAddInput is the request body of [AnalyticsDashboardsService.WidgetAdd].
-type AnalyticsDashboardsWidgetAddInput struct {
-	ID            string                                   `json:"id"`
-	PresetID      *string                                  `json:"presetId,omitzero"`
-	Widget        *AnalyticsDashboardsWidgetAddInputWidget `json:"widget,omitzero"`
-	Heading       *string                                  `json:"heading,omitzero"`
-	Title         *string                                  `json:"title,omitzero"`
-	PipelineID    *string                                  `json:"pipelineId,omitzero"`
-	Position      *int64                                   `json:"position,omitzero"`
-	Size          *AnalyticsDashboardsWidgetAddInputSize   `json:"size,omitzero"`
-	CustomFieldID *string                                  `json:"customFieldId,omitzero"`
-	TagIDs        []string                                 `json:"tagIds,omitzero"`
-	ObjectID      *string                                  `json:"objectId,omitzero"`
+// AnalyticsDashboardsWidgetsAddInput is the request body of [AnalyticsDashboardsService.WidgetsAdd].
+type AnalyticsDashboardsWidgetsAddInput struct {
+	ID            string                                    `json:"id"`
+	PresetID      *string                                   `json:"presetId,omitzero"`
+	Widget        *AnalyticsDashboardsWidgetsAddInputWidget `json:"widget,omitzero"`
+	Heading       *string                                   `json:"heading,omitzero"`
+	Title         *string                                   `json:"title,omitzero"`
+	PipelineID    *string                                   `json:"pipelineId,omitzero"`
+	Position      *int64                                    `json:"position,omitzero"`
+	Size          *AnalyticsDashboardsWidgetsAddInputSize   `json:"size,omitzero"`
+	CustomFieldID *string                                   `json:"customFieldId,omitzero"`
+	TagIDs        []string                                  `json:"tagIds,omitzero"`
+	ObjectID      *string                                   `json:"objectId,omitzero"`
 }
 
-// AnalyticsDashboardsWidgetAddInputSize is the type of [AnalyticsDashboardsWidgetAddInput.Size].
-type AnalyticsDashboardsWidgetAddInputSize struct {
+// AnalyticsDashboardsWidgetsAddInputSize is the type of [AnalyticsDashboardsWidgetsAddInput.Size].
+type AnalyticsDashboardsWidgetsAddInputSize struct {
 	W int64 `json:"w"`
 	H int64 `json:"h"`
 }
 
-// AnalyticsDashboardsWidgetAddInputWidget is the type of [AnalyticsDashboardsWidgetAddInput.Widget].
-type AnalyticsDashboardsWidgetAddInputWidget struct {
-	Entity                AnalyticsDashboardsWidgetAddInputWidgetEntity     `json:"entity"`
-	ReportType            AnalyticsDashboardsWidgetAddInputWidgetReportType `json:"reportType"`
-	Measure               AnalyticsDashboardsWidgetAddInputWidgetMeasure    `json:"measure"`
-	ViewBy                AnalyticsDashboardsWidgetAddInputWidgetViewBy     `json:"viewBy"`
-	Interval              AnalyticsDashboardsWidgetAddInputWidgetInterval   `json:"interval"`
-	SegmentBy             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy  `json:"segmentBy"`
-	ChartType             AnalyticsDashboardsWidgetAddInputWidgetChartType  `json:"chartType"`
-	SegmentOverTime       *bool                                             `json:"segmentOverTime,omitzero"`
-	ScopeCustomFieldID    *string                                           `json:"scopeCustomFieldId,omitzero"`
-	ScopeCustomFieldValue *string                                           `json:"scopeCustomFieldValue,omitzero"`
-	ScopeTagIDs           []string                                          `json:"scopeTagIds,omitzero"`
-	SelfBookedOnly        *bool                                             `json:"selfBookedOnly,omitzero"`
+// AnalyticsDashboardsWidgetsAddInputWidget is the type of [AnalyticsDashboardsWidgetsAddInput.Widget].
+type AnalyticsDashboardsWidgetsAddInputWidget struct {
+	Entity                AnalyticsDashboardsWidgetsAddInputWidgetEntity     `json:"entity"`
+	ReportType            AnalyticsDashboardsWidgetsAddInputWidgetReportType `json:"reportType"`
+	Measure               AnalyticsDashboardsWidgetsAddInputWidgetMeasure    `json:"measure"`
+	ViewBy                AnalyticsDashboardsWidgetsAddInputWidgetViewBy     `json:"viewBy"`
+	Interval              AnalyticsDashboardsWidgetsAddInputWidgetInterval   `json:"interval"`
+	SegmentBy             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy  `json:"segmentBy"`
+	ChartType             AnalyticsDashboardsWidgetsAddInputWidgetChartType  `json:"chartType"`
+	SegmentOverTime       *bool                                              `json:"segmentOverTime,omitzero"`
+	ScopeCustomFieldID    *string                                            `json:"scopeCustomFieldId,omitzero"`
+	ScopeCustomFieldValue *string                                            `json:"scopeCustomFieldValue,omitzero"`
+	ScopeTagIDs           []string                                           `json:"scopeTagIds,omitzero"`
+	SelfBookedOnly        *bool                                              `json:"selfBookedOnly,omitzero"`
 }
 
-// AnalyticsDashboardsWidgetAddInputWidgetChartType is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.ChartType].
-type AnalyticsDashboardsWidgetAddInputWidgetChartType string
+// AnalyticsDashboardsWidgetsAddInputWidgetChartType is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.ChartType].
+type AnalyticsDashboardsWidgetsAddInputWidgetChartType string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetChartType].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetChartType].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeBar      AnalyticsDashboardsWidgetAddInputWidgetChartType = "bar"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeLine     AnalyticsDashboardsWidgetAddInputWidgetChartType = "line"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypePie      AnalyticsDashboardsWidgetAddInputWidgetChartType = "pie"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeNumber   AnalyticsDashboardsWidgetAddInputWidgetChartType = "number"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeRanking  AnalyticsDashboardsWidgetAddInputWidgetChartType = "ranking"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeList     AnalyticsDashboardsWidgetAddInputWidgetChartType = "list"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeTable    AnalyticsDashboardsWidgetAddInputWidgetChartType = "table"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypePace     AnalyticsDashboardsWidgetAddInputWidgetChartType = "pace"
-	AnalyticsDashboardsWidgetAddInputWidgetChartTypeTracking AnalyticsDashboardsWidgetAddInputWidgetChartType = "tracking"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeBar      AnalyticsDashboardsWidgetsAddInputWidgetChartType = "bar"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeLine     AnalyticsDashboardsWidgetsAddInputWidgetChartType = "line"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypePie      AnalyticsDashboardsWidgetsAddInputWidgetChartType = "pie"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeNumber   AnalyticsDashboardsWidgetsAddInputWidgetChartType = "number"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeRanking  AnalyticsDashboardsWidgetsAddInputWidgetChartType = "ranking"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeList     AnalyticsDashboardsWidgetsAddInputWidgetChartType = "list"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeTable    AnalyticsDashboardsWidgetsAddInputWidgetChartType = "table"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypePace     AnalyticsDashboardsWidgetsAddInputWidgetChartType = "pace"
+	AnalyticsDashboardsWidgetsAddInputWidgetChartTypeTracking AnalyticsDashboardsWidgetsAddInputWidgetChartType = "tracking"
 )
 
-// AnalyticsDashboardsWidgetAddInputWidgetEntity is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.Entity].
-type AnalyticsDashboardsWidgetAddInputWidgetEntity string
+// AnalyticsDashboardsWidgetsAddInputWidgetEntity is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.Entity].
+type AnalyticsDashboardsWidgetsAddInputWidgetEntity string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetEntity].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetEntity].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetEntityDeal             AnalyticsDashboardsWidgetAddInputWidgetEntity = "deal"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityActivity         AnalyticsDashboardsWidgetAddInputWidgetEntity = "activity"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityLead             AnalyticsDashboardsWidgetAddInputWidgetEntity = "lead"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityMeeting          AnalyticsDashboardsWidgetAddInputWidgetEntity = "meeting"
-	AnalyticsDashboardsWidgetAddInputWidgetEntitySale             AnalyticsDashboardsWidgetAddInputWidgetEntity = "sale"
-	AnalyticsDashboardsWidgetAddInputWidgetEntitySubscription     AnalyticsDashboardsWidgetAddInputWidgetEntity = "subscription"
-	AnalyticsDashboardsWidgetAddInputWidgetEntitySalesRecovery    AnalyticsDashboardsWidgetAddInputWidgetEntity = "salesRecovery"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityExternalRecovery AnalyticsDashboardsWidgetAddInputWidgetEntity = "externalRecovery"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityExternalSale     AnalyticsDashboardsWidgetAddInputWidgetEntity = "externalSale"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityAffiliate        AnalyticsDashboardsWidgetAddInputWidgetEntity = "affiliate"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityVisitor          AnalyticsDashboardsWidgetAddInputWidgetEntity = "visitor"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityFlow             AnalyticsDashboardsWidgetAddInputWidgetEntity = "flow"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityBroadcast        AnalyticsDashboardsWidgetAddInputWidgetEntity = "broadcast"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityMessage          AnalyticsDashboardsWidgetAddInputWidgetEntity = "message"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityLivechat         AnalyticsDashboardsWidgetAddInputWidgetEntity = "livechat"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityAttendance       AnalyticsDashboardsWidgetAddInputWidgetEntity = "attendance"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityCall             AnalyticsDashboardsWidgetAddInputWidgetEntity = "call"
-	AnalyticsDashboardsWidgetAddInputWidgetEntitySocial           AnalyticsDashboardsWidgetAddInputWidgetEntity = "social"
-	AnalyticsDashboardsWidgetAddInputWidgetEntityCustomObject     AnalyticsDashboardsWidgetAddInputWidgetEntity = "customObject"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityDeal             AnalyticsDashboardsWidgetsAddInputWidgetEntity = "deal"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityActivity         AnalyticsDashboardsWidgetsAddInputWidgetEntity = "activity"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityLead             AnalyticsDashboardsWidgetsAddInputWidgetEntity = "lead"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityMeeting          AnalyticsDashboardsWidgetsAddInputWidgetEntity = "meeting"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntitySale             AnalyticsDashboardsWidgetsAddInputWidgetEntity = "sale"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntitySubscription     AnalyticsDashboardsWidgetsAddInputWidgetEntity = "subscription"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntitySalesRecovery    AnalyticsDashboardsWidgetsAddInputWidgetEntity = "salesRecovery"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityExternalRecovery AnalyticsDashboardsWidgetsAddInputWidgetEntity = "externalRecovery"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityExternalSale     AnalyticsDashboardsWidgetsAddInputWidgetEntity = "externalSale"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityAffiliate        AnalyticsDashboardsWidgetsAddInputWidgetEntity = "affiliate"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityVisitor          AnalyticsDashboardsWidgetsAddInputWidgetEntity = "visitor"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityFlow             AnalyticsDashboardsWidgetsAddInputWidgetEntity = "flow"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityBroadcast        AnalyticsDashboardsWidgetsAddInputWidgetEntity = "broadcast"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityMessage          AnalyticsDashboardsWidgetsAddInputWidgetEntity = "message"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityLivechat         AnalyticsDashboardsWidgetsAddInputWidgetEntity = "livechat"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityAttendance       AnalyticsDashboardsWidgetsAddInputWidgetEntity = "attendance"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityCall             AnalyticsDashboardsWidgetsAddInputWidgetEntity = "call"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntitySocial           AnalyticsDashboardsWidgetsAddInputWidgetEntity = "social"
+	AnalyticsDashboardsWidgetsAddInputWidgetEntityCustomObject     AnalyticsDashboardsWidgetsAddInputWidgetEntity = "customObject"
 )
 
-// AnalyticsDashboardsWidgetAddInputWidgetInterval is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.Interval].
-type AnalyticsDashboardsWidgetAddInputWidgetInterval string
+// AnalyticsDashboardsWidgetsAddInputWidgetInterval is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.Interval].
+type AnalyticsDashboardsWidgetsAddInputWidgetInterval string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetInterval].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetInterval].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetIntervalDaily   AnalyticsDashboardsWidgetAddInputWidgetInterval = "daily"
-	AnalyticsDashboardsWidgetAddInputWidgetIntervalWeekly  AnalyticsDashboardsWidgetAddInputWidgetInterval = "weekly"
-	AnalyticsDashboardsWidgetAddInputWidgetIntervalMonthly AnalyticsDashboardsWidgetAddInputWidgetInterval = "monthly"
+	AnalyticsDashboardsWidgetsAddInputWidgetIntervalDaily   AnalyticsDashboardsWidgetsAddInputWidgetInterval = "daily"
+	AnalyticsDashboardsWidgetsAddInputWidgetIntervalWeekly  AnalyticsDashboardsWidgetsAddInputWidgetInterval = "weekly"
+	AnalyticsDashboardsWidgetsAddInputWidgetIntervalMonthly AnalyticsDashboardsWidgetsAddInputWidgetInterval = "monthly"
 )
 
-// AnalyticsDashboardsWidgetAddInputWidgetMeasure is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.Measure].
-type AnalyticsDashboardsWidgetAddInputWidgetMeasure string
+// AnalyticsDashboardsWidgetsAddInputWidgetMeasure is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.Measure].
+type AnalyticsDashboardsWidgetsAddInputWidgetMeasure string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetMeasure].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetMeasure].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetMeasureCount AnalyticsDashboardsWidgetAddInputWidgetMeasure = "count"
-	AnalyticsDashboardsWidgetAddInputWidgetMeasureValue AnalyticsDashboardsWidgetAddInputWidgetMeasure = "value"
+	AnalyticsDashboardsWidgetsAddInputWidgetMeasureCount AnalyticsDashboardsWidgetsAddInputWidgetMeasure = "count"
+	AnalyticsDashboardsWidgetsAddInputWidgetMeasureValue AnalyticsDashboardsWidgetsAddInputWidgetMeasure = "value"
 )
 
-// AnalyticsDashboardsWidgetAddInputWidgetReportType is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.ReportType].
-type AnalyticsDashboardsWidgetAddInputWidgetReportType string
+// AnalyticsDashboardsWidgetsAddInputWidgetReportType is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.ReportType].
+type AnalyticsDashboardsWidgetsAddInputWidgetReportType string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetReportType].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetReportType].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypePerformance      AnalyticsDashboardsWidgetAddInputWidgetReportType = "performance"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeConversion       AnalyticsDashboardsWidgetAddInputWidgetReportType = "conversion"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeDuration         AnalyticsDashboardsWidgetAddInputWidgetReportType = "duration"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeProgress         AnalyticsDashboardsWidgetAddInputWidgetReportType = "progress"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeProducts         AnalyticsDashboardsWidgetAddInputWidgetReportType = "products"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeTicket           AnalyticsDashboardsWidgetAddInputWidgetReportType = "ticket"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeCompletion       AnalyticsDashboardsWidgetAddInputWidgetReportType = "completion"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeOverdue          AnalyticsDashboardsWidgetAddInputWidgetReportType = "overdue"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeStagetime        AnalyticsDashboardsWidgetAddInputWidgetReportType = "stagetime"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeFunnel           AnalyticsDashboardsWidgetAddInputWidgetReportType = "funnel"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeStageConversion  AnalyticsDashboardsWidgetAddInputWidgetReportType = "stageConversion"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeForecast         AnalyticsDashboardsWidgetAddInputWidgetReportType = "forecast"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeForecastUpcoming AnalyticsDashboardsWidgetAddInputWidgetReportType = "forecastUpcoming"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeStageflow        AnalyticsDashboardsWidgetAddInputWidgetReportType = "stageflow"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeTeamOverview     AnalyticsDashboardsWidgetAddInputWidgetReportType = "teamOverview"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeFollowup         AnalyticsDashboardsWidgetAddInputWidgetReportType = "followup"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeLossBreakdown    AnalyticsDashboardsWidgetAddInputWidgetReportType = "lossBreakdown"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeLeadTime         AnalyticsDashboardsWidgetAddInputWidgetReportType = "leadTime"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeMeetingHandoff   AnalyticsDashboardsWidgetAddInputWidgetReportType = "meetingHandoff"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeRecovered        AnalyticsDashboardsWidgetAddInputWidgetReportType = "recovered"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeCohortProgress   AnalyticsDashboardsWidgetAddInputWidgetReportType = "cohortProgress"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeCohortOutcome    AnalyticsDashboardsWidgetAddInputWidgetReportType = "cohortOutcome"
-	AnalyticsDashboardsWidgetAddInputWidgetReportTypeCohortCycle      AnalyticsDashboardsWidgetAddInputWidgetReportType = "cohortCycle"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypePerformance      AnalyticsDashboardsWidgetsAddInputWidgetReportType = "performance"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeConversion       AnalyticsDashboardsWidgetsAddInputWidgetReportType = "conversion"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeDuration         AnalyticsDashboardsWidgetsAddInputWidgetReportType = "duration"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeProgress         AnalyticsDashboardsWidgetsAddInputWidgetReportType = "progress"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeProducts         AnalyticsDashboardsWidgetsAddInputWidgetReportType = "products"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeTicket           AnalyticsDashboardsWidgetsAddInputWidgetReportType = "ticket"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeCompletion       AnalyticsDashboardsWidgetsAddInputWidgetReportType = "completion"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeOverdue          AnalyticsDashboardsWidgetsAddInputWidgetReportType = "overdue"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeStagetime        AnalyticsDashboardsWidgetsAddInputWidgetReportType = "stagetime"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeFunnel           AnalyticsDashboardsWidgetsAddInputWidgetReportType = "funnel"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeStageConversion  AnalyticsDashboardsWidgetsAddInputWidgetReportType = "stageConversion"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeForecast         AnalyticsDashboardsWidgetsAddInputWidgetReportType = "forecast"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeForecastUpcoming AnalyticsDashboardsWidgetsAddInputWidgetReportType = "forecastUpcoming"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeStageflow        AnalyticsDashboardsWidgetsAddInputWidgetReportType = "stageflow"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeTeamOverview     AnalyticsDashboardsWidgetsAddInputWidgetReportType = "teamOverview"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeFollowup         AnalyticsDashboardsWidgetsAddInputWidgetReportType = "followup"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeLossBreakdown    AnalyticsDashboardsWidgetsAddInputWidgetReportType = "lossBreakdown"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeLeadTime         AnalyticsDashboardsWidgetsAddInputWidgetReportType = "leadTime"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeMeetingHandoff   AnalyticsDashboardsWidgetsAddInputWidgetReportType = "meetingHandoff"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeRecovered        AnalyticsDashboardsWidgetsAddInputWidgetReportType = "recovered"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeCohortProgress   AnalyticsDashboardsWidgetsAddInputWidgetReportType = "cohortProgress"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeCohortOutcome    AnalyticsDashboardsWidgetsAddInputWidgetReportType = "cohortOutcome"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeCohortCycle      AnalyticsDashboardsWidgetsAddInputWidgetReportType = "cohortCycle"
+	AnalyticsDashboardsWidgetsAddInputWidgetReportTypeUntilReply       AnalyticsDashboardsWidgetsAddInputWidgetReportType = "untilReply"
 )
 
-// AnalyticsDashboardsWidgetAddInputWidgetSegmentBy is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.SegmentBy].
-type AnalyticsDashboardsWidgetAddInputWidgetSegmentBy string
+// AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.SegmentBy].
+type AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetSegmentBy].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByNone                AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "none"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByStatus              AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "status"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByPipeline            AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "pipeline"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByStage               AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "stage"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByAttendant           AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "attendant"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByScheduler           AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "scheduler"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByAppointmentSchedule AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "appointmentSchedule"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByTemperature         AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "temperature"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByPriority            AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "priority"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByType                AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "type"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByOrigin              AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "origin"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByProduct             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "product"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByLossReason          AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "lossReason"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByContactReason       AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "contactReason"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByCustomField         AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "customField"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByTag                 AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "tag"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByCardTag             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "cardTag"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByUtmSource           AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "utmSource"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByUtmMedium           AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "utmMedium"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByUtmCampaign         AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "utmCampaign"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByUtmContent          AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "utmContent"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByUtmTerm             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "utmTerm"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByCaptureLink         AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "captureLink"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByPaymentMethod       AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "paymentMethod"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByRecoveryKind        AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "recoveryKind"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByPlatform            AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "platform"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByAffiliate           AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "affiliate"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByDomain              AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "domain"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByPage                AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "page"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByFunnel              AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "funnel"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByQuiz                AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "quiz"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByWebinar             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "webinar"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByChatbot             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "chatbot"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByFlow                AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "flow"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByBroadcast           AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "broadcast"
-	AnalyticsDashboardsWidgetAddInputWidgetSegmentByChannel             AnalyticsDashboardsWidgetAddInputWidgetSegmentBy = "channel"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByNone                AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "none"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByStatus              AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "status"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByPipeline            AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "pipeline"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByStage               AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "stage"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByAttendant           AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "attendant"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByScheduler           AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "scheduler"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByAppointmentSchedule AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "appointmentSchedule"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByTemperature         AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "temperature"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByPriority            AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "priority"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByType                AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "type"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByOrigin              AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "origin"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByProduct             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "product"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByLossReason          AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "lossReason"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByContactReason       AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "contactReason"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByCustomField         AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "customField"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByTag                 AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "tag"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByCardTag             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "cardTag"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByUtmSource           AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "utmSource"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByUtmMedium           AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "utmMedium"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByUtmCampaign         AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "utmCampaign"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByUtmContent          AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "utmContent"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByUtmTerm             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "utmTerm"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByCaptureLink         AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "captureLink"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByPaymentMethod       AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "paymentMethod"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByRecoveryKind        AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "recoveryKind"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByPlatform            AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "platform"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByAffiliate           AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "affiliate"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByDomain              AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "domain"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByPage                AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "page"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByFunnel              AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "funnel"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByQuiz                AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "quiz"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByWebinar             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "webinar"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByChatbot             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "chatbot"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByFlow                AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "flow"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByBroadcast           AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "broadcast"
+	AnalyticsDashboardsWidgetsAddInputWidgetSegmentByChannel             AnalyticsDashboardsWidgetsAddInputWidgetSegmentBy = "channel"
 )
 
-// AnalyticsDashboardsWidgetAddInputWidgetViewBy is the type of
-// [AnalyticsDashboardsWidgetAddInputWidget.ViewBy].
-type AnalyticsDashboardsWidgetAddInputWidgetViewBy string
+// AnalyticsDashboardsWidgetsAddInputWidgetViewBy is the type of
+// [AnalyticsDashboardsWidgetsAddInputWidget.ViewBy].
+type AnalyticsDashboardsWidgetsAddInputWidgetViewBy string
 
-// Values of [AnalyticsDashboardsWidgetAddInputWidgetViewBy].
+// Values of [AnalyticsDashboardsWidgetsAddInputWidgetViewBy].
 const (
-	AnalyticsDashboardsWidgetAddInputWidgetViewByCreated         AnalyticsDashboardsWidgetAddInputWidgetViewBy = "created"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByWon             AnalyticsDashboardsWidgetAddInputWidgetViewBy = "won"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByLost            AnalyticsDashboardsWidgetAddInputWidgetViewBy = "lost"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByScheduled       AnalyticsDashboardsWidgetAddInputWidgetViewBy = "scheduled"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByAwaiting        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "awaiting"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByHeld            AnalyticsDashboardsWidgetAddInputWidgetViewBy = "held"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByNoShow          AnalyticsDashboardsWidgetAddInputWidgetViewBy = "noShow"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByMeetingOutcomes AnalyticsDashboardsWidgetAddInputWidgetViewBy = "meetingOutcomes"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByPaid            AnalyticsDashboardsWidgetAddInputWidgetViewBy = "paid"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByRefunded        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "refunded"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByChargedBack     AnalyticsDashboardsWidgetAddInputWidgetViewBy = "chargedBack"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByCanceled        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "canceled"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByFailed          AnalyticsDashboardsWidgetAddInputWidgetViewBy = "failed"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByPending         AnalyticsDashboardsWidgetAddInputWidgetViewBy = "pending"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByAbandoned       AnalyticsDashboardsWidgetAddInputWidgetViewBy = "abandoned"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByCommission      AnalyticsDashboardsWidgetAddInputWidgetViewBy = "commission"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByVisitors        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "visitors"
-	AnalyticsDashboardsWidgetAddInputWidgetViewBySessions        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "sessions"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByConverted       AnalyticsDashboardsWidgetAddInputWidgetViewBy = "converted"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByStarted         AnalyticsDashboardsWidgetAddInputWidgetViewBy = "started"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByFinished        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "finished"
-	AnalyticsDashboardsWidgetAddInputWidgetViewBySent            AnalyticsDashboardsWidgetAddInputWidgetViewBy = "sent"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByDelivered       AnalyticsDashboardsWidgetAddInputWidgetViewBy = "delivered"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByOpened          AnalyticsDashboardsWidgetAddInputWidgetViewBy = "opened"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByClicked         AnalyticsDashboardsWidgetAddInputWidgetViewBy = "clicked"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByReceived        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "received"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByResolved        AnalyticsDashboardsWidgetAddInputWidgetViewBy = "resolved"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByPublished       AnalyticsDashboardsWidgetAddInputWidgetViewBy = "published"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByViews           AnalyticsDashboardsWidgetAddInputWidgetViewBy = "views"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByEngagement      AnalyticsDashboardsWidgetAddInputWidgetViewBy = "engagement"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByInteractions    AnalyticsDashboardsWidgetAddInputWidgetViewBy = "interactions"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByFirstResponse   AnalyticsDashboardsWidgetAddInputWidgetViewBy = "firstResponse"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByResolution      AnalyticsDashboardsWidgetAddInputWidgetViewBy = "resolution"
-	AnalyticsDashboardsWidgetAddInputWidgetViewByQueueWait       AnalyticsDashboardsWidgetAddInputWidgetViewBy = "queueWait"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByCreated           AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "created"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByWon               AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "won"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByLost              AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "lost"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByScheduled         AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "scheduled"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByAwaiting          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "awaiting"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByHeld              AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "held"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByNoShow            AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "noShow"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByMeetingOutcomes   AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "meetingOutcomes"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByPaid              AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "paid"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByRefunded          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "refunded"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByChargedBack       AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "chargedBack"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByCanceled          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "canceled"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByFailed            AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "failed"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByPending           AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "pending"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByAbandoned         AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "abandoned"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByCommission        AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "commission"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByVisitors          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "visitors"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewBySessions          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "sessions"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByConverted         AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "converted"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByStarted           AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "started"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByFinished          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "finished"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewBySent              AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "sent"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByDelivered         AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "delivered"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByOpened            AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "opened"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByClicked           AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "clicked"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByReceived          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "received"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByResolved          AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "resolved"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByPublished         AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "published"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByViews             AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "views"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByEngagement        AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "engagement"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByInteractions      AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "interactions"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByFirstResponse     AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "firstResponse"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByResolution        AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "resolution"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByQueueWait         AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "queueWait"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByReplyInterval     AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "replyInterval"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByUntilReply        AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "untilReply"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByCreditsUntilReply AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "creditsUntilReply"
+	AnalyticsDashboardsWidgetsAddInputWidgetViewByUnanswered        AnalyticsDashboardsWidgetsAddInputWidgetViewBy = "unanswered"
 )
 
-// AnalyticsDashboardsWidgetMoveInput is the request body of [AnalyticsDashboardsService.WidgetMove].
-type AnalyticsDashboardsWidgetMoveInput struct {
+// AnalyticsDashboardsWidgetsMoveInput is the request body of [AnalyticsDashboardsService.WidgetsMove].
+type AnalyticsDashboardsWidgetsMoveInput struct {
 	ID       string `json:"id"`
 	WidgetID string `json:"widgetId"`
 	Position int64  `json:"position"`
 }
 
-// AnalyticsDashboardsWidgetRemoveInput is the request body of
-// [AnalyticsDashboardsService.WidgetRemove].
-type AnalyticsDashboardsWidgetRemoveInput struct {
+// AnalyticsDashboardsWidgetsRemoveInput is the request body of
+// [AnalyticsDashboardsService.WidgetsRemove].
+type AnalyticsDashboardsWidgetsRemoveInput struct {
 	ID       string `json:"id"`
 	WidgetID string `json:"widgetId"`
 }
 
-// AnalyticsDashboardsWidgetUpdateInput is the request body of
-// [AnalyticsDashboardsService.WidgetUpdate].
-type AnalyticsDashboardsWidgetUpdateInput struct {
-	ID                    string                                          `json:"id"`
-	WidgetID              string                                          `json:"widgetId"`
-	Entity                *AnalyticsDashboardsWidgetUpdateInputEntity     `json:"entity,omitzero"`
-	ReportType            *AnalyticsDashboardsWidgetUpdateInputReportType `json:"reportType,omitzero"`
-	Measure               *AnalyticsDashboardsWidgetUpdateInputMeasure    `json:"measure,omitzero"`
-	ViewBy                *AnalyticsDashboardsWidgetUpdateInputViewBy     `json:"viewBy,omitzero"`
-	Interval              *AnalyticsDashboardsWidgetUpdateInputInterval   `json:"interval,omitzero"`
-	SegmentBy             *AnalyticsDashboardsWidgetUpdateInputSegmentBy  `json:"segmentBy,omitzero"`
-	ChartType             *AnalyticsDashboardsWidgetUpdateInputChartType  `json:"chartType,omitzero"`
-	SegmentOverTime       *bool                                           `json:"segmentOverTime,omitzero"`
-	ScopeCustomFieldID    *string                                         `json:"scopeCustomFieldId,omitzero"`
-	ScopeCustomFieldValue *string                                         `json:"scopeCustomFieldValue,omitzero"`
-	ScopeTagIDs           []string                                        `json:"scopeTagIds,omitzero"`
-	SelfBookedOnly        *bool                                           `json:"selfBookedOnly,omitzero"`
-	Size                  *AnalyticsDashboardsWidgetUpdateInputSize       `json:"size,omitzero"`
-	CustomFieldID         *string                                         `json:"customFieldId,omitzero"`
-	TagIDs                []string                                        `json:"tagIds,omitzero"`
-	ObjectID              *string                                         `json:"objectId,omitzero"`
-	Title                 *string                                         `json:"title,omitzero"`
-	PipelineID            *string                                         `json:"pipelineId,omitzero"`
-	Heading               *string                                         `json:"heading,omitzero"`
+// AnalyticsDashboardsWidgetsUpdateInput is the request body of
+// [AnalyticsDashboardsService.WidgetsUpdate].
+type AnalyticsDashboardsWidgetsUpdateInput struct {
+	ID                    string                                           `json:"id"`
+	WidgetID              string                                           `json:"widgetId"`
+	Entity                *AnalyticsDashboardsWidgetsUpdateInputEntity     `json:"entity,omitzero"`
+	ReportType            *AnalyticsDashboardsWidgetsUpdateInputReportType `json:"reportType,omitzero"`
+	Measure               *AnalyticsDashboardsWidgetsUpdateInputMeasure    `json:"measure,omitzero"`
+	ViewBy                *AnalyticsDashboardsWidgetsUpdateInputViewBy     `json:"viewBy,omitzero"`
+	Interval              *AnalyticsDashboardsWidgetsUpdateInputInterval   `json:"interval,omitzero"`
+	SegmentBy             *AnalyticsDashboardsWidgetsUpdateInputSegmentBy  `json:"segmentBy,omitzero"`
+	ChartType             *AnalyticsDashboardsWidgetsUpdateInputChartType  `json:"chartType,omitzero"`
+	SegmentOverTime       *bool                                            `json:"segmentOverTime,omitzero"`
+	ScopeCustomFieldID    *string                                          `json:"scopeCustomFieldId,omitzero"`
+	ScopeCustomFieldValue *string                                          `json:"scopeCustomFieldValue,omitzero"`
+	ScopeTagIDs           []string                                         `json:"scopeTagIds,omitzero"`
+	SelfBookedOnly        *bool                                            `json:"selfBookedOnly,omitzero"`
+	Size                  *AnalyticsDashboardsWidgetsUpdateInputSize       `json:"size,omitzero"`
+	CustomFieldID         *string                                          `json:"customFieldId,omitzero"`
+	TagIDs                []string                                         `json:"tagIds,omitzero"`
+	ObjectID              *string                                          `json:"objectId,omitzero"`
+	Title                 *string                                          `json:"title,omitzero"`
+	PipelineID            *string                                          `json:"pipelineId,omitzero"`
+	Heading               *string                                          `json:"heading,omitzero"`
 }
 
-// AnalyticsDashboardsWidgetUpdateInputChartType is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.ChartType].
-type AnalyticsDashboardsWidgetUpdateInputChartType string
+// AnalyticsDashboardsWidgetsUpdateInputChartType is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.ChartType].
+type AnalyticsDashboardsWidgetsUpdateInputChartType string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputChartType].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputChartType].
 const (
-	AnalyticsDashboardsWidgetUpdateInputChartTypeBar      AnalyticsDashboardsWidgetUpdateInputChartType = "bar"
-	AnalyticsDashboardsWidgetUpdateInputChartTypeLine     AnalyticsDashboardsWidgetUpdateInputChartType = "line"
-	AnalyticsDashboardsWidgetUpdateInputChartTypePie      AnalyticsDashboardsWidgetUpdateInputChartType = "pie"
-	AnalyticsDashboardsWidgetUpdateInputChartTypeNumber   AnalyticsDashboardsWidgetUpdateInputChartType = "number"
-	AnalyticsDashboardsWidgetUpdateInputChartTypeRanking  AnalyticsDashboardsWidgetUpdateInputChartType = "ranking"
-	AnalyticsDashboardsWidgetUpdateInputChartTypeList     AnalyticsDashboardsWidgetUpdateInputChartType = "list"
-	AnalyticsDashboardsWidgetUpdateInputChartTypeTable    AnalyticsDashboardsWidgetUpdateInputChartType = "table"
-	AnalyticsDashboardsWidgetUpdateInputChartTypePace     AnalyticsDashboardsWidgetUpdateInputChartType = "pace"
-	AnalyticsDashboardsWidgetUpdateInputChartTypeTracking AnalyticsDashboardsWidgetUpdateInputChartType = "tracking"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeBar      AnalyticsDashboardsWidgetsUpdateInputChartType = "bar"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeLine     AnalyticsDashboardsWidgetsUpdateInputChartType = "line"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypePie      AnalyticsDashboardsWidgetsUpdateInputChartType = "pie"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeNumber   AnalyticsDashboardsWidgetsUpdateInputChartType = "number"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeRanking  AnalyticsDashboardsWidgetsUpdateInputChartType = "ranking"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeList     AnalyticsDashboardsWidgetsUpdateInputChartType = "list"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeTable    AnalyticsDashboardsWidgetsUpdateInputChartType = "table"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypePace     AnalyticsDashboardsWidgetsUpdateInputChartType = "pace"
+	AnalyticsDashboardsWidgetsUpdateInputChartTypeTracking AnalyticsDashboardsWidgetsUpdateInputChartType = "tracking"
 )
 
-// AnalyticsDashboardsWidgetUpdateInputEntity is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.Entity].
-type AnalyticsDashboardsWidgetUpdateInputEntity string
+// AnalyticsDashboardsWidgetsUpdateInputEntity is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.Entity].
+type AnalyticsDashboardsWidgetsUpdateInputEntity string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputEntity].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputEntity].
 const (
-	AnalyticsDashboardsWidgetUpdateInputEntityDeal             AnalyticsDashboardsWidgetUpdateInputEntity = "deal"
-	AnalyticsDashboardsWidgetUpdateInputEntityActivity         AnalyticsDashboardsWidgetUpdateInputEntity = "activity"
-	AnalyticsDashboardsWidgetUpdateInputEntityLead             AnalyticsDashboardsWidgetUpdateInputEntity = "lead"
-	AnalyticsDashboardsWidgetUpdateInputEntityMeeting          AnalyticsDashboardsWidgetUpdateInputEntity = "meeting"
-	AnalyticsDashboardsWidgetUpdateInputEntitySale             AnalyticsDashboardsWidgetUpdateInputEntity = "sale"
-	AnalyticsDashboardsWidgetUpdateInputEntitySubscription     AnalyticsDashboardsWidgetUpdateInputEntity = "subscription"
-	AnalyticsDashboardsWidgetUpdateInputEntitySalesRecovery    AnalyticsDashboardsWidgetUpdateInputEntity = "salesRecovery"
-	AnalyticsDashboardsWidgetUpdateInputEntityExternalRecovery AnalyticsDashboardsWidgetUpdateInputEntity = "externalRecovery"
-	AnalyticsDashboardsWidgetUpdateInputEntityExternalSale     AnalyticsDashboardsWidgetUpdateInputEntity = "externalSale"
-	AnalyticsDashboardsWidgetUpdateInputEntityAffiliate        AnalyticsDashboardsWidgetUpdateInputEntity = "affiliate"
-	AnalyticsDashboardsWidgetUpdateInputEntityVisitor          AnalyticsDashboardsWidgetUpdateInputEntity = "visitor"
-	AnalyticsDashboardsWidgetUpdateInputEntityFlow             AnalyticsDashboardsWidgetUpdateInputEntity = "flow"
-	AnalyticsDashboardsWidgetUpdateInputEntityBroadcast        AnalyticsDashboardsWidgetUpdateInputEntity = "broadcast"
-	AnalyticsDashboardsWidgetUpdateInputEntityMessage          AnalyticsDashboardsWidgetUpdateInputEntity = "message"
-	AnalyticsDashboardsWidgetUpdateInputEntityLivechat         AnalyticsDashboardsWidgetUpdateInputEntity = "livechat"
-	AnalyticsDashboardsWidgetUpdateInputEntityAttendance       AnalyticsDashboardsWidgetUpdateInputEntity = "attendance"
-	AnalyticsDashboardsWidgetUpdateInputEntityCall             AnalyticsDashboardsWidgetUpdateInputEntity = "call"
-	AnalyticsDashboardsWidgetUpdateInputEntitySocial           AnalyticsDashboardsWidgetUpdateInputEntity = "social"
-	AnalyticsDashboardsWidgetUpdateInputEntityCustomObject     AnalyticsDashboardsWidgetUpdateInputEntity = "customObject"
+	AnalyticsDashboardsWidgetsUpdateInputEntityDeal             AnalyticsDashboardsWidgetsUpdateInputEntity = "deal"
+	AnalyticsDashboardsWidgetsUpdateInputEntityActivity         AnalyticsDashboardsWidgetsUpdateInputEntity = "activity"
+	AnalyticsDashboardsWidgetsUpdateInputEntityLead             AnalyticsDashboardsWidgetsUpdateInputEntity = "lead"
+	AnalyticsDashboardsWidgetsUpdateInputEntityMeeting          AnalyticsDashboardsWidgetsUpdateInputEntity = "meeting"
+	AnalyticsDashboardsWidgetsUpdateInputEntitySale             AnalyticsDashboardsWidgetsUpdateInputEntity = "sale"
+	AnalyticsDashboardsWidgetsUpdateInputEntitySubscription     AnalyticsDashboardsWidgetsUpdateInputEntity = "subscription"
+	AnalyticsDashboardsWidgetsUpdateInputEntitySalesRecovery    AnalyticsDashboardsWidgetsUpdateInputEntity = "salesRecovery"
+	AnalyticsDashboardsWidgetsUpdateInputEntityExternalRecovery AnalyticsDashboardsWidgetsUpdateInputEntity = "externalRecovery"
+	AnalyticsDashboardsWidgetsUpdateInputEntityExternalSale     AnalyticsDashboardsWidgetsUpdateInputEntity = "externalSale"
+	AnalyticsDashboardsWidgetsUpdateInputEntityAffiliate        AnalyticsDashboardsWidgetsUpdateInputEntity = "affiliate"
+	AnalyticsDashboardsWidgetsUpdateInputEntityVisitor          AnalyticsDashboardsWidgetsUpdateInputEntity = "visitor"
+	AnalyticsDashboardsWidgetsUpdateInputEntityFlow             AnalyticsDashboardsWidgetsUpdateInputEntity = "flow"
+	AnalyticsDashboardsWidgetsUpdateInputEntityBroadcast        AnalyticsDashboardsWidgetsUpdateInputEntity = "broadcast"
+	AnalyticsDashboardsWidgetsUpdateInputEntityMessage          AnalyticsDashboardsWidgetsUpdateInputEntity = "message"
+	AnalyticsDashboardsWidgetsUpdateInputEntityLivechat         AnalyticsDashboardsWidgetsUpdateInputEntity = "livechat"
+	AnalyticsDashboardsWidgetsUpdateInputEntityAttendance       AnalyticsDashboardsWidgetsUpdateInputEntity = "attendance"
+	AnalyticsDashboardsWidgetsUpdateInputEntityCall             AnalyticsDashboardsWidgetsUpdateInputEntity = "call"
+	AnalyticsDashboardsWidgetsUpdateInputEntitySocial           AnalyticsDashboardsWidgetsUpdateInputEntity = "social"
+	AnalyticsDashboardsWidgetsUpdateInputEntityCustomObject     AnalyticsDashboardsWidgetsUpdateInputEntity = "customObject"
 )
 
-// AnalyticsDashboardsWidgetUpdateInputInterval is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.Interval].
-type AnalyticsDashboardsWidgetUpdateInputInterval string
+// AnalyticsDashboardsWidgetsUpdateInputInterval is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.Interval].
+type AnalyticsDashboardsWidgetsUpdateInputInterval string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputInterval].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputInterval].
 const (
-	AnalyticsDashboardsWidgetUpdateInputIntervalDaily   AnalyticsDashboardsWidgetUpdateInputInterval = "daily"
-	AnalyticsDashboardsWidgetUpdateInputIntervalWeekly  AnalyticsDashboardsWidgetUpdateInputInterval = "weekly"
-	AnalyticsDashboardsWidgetUpdateInputIntervalMonthly AnalyticsDashboardsWidgetUpdateInputInterval = "monthly"
+	AnalyticsDashboardsWidgetsUpdateInputIntervalDaily   AnalyticsDashboardsWidgetsUpdateInputInterval = "daily"
+	AnalyticsDashboardsWidgetsUpdateInputIntervalWeekly  AnalyticsDashboardsWidgetsUpdateInputInterval = "weekly"
+	AnalyticsDashboardsWidgetsUpdateInputIntervalMonthly AnalyticsDashboardsWidgetsUpdateInputInterval = "monthly"
 )
 
-// AnalyticsDashboardsWidgetUpdateInputMeasure is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.Measure].
-type AnalyticsDashboardsWidgetUpdateInputMeasure string
+// AnalyticsDashboardsWidgetsUpdateInputMeasure is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.Measure].
+type AnalyticsDashboardsWidgetsUpdateInputMeasure string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputMeasure].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputMeasure].
 const (
-	AnalyticsDashboardsWidgetUpdateInputMeasureCount AnalyticsDashboardsWidgetUpdateInputMeasure = "count"
-	AnalyticsDashboardsWidgetUpdateInputMeasureValue AnalyticsDashboardsWidgetUpdateInputMeasure = "value"
+	AnalyticsDashboardsWidgetsUpdateInputMeasureCount AnalyticsDashboardsWidgetsUpdateInputMeasure = "count"
+	AnalyticsDashboardsWidgetsUpdateInputMeasureValue AnalyticsDashboardsWidgetsUpdateInputMeasure = "value"
 )
 
-// AnalyticsDashboardsWidgetUpdateInputReportType is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.ReportType].
-type AnalyticsDashboardsWidgetUpdateInputReportType string
+// AnalyticsDashboardsWidgetsUpdateInputReportType is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.ReportType].
+type AnalyticsDashboardsWidgetsUpdateInputReportType string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputReportType].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputReportType].
 const (
-	AnalyticsDashboardsWidgetUpdateInputReportTypePerformance      AnalyticsDashboardsWidgetUpdateInputReportType = "performance"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeConversion       AnalyticsDashboardsWidgetUpdateInputReportType = "conversion"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeDuration         AnalyticsDashboardsWidgetUpdateInputReportType = "duration"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeProgress         AnalyticsDashboardsWidgetUpdateInputReportType = "progress"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeProducts         AnalyticsDashboardsWidgetUpdateInputReportType = "products"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeTicket           AnalyticsDashboardsWidgetUpdateInputReportType = "ticket"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeCompletion       AnalyticsDashboardsWidgetUpdateInputReportType = "completion"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeOverdue          AnalyticsDashboardsWidgetUpdateInputReportType = "overdue"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeStagetime        AnalyticsDashboardsWidgetUpdateInputReportType = "stagetime"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeFunnel           AnalyticsDashboardsWidgetUpdateInputReportType = "funnel"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeStageConversion  AnalyticsDashboardsWidgetUpdateInputReportType = "stageConversion"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeForecast         AnalyticsDashboardsWidgetUpdateInputReportType = "forecast"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeForecastUpcoming AnalyticsDashboardsWidgetUpdateInputReportType = "forecastUpcoming"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeStageflow        AnalyticsDashboardsWidgetUpdateInputReportType = "stageflow"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeTeamOverview     AnalyticsDashboardsWidgetUpdateInputReportType = "teamOverview"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeFollowup         AnalyticsDashboardsWidgetUpdateInputReportType = "followup"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeLossBreakdown    AnalyticsDashboardsWidgetUpdateInputReportType = "lossBreakdown"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeLeadTime         AnalyticsDashboardsWidgetUpdateInputReportType = "leadTime"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeMeetingHandoff   AnalyticsDashboardsWidgetUpdateInputReportType = "meetingHandoff"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeRecovered        AnalyticsDashboardsWidgetUpdateInputReportType = "recovered"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeCohortProgress   AnalyticsDashboardsWidgetUpdateInputReportType = "cohortProgress"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeCohortOutcome    AnalyticsDashboardsWidgetUpdateInputReportType = "cohortOutcome"
-	AnalyticsDashboardsWidgetUpdateInputReportTypeCohortCycle      AnalyticsDashboardsWidgetUpdateInputReportType = "cohortCycle"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypePerformance      AnalyticsDashboardsWidgetsUpdateInputReportType = "performance"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeConversion       AnalyticsDashboardsWidgetsUpdateInputReportType = "conversion"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeDuration         AnalyticsDashboardsWidgetsUpdateInputReportType = "duration"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeProgress         AnalyticsDashboardsWidgetsUpdateInputReportType = "progress"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeProducts         AnalyticsDashboardsWidgetsUpdateInputReportType = "products"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeTicket           AnalyticsDashboardsWidgetsUpdateInputReportType = "ticket"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeCompletion       AnalyticsDashboardsWidgetsUpdateInputReportType = "completion"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeOverdue          AnalyticsDashboardsWidgetsUpdateInputReportType = "overdue"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeStagetime        AnalyticsDashboardsWidgetsUpdateInputReportType = "stagetime"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeFunnel           AnalyticsDashboardsWidgetsUpdateInputReportType = "funnel"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeStageConversion  AnalyticsDashboardsWidgetsUpdateInputReportType = "stageConversion"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeForecast         AnalyticsDashboardsWidgetsUpdateInputReportType = "forecast"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeForecastUpcoming AnalyticsDashboardsWidgetsUpdateInputReportType = "forecastUpcoming"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeStageflow        AnalyticsDashboardsWidgetsUpdateInputReportType = "stageflow"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeTeamOverview     AnalyticsDashboardsWidgetsUpdateInputReportType = "teamOverview"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeFollowup         AnalyticsDashboardsWidgetsUpdateInputReportType = "followup"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeLossBreakdown    AnalyticsDashboardsWidgetsUpdateInputReportType = "lossBreakdown"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeLeadTime         AnalyticsDashboardsWidgetsUpdateInputReportType = "leadTime"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeMeetingHandoff   AnalyticsDashboardsWidgetsUpdateInputReportType = "meetingHandoff"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeRecovered        AnalyticsDashboardsWidgetsUpdateInputReportType = "recovered"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeCohortProgress   AnalyticsDashboardsWidgetsUpdateInputReportType = "cohortProgress"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeCohortOutcome    AnalyticsDashboardsWidgetsUpdateInputReportType = "cohortOutcome"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeCohortCycle      AnalyticsDashboardsWidgetsUpdateInputReportType = "cohortCycle"
+	AnalyticsDashboardsWidgetsUpdateInputReportTypeUntilReply       AnalyticsDashboardsWidgetsUpdateInputReportType = "untilReply"
 )
 
-// AnalyticsDashboardsWidgetUpdateInputSegmentBy is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.SegmentBy].
-type AnalyticsDashboardsWidgetUpdateInputSegmentBy string
+// AnalyticsDashboardsWidgetsUpdateInputSegmentBy is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.SegmentBy].
+type AnalyticsDashboardsWidgetsUpdateInputSegmentBy string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputSegmentBy].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputSegmentBy].
 const (
-	AnalyticsDashboardsWidgetUpdateInputSegmentByNone                AnalyticsDashboardsWidgetUpdateInputSegmentBy = "none"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByStatus              AnalyticsDashboardsWidgetUpdateInputSegmentBy = "status"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByPipeline            AnalyticsDashboardsWidgetUpdateInputSegmentBy = "pipeline"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByStage               AnalyticsDashboardsWidgetUpdateInputSegmentBy = "stage"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByAttendant           AnalyticsDashboardsWidgetUpdateInputSegmentBy = "attendant"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByScheduler           AnalyticsDashboardsWidgetUpdateInputSegmentBy = "scheduler"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByAppointmentSchedule AnalyticsDashboardsWidgetUpdateInputSegmentBy = "appointmentSchedule"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByTemperature         AnalyticsDashboardsWidgetUpdateInputSegmentBy = "temperature"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByPriority            AnalyticsDashboardsWidgetUpdateInputSegmentBy = "priority"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByType                AnalyticsDashboardsWidgetUpdateInputSegmentBy = "type"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByOrigin              AnalyticsDashboardsWidgetUpdateInputSegmentBy = "origin"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByProduct             AnalyticsDashboardsWidgetUpdateInputSegmentBy = "product"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByLossReason          AnalyticsDashboardsWidgetUpdateInputSegmentBy = "lossReason"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByContactReason       AnalyticsDashboardsWidgetUpdateInputSegmentBy = "contactReason"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByCustomField         AnalyticsDashboardsWidgetUpdateInputSegmentBy = "customField"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByTag                 AnalyticsDashboardsWidgetUpdateInputSegmentBy = "tag"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByCardTag             AnalyticsDashboardsWidgetUpdateInputSegmentBy = "cardTag"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByUtmSource           AnalyticsDashboardsWidgetUpdateInputSegmentBy = "utmSource"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByUtmMedium           AnalyticsDashboardsWidgetUpdateInputSegmentBy = "utmMedium"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByUtmCampaign         AnalyticsDashboardsWidgetUpdateInputSegmentBy = "utmCampaign"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByUtmContent          AnalyticsDashboardsWidgetUpdateInputSegmentBy = "utmContent"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByUtmTerm             AnalyticsDashboardsWidgetUpdateInputSegmentBy = "utmTerm"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByCaptureLink         AnalyticsDashboardsWidgetUpdateInputSegmentBy = "captureLink"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByPaymentMethod       AnalyticsDashboardsWidgetUpdateInputSegmentBy = "paymentMethod"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByRecoveryKind        AnalyticsDashboardsWidgetUpdateInputSegmentBy = "recoveryKind"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByPlatform            AnalyticsDashboardsWidgetUpdateInputSegmentBy = "platform"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByAffiliate           AnalyticsDashboardsWidgetUpdateInputSegmentBy = "affiliate"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByDomain              AnalyticsDashboardsWidgetUpdateInputSegmentBy = "domain"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByPage                AnalyticsDashboardsWidgetUpdateInputSegmentBy = "page"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByFunnel              AnalyticsDashboardsWidgetUpdateInputSegmentBy = "funnel"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByQuiz                AnalyticsDashboardsWidgetUpdateInputSegmentBy = "quiz"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByWebinar             AnalyticsDashboardsWidgetUpdateInputSegmentBy = "webinar"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByChatbot             AnalyticsDashboardsWidgetUpdateInputSegmentBy = "chatbot"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByFlow                AnalyticsDashboardsWidgetUpdateInputSegmentBy = "flow"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByBroadcast           AnalyticsDashboardsWidgetUpdateInputSegmentBy = "broadcast"
-	AnalyticsDashboardsWidgetUpdateInputSegmentByChannel             AnalyticsDashboardsWidgetUpdateInputSegmentBy = "channel"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByNone                AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "none"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByStatus              AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "status"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByPipeline            AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "pipeline"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByStage               AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "stage"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByAttendant           AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "attendant"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByScheduler           AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "scheduler"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByAppointmentSchedule AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "appointmentSchedule"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByTemperature         AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "temperature"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByPriority            AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "priority"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByType                AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "type"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByOrigin              AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "origin"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByProduct             AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "product"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByLossReason          AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "lossReason"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByContactReason       AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "contactReason"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByCustomField         AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "customField"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByTag                 AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "tag"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByCardTag             AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "cardTag"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByUtmSource           AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "utmSource"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByUtmMedium           AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "utmMedium"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByUtmCampaign         AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "utmCampaign"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByUtmContent          AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "utmContent"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByUtmTerm             AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "utmTerm"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByCaptureLink         AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "captureLink"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByPaymentMethod       AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "paymentMethod"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByRecoveryKind        AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "recoveryKind"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByPlatform            AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "platform"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByAffiliate           AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "affiliate"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByDomain              AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "domain"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByPage                AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "page"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByFunnel              AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "funnel"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByQuiz                AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "quiz"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByWebinar             AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "webinar"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByChatbot             AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "chatbot"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByFlow                AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "flow"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByBroadcast           AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "broadcast"
+	AnalyticsDashboardsWidgetsUpdateInputSegmentByChannel             AnalyticsDashboardsWidgetsUpdateInputSegmentBy = "channel"
 )
 
-// AnalyticsDashboardsWidgetUpdateInputSize is the type of [AnalyticsDashboardsWidgetUpdateInput.Size].
-type AnalyticsDashboardsWidgetUpdateInputSize struct {
+// AnalyticsDashboardsWidgetsUpdateInputSize is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.Size].
+type AnalyticsDashboardsWidgetsUpdateInputSize struct {
 	W int64 `json:"w"`
 	H int64 `json:"h"`
 }
 
-// AnalyticsDashboardsWidgetUpdateInputViewBy is the type of
-// [AnalyticsDashboardsWidgetUpdateInput.ViewBy].
-type AnalyticsDashboardsWidgetUpdateInputViewBy string
+// AnalyticsDashboardsWidgetsUpdateInputViewBy is the type of
+// [AnalyticsDashboardsWidgetsUpdateInput.ViewBy].
+type AnalyticsDashboardsWidgetsUpdateInputViewBy string
 
-// Values of [AnalyticsDashboardsWidgetUpdateInputViewBy].
+// Values of [AnalyticsDashboardsWidgetsUpdateInputViewBy].
 const (
-	AnalyticsDashboardsWidgetUpdateInputViewByCreated         AnalyticsDashboardsWidgetUpdateInputViewBy = "created"
-	AnalyticsDashboardsWidgetUpdateInputViewByWon             AnalyticsDashboardsWidgetUpdateInputViewBy = "won"
-	AnalyticsDashboardsWidgetUpdateInputViewByLost            AnalyticsDashboardsWidgetUpdateInputViewBy = "lost"
-	AnalyticsDashboardsWidgetUpdateInputViewByScheduled       AnalyticsDashboardsWidgetUpdateInputViewBy = "scheduled"
-	AnalyticsDashboardsWidgetUpdateInputViewByAwaiting        AnalyticsDashboardsWidgetUpdateInputViewBy = "awaiting"
-	AnalyticsDashboardsWidgetUpdateInputViewByHeld            AnalyticsDashboardsWidgetUpdateInputViewBy = "held"
-	AnalyticsDashboardsWidgetUpdateInputViewByNoShow          AnalyticsDashboardsWidgetUpdateInputViewBy = "noShow"
-	AnalyticsDashboardsWidgetUpdateInputViewByMeetingOutcomes AnalyticsDashboardsWidgetUpdateInputViewBy = "meetingOutcomes"
-	AnalyticsDashboardsWidgetUpdateInputViewByPaid            AnalyticsDashboardsWidgetUpdateInputViewBy = "paid"
-	AnalyticsDashboardsWidgetUpdateInputViewByRefunded        AnalyticsDashboardsWidgetUpdateInputViewBy = "refunded"
-	AnalyticsDashboardsWidgetUpdateInputViewByChargedBack     AnalyticsDashboardsWidgetUpdateInputViewBy = "chargedBack"
-	AnalyticsDashboardsWidgetUpdateInputViewByCanceled        AnalyticsDashboardsWidgetUpdateInputViewBy = "canceled"
-	AnalyticsDashboardsWidgetUpdateInputViewByFailed          AnalyticsDashboardsWidgetUpdateInputViewBy = "failed"
-	AnalyticsDashboardsWidgetUpdateInputViewByPending         AnalyticsDashboardsWidgetUpdateInputViewBy = "pending"
-	AnalyticsDashboardsWidgetUpdateInputViewByAbandoned       AnalyticsDashboardsWidgetUpdateInputViewBy = "abandoned"
-	AnalyticsDashboardsWidgetUpdateInputViewByCommission      AnalyticsDashboardsWidgetUpdateInputViewBy = "commission"
-	AnalyticsDashboardsWidgetUpdateInputViewByVisitors        AnalyticsDashboardsWidgetUpdateInputViewBy = "visitors"
-	AnalyticsDashboardsWidgetUpdateInputViewBySessions        AnalyticsDashboardsWidgetUpdateInputViewBy = "sessions"
-	AnalyticsDashboardsWidgetUpdateInputViewByConverted       AnalyticsDashboardsWidgetUpdateInputViewBy = "converted"
-	AnalyticsDashboardsWidgetUpdateInputViewByStarted         AnalyticsDashboardsWidgetUpdateInputViewBy = "started"
-	AnalyticsDashboardsWidgetUpdateInputViewByFinished        AnalyticsDashboardsWidgetUpdateInputViewBy = "finished"
-	AnalyticsDashboardsWidgetUpdateInputViewBySent            AnalyticsDashboardsWidgetUpdateInputViewBy = "sent"
-	AnalyticsDashboardsWidgetUpdateInputViewByDelivered       AnalyticsDashboardsWidgetUpdateInputViewBy = "delivered"
-	AnalyticsDashboardsWidgetUpdateInputViewByOpened          AnalyticsDashboardsWidgetUpdateInputViewBy = "opened"
-	AnalyticsDashboardsWidgetUpdateInputViewByClicked         AnalyticsDashboardsWidgetUpdateInputViewBy = "clicked"
-	AnalyticsDashboardsWidgetUpdateInputViewByReceived        AnalyticsDashboardsWidgetUpdateInputViewBy = "received"
-	AnalyticsDashboardsWidgetUpdateInputViewByResolved        AnalyticsDashboardsWidgetUpdateInputViewBy = "resolved"
-	AnalyticsDashboardsWidgetUpdateInputViewByPublished       AnalyticsDashboardsWidgetUpdateInputViewBy = "published"
-	AnalyticsDashboardsWidgetUpdateInputViewByViews           AnalyticsDashboardsWidgetUpdateInputViewBy = "views"
-	AnalyticsDashboardsWidgetUpdateInputViewByEngagement      AnalyticsDashboardsWidgetUpdateInputViewBy = "engagement"
-	AnalyticsDashboardsWidgetUpdateInputViewByInteractions    AnalyticsDashboardsWidgetUpdateInputViewBy = "interactions"
-	AnalyticsDashboardsWidgetUpdateInputViewByFirstResponse   AnalyticsDashboardsWidgetUpdateInputViewBy = "firstResponse"
-	AnalyticsDashboardsWidgetUpdateInputViewByResolution      AnalyticsDashboardsWidgetUpdateInputViewBy = "resolution"
-	AnalyticsDashboardsWidgetUpdateInputViewByQueueWait       AnalyticsDashboardsWidgetUpdateInputViewBy = "queueWait"
+	AnalyticsDashboardsWidgetsUpdateInputViewByCreated           AnalyticsDashboardsWidgetsUpdateInputViewBy = "created"
+	AnalyticsDashboardsWidgetsUpdateInputViewByWon               AnalyticsDashboardsWidgetsUpdateInputViewBy = "won"
+	AnalyticsDashboardsWidgetsUpdateInputViewByLost              AnalyticsDashboardsWidgetsUpdateInputViewBy = "lost"
+	AnalyticsDashboardsWidgetsUpdateInputViewByScheduled         AnalyticsDashboardsWidgetsUpdateInputViewBy = "scheduled"
+	AnalyticsDashboardsWidgetsUpdateInputViewByAwaiting          AnalyticsDashboardsWidgetsUpdateInputViewBy = "awaiting"
+	AnalyticsDashboardsWidgetsUpdateInputViewByHeld              AnalyticsDashboardsWidgetsUpdateInputViewBy = "held"
+	AnalyticsDashboardsWidgetsUpdateInputViewByNoShow            AnalyticsDashboardsWidgetsUpdateInputViewBy = "noShow"
+	AnalyticsDashboardsWidgetsUpdateInputViewByMeetingOutcomes   AnalyticsDashboardsWidgetsUpdateInputViewBy = "meetingOutcomes"
+	AnalyticsDashboardsWidgetsUpdateInputViewByPaid              AnalyticsDashboardsWidgetsUpdateInputViewBy = "paid"
+	AnalyticsDashboardsWidgetsUpdateInputViewByRefunded          AnalyticsDashboardsWidgetsUpdateInputViewBy = "refunded"
+	AnalyticsDashboardsWidgetsUpdateInputViewByChargedBack       AnalyticsDashboardsWidgetsUpdateInputViewBy = "chargedBack"
+	AnalyticsDashboardsWidgetsUpdateInputViewByCanceled          AnalyticsDashboardsWidgetsUpdateInputViewBy = "canceled"
+	AnalyticsDashboardsWidgetsUpdateInputViewByFailed            AnalyticsDashboardsWidgetsUpdateInputViewBy = "failed"
+	AnalyticsDashboardsWidgetsUpdateInputViewByPending           AnalyticsDashboardsWidgetsUpdateInputViewBy = "pending"
+	AnalyticsDashboardsWidgetsUpdateInputViewByAbandoned         AnalyticsDashboardsWidgetsUpdateInputViewBy = "abandoned"
+	AnalyticsDashboardsWidgetsUpdateInputViewByCommission        AnalyticsDashboardsWidgetsUpdateInputViewBy = "commission"
+	AnalyticsDashboardsWidgetsUpdateInputViewByVisitors          AnalyticsDashboardsWidgetsUpdateInputViewBy = "visitors"
+	AnalyticsDashboardsWidgetsUpdateInputViewBySessions          AnalyticsDashboardsWidgetsUpdateInputViewBy = "sessions"
+	AnalyticsDashboardsWidgetsUpdateInputViewByConverted         AnalyticsDashboardsWidgetsUpdateInputViewBy = "converted"
+	AnalyticsDashboardsWidgetsUpdateInputViewByStarted           AnalyticsDashboardsWidgetsUpdateInputViewBy = "started"
+	AnalyticsDashboardsWidgetsUpdateInputViewByFinished          AnalyticsDashboardsWidgetsUpdateInputViewBy = "finished"
+	AnalyticsDashboardsWidgetsUpdateInputViewBySent              AnalyticsDashboardsWidgetsUpdateInputViewBy = "sent"
+	AnalyticsDashboardsWidgetsUpdateInputViewByDelivered         AnalyticsDashboardsWidgetsUpdateInputViewBy = "delivered"
+	AnalyticsDashboardsWidgetsUpdateInputViewByOpened            AnalyticsDashboardsWidgetsUpdateInputViewBy = "opened"
+	AnalyticsDashboardsWidgetsUpdateInputViewByClicked           AnalyticsDashboardsWidgetsUpdateInputViewBy = "clicked"
+	AnalyticsDashboardsWidgetsUpdateInputViewByReceived          AnalyticsDashboardsWidgetsUpdateInputViewBy = "received"
+	AnalyticsDashboardsWidgetsUpdateInputViewByResolved          AnalyticsDashboardsWidgetsUpdateInputViewBy = "resolved"
+	AnalyticsDashboardsWidgetsUpdateInputViewByPublished         AnalyticsDashboardsWidgetsUpdateInputViewBy = "published"
+	AnalyticsDashboardsWidgetsUpdateInputViewByViews             AnalyticsDashboardsWidgetsUpdateInputViewBy = "views"
+	AnalyticsDashboardsWidgetsUpdateInputViewByEngagement        AnalyticsDashboardsWidgetsUpdateInputViewBy = "engagement"
+	AnalyticsDashboardsWidgetsUpdateInputViewByInteractions      AnalyticsDashboardsWidgetsUpdateInputViewBy = "interactions"
+	AnalyticsDashboardsWidgetsUpdateInputViewByFirstResponse     AnalyticsDashboardsWidgetsUpdateInputViewBy = "firstResponse"
+	AnalyticsDashboardsWidgetsUpdateInputViewByResolution        AnalyticsDashboardsWidgetsUpdateInputViewBy = "resolution"
+	AnalyticsDashboardsWidgetsUpdateInputViewByQueueWait         AnalyticsDashboardsWidgetsUpdateInputViewBy = "queueWait"
+	AnalyticsDashboardsWidgetsUpdateInputViewByReplyInterval     AnalyticsDashboardsWidgetsUpdateInputViewBy = "replyInterval"
+	AnalyticsDashboardsWidgetsUpdateInputViewByUntilReply        AnalyticsDashboardsWidgetsUpdateInputViewBy = "untilReply"
+	AnalyticsDashboardsWidgetsUpdateInputViewByCreditsUntilReply AnalyticsDashboardsWidgetsUpdateInputViewBy = "creditsUntilReply"
+	AnalyticsDashboardsWidgetsUpdateInputViewByUnanswered        AnalyticsDashboardsWidgetsUpdateInputViewBy = "unanswered"
 )
-
-// AnalyticsRecordsDrilldownInput is the request body of
-// [AnalyticsDashboardsService.AnalyticsRecordsDrilldown].
-type AnalyticsRecordsDrilldownInput struct {
-	Config     AnalyticsRecordsDrilldownInputConfig `json:"config"`
-	BucketKey  *string                              `json:"bucketKey,omitzero"`
-	SegmentKey *string                              `json:"segmentKey,omitzero"`
-	Page       *int64                               `json:"page,omitzero"`
-	PerPage    *int64                               `json:"perPage,omitzero"`
-}
-
-// AnalyticsRecordsDrilldownInputConfig is the type of [AnalyticsRecordsDrilldownInput.Config].
-type AnalyticsRecordsDrilldownInputConfig struct {
-	Entity                    AnalyticsRecordsDrilldownInputConfigEntity                 `json:"entity"`
-	ReportType                AnalyticsRecordsDrilldownInputConfigReportType             `json:"reportType"`
-	Measure                   AnalyticsRecordsDrilldownInputConfigMeasure                `json:"measure"`
-	ViewBy                    AnalyticsRecordsDrilldownInputConfigViewBy                 `json:"viewBy"`
-	Interval                  AnalyticsRecordsDrilldownInputConfigInterval               `json:"interval"`
-	SegmentBy                 AnalyticsRecordsDrilldownInputConfigSegmentBy              `json:"segmentBy"`
-	ChartType                 AnalyticsRecordsDrilldownInputConfigChartType              `json:"chartType"`
-	Filters                   AnalyticsRecordsDrilldownInputConfigFilters                `json:"filters"`
-	Conditions                []AnalyticsRecordsDrilldownInputConfigConditionsItem       `json:"conditions,omitzero"`
-	CutStageID                *string                                                    `json:"cutStageId,omitzero"`
-	ObjectID                  *string                                                    `json:"objectId,omitzero"`
-	CustomFieldID             *string                                                    `json:"customFieldId,omitzero"`
-	TagIDs                    []string                                                   `json:"tagIds,omitzero"`
-	SegmentOverTime           *bool                                                      `json:"segmentOverTime,omitzero"`
-	ScopeCustomFieldID        *string                                                    `json:"scopeCustomFieldId,omitzero"`
-	ScopeCustomFieldValue     *string                                                    `json:"scopeCustomFieldValue,omitzero"`
-	ScopeTagIDs               []string                                                   `json:"scopeTagIds,omitzero"`
-	ScopeCardCustomFieldID    *string                                                    `json:"scopeCardCustomFieldId,omitzero"`
-	ScopeCardCustomFieldValue *string                                                    `json:"scopeCardCustomFieldValue,omitzero"`
-	ScopeCardTagIDs           []string                                                   `json:"scopeCardTagIds,omitzero"`
-	MeetingAttendantField     *AnalyticsRecordsDrilldownInputConfigMeetingAttendantField `json:"meetingAttendantField,omitzero"`
-	DistinctByOpportunity     *bool                                                      `json:"distinctByOpportunity,omitzero"`
-	SelfBookedOnly            *bool                                                      `json:"selfBookedOnly,omitzero"`
-	LeadTimeDateFrom          Nullable[time.Time]                                        `json:"leadTimeDateFrom,omitzero"`
-	LeadTimeDateTo            Nullable[time.Time]                                        `json:"leadTimeDateTo,omitzero"`
-	BusinessDaysOnly          *bool                                                      `json:"businessDaysOnly,omitzero"`
-	TeamFieldColumns          []AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem `json:"teamFieldColumns,omitzero"`
-}
-
-// AnalyticsRecordsDrilldownInputConfigChartType is the type of
-// [AnalyticsRecordsDrilldownInputConfig.ChartType].
-type AnalyticsRecordsDrilldownInputConfigChartType string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigChartType].
-const (
-	AnalyticsRecordsDrilldownInputConfigChartTypeBar      AnalyticsRecordsDrilldownInputConfigChartType = "bar"
-	AnalyticsRecordsDrilldownInputConfigChartTypeLine     AnalyticsRecordsDrilldownInputConfigChartType = "line"
-	AnalyticsRecordsDrilldownInputConfigChartTypePie      AnalyticsRecordsDrilldownInputConfigChartType = "pie"
-	AnalyticsRecordsDrilldownInputConfigChartTypeNumber   AnalyticsRecordsDrilldownInputConfigChartType = "number"
-	AnalyticsRecordsDrilldownInputConfigChartTypeRanking  AnalyticsRecordsDrilldownInputConfigChartType = "ranking"
-	AnalyticsRecordsDrilldownInputConfigChartTypeList     AnalyticsRecordsDrilldownInputConfigChartType = "list"
-	AnalyticsRecordsDrilldownInputConfigChartTypeTable    AnalyticsRecordsDrilldownInputConfigChartType = "table"
-	AnalyticsRecordsDrilldownInputConfigChartTypePace     AnalyticsRecordsDrilldownInputConfigChartType = "pace"
-	AnalyticsRecordsDrilldownInputConfigChartTypeTracking AnalyticsRecordsDrilldownInputConfigChartType = "tracking"
-)
-
-// AnalyticsRecordsDrilldownInputConfigConditionsItem is an element of
-// [AnalyticsRecordsDrilldownInputConfig.Conditions].
-type AnalyticsRecordsDrilldownInputConfigConditionsItem struct {
-	ID            Nullable[string]                                           `json:"id,omitzero"`
-	Field         AnalyticsRecordsDrilldownInputConfigConditionsItemField    `json:"field"`
-	Operator      AnalyticsRecordsDrilldownInputConfigConditionsItemOperator `json:"operator"`
-	Negation      bool                                                       `json:"negation"`
-	ParentID      Nullable[string]                                           `json:"parentId,omitzero"`
-	Order         int64                                                      `json:"order"`
-	ValueString   Nullable[string]                                           `json:"valueString,omitzero"`
-	ValueNumber   Nullable[float64]                                          `json:"valueNumber,omitzero"`
-	ValueDate     Nullable[string]                                           `json:"valueDate,omitzero"`
-	ValueBool     Nullable[bool]                                             `json:"valueBool,omitzero"`
-	ValueUUID     Nullable[string]                                           `json:"valueUuid,omitzero"`
-	CustomFieldID Nullable[string]                                           `json:"customFieldId,omitzero"`
-}
-
-// AnalyticsRecordsDrilldownInputConfigConditionsItemField is the type of
-// [AnalyticsRecordsDrilldownInputConfigConditionsItem.Field].
-type AnalyticsRecordsDrilldownInputConfigConditionsItemField string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigConditionsItemField].
-const (
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTitle                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "title"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldValue                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "value"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldIsRecurring            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "isRecurring"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldPriority               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "priority"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTemperature            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "temperature"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldStatus                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "status"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldOrigin                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "origin"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldReferredBy             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "referredBy"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLossReason             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "lossReason"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCreatedAt              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "createdAt"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldUpdatedAt              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "updatedAt"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldExpectedClosingDate    AnalyticsRecordsDrilldownInputConfigConditionsItemField = "expectedClosingDate"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldWonAt                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "wonAt"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLostAt                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "lostAt"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldProductID              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "productId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldOfferID                AnalyticsRecordsDrilldownInputConfigConditionsItemField = "offerId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldPipelineID             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "pipelineId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldStageID                AnalyticsRecordsDrilldownInputConfigConditionsItemField = "stageId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldFunnelID               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "funnelId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldResponsibleAttendantID AnalyticsRecordsDrilldownInputConfigConditionsItemField = "responsibleAttendantId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTagID                  AnalyticsRecordsDrilldownInputConfigConditionsItemField = "tagId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldAttendantID            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "attendantId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCompanyID              AnalyticsRecordsDrilldownInputConfigConditionsItemField = "companyId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLeadID                 AnalyticsRecordsDrilldownInputConfigConditionsItemField = "leadId"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldText        AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldText"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldNumber      AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldNumber"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldDate        AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldDate"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldBoolean     AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldBoolean"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldCustomFieldSelect      AnalyticsRecordsDrilldownInputConfigConditionsItemField = "customFieldSelect"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTaskStatus             AnalyticsRecordsDrilldownInputConfigConditionsItemField = "taskStatus"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTaskType               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "taskType"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldTaskDeadline           AnalyticsRecordsDrilldownInputConfigConditionsItemField = "taskDeadline"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldHasOpenTask            AnalyticsRecordsDrilldownInputConfigConditionsItemField = "hasOpenTask"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldChildren               AnalyticsRecordsDrilldownInputConfigConditionsItemField = "children"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemFieldLead                   AnalyticsRecordsDrilldownInputConfigConditionsItemField = "lead"
-)
-
-// AnalyticsRecordsDrilldownInputConfigConditionsItemOperator is the type of
-// [AnalyticsRecordsDrilldownInputConfigConditionsItem.Operator].
-type AnalyticsRecordsDrilldownInputConfigConditionsItemOperator string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigConditionsItemOperator].
-const (
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorChildrenAnd        AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "childrenAnd"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorChildrenOr         AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "childrenOr"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorEquals             AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "equals"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorContains           AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "contains"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorStartsWith         AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "startsWith"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorEndsWith           AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "endsWith"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorGreaterThan        AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "greaterThan"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorGreaterThanOrEqual AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "greaterThanOrEqual"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorLessThan           AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "lessThan"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorLessThanOrEqual    AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "lessThanOrEqual"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorIn                 AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "in"
-	AnalyticsRecordsDrilldownInputConfigConditionsItemOperatorIsNotEmpty         AnalyticsRecordsDrilldownInputConfigConditionsItemOperator = "isNotEmpty"
-)
-
-// AnalyticsRecordsDrilldownInputConfigEntity is the type of
-// [AnalyticsRecordsDrilldownInputConfig.Entity].
-type AnalyticsRecordsDrilldownInputConfigEntity string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigEntity].
-const (
-	AnalyticsRecordsDrilldownInputConfigEntityDeal             AnalyticsRecordsDrilldownInputConfigEntity = "deal"
-	AnalyticsRecordsDrilldownInputConfigEntityActivity         AnalyticsRecordsDrilldownInputConfigEntity = "activity"
-	AnalyticsRecordsDrilldownInputConfigEntityLead             AnalyticsRecordsDrilldownInputConfigEntity = "lead"
-	AnalyticsRecordsDrilldownInputConfigEntityMeeting          AnalyticsRecordsDrilldownInputConfigEntity = "meeting"
-	AnalyticsRecordsDrilldownInputConfigEntitySale             AnalyticsRecordsDrilldownInputConfigEntity = "sale"
-	AnalyticsRecordsDrilldownInputConfigEntitySubscription     AnalyticsRecordsDrilldownInputConfigEntity = "subscription"
-	AnalyticsRecordsDrilldownInputConfigEntitySalesRecovery    AnalyticsRecordsDrilldownInputConfigEntity = "salesRecovery"
-	AnalyticsRecordsDrilldownInputConfigEntityExternalRecovery AnalyticsRecordsDrilldownInputConfigEntity = "externalRecovery"
-	AnalyticsRecordsDrilldownInputConfigEntityExternalSale     AnalyticsRecordsDrilldownInputConfigEntity = "externalSale"
-	AnalyticsRecordsDrilldownInputConfigEntityAffiliate        AnalyticsRecordsDrilldownInputConfigEntity = "affiliate"
-	AnalyticsRecordsDrilldownInputConfigEntityVisitor          AnalyticsRecordsDrilldownInputConfigEntity = "visitor"
-	AnalyticsRecordsDrilldownInputConfigEntityFlow             AnalyticsRecordsDrilldownInputConfigEntity = "flow"
-	AnalyticsRecordsDrilldownInputConfigEntityBroadcast        AnalyticsRecordsDrilldownInputConfigEntity = "broadcast"
-	AnalyticsRecordsDrilldownInputConfigEntityMessage          AnalyticsRecordsDrilldownInputConfigEntity = "message"
-	AnalyticsRecordsDrilldownInputConfigEntityLivechat         AnalyticsRecordsDrilldownInputConfigEntity = "livechat"
-	AnalyticsRecordsDrilldownInputConfigEntityAttendance       AnalyticsRecordsDrilldownInputConfigEntity = "attendance"
-	AnalyticsRecordsDrilldownInputConfigEntityCall             AnalyticsRecordsDrilldownInputConfigEntity = "call"
-	AnalyticsRecordsDrilldownInputConfigEntitySocial           AnalyticsRecordsDrilldownInputConfigEntity = "social"
-	AnalyticsRecordsDrilldownInputConfigEntityCustomObject     AnalyticsRecordsDrilldownInputConfigEntity = "customObject"
-)
-
-// AnalyticsRecordsDrilldownInputConfigFilters is the type of
-// [AnalyticsRecordsDrilldownInputConfig.Filters].
-type AnalyticsRecordsDrilldownInputConfigFilters struct {
-	PipelineIDs  []string                                                      `json:"pipelineIds,omitzero"`
-	StageIDs     []string                                                      `json:"stageIds,omitzero"`
-	AttendantIDs []string                                                      `json:"attendantIds,omitzero"`
-	Statuses     []AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem     `json:"statuses,omitzero"`
-	Temperatures []AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem `json:"temperatures,omitzero"`
-	Priorities   []AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem   `json:"priorities,omitzero"`
-	TaskStatuses []AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem `json:"taskStatuses,omitzero"`
-	TaskTypes    []AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem    `json:"taskTypes,omitzero"`
-	Origins      []string                                                      `json:"origins,omitzero"`
-	DateFrom     Nullable[time.Time]                                           `json:"dateFrom,omitzero"`
-	DateTo       Nullable[time.Time]                                           `json:"dateTo,omitzero"`
-	ValueMin     Nullable[int64]                                               `json:"valueMin,omitzero"`
-	ValueMax     Nullable[int64]                                               `json:"valueMax,omitzero"`
-}
-
-// AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem is an element of
-// [AnalyticsRecordsDrilldownInputConfigFilters.Priorities].
-type AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem].
-const (
-	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemHigh   AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "high"
-	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemMedium AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "medium"
-	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemLow    AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "low"
-	AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItemNone   AnalyticsRecordsDrilldownInputConfigFiltersPrioritiesItem = "none"
-)
-
-// AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem is an element of
-// [AnalyticsRecordsDrilldownInputConfigFilters.Statuses].
-type AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem].
-const (
-	AnalyticsRecordsDrilldownInputConfigFiltersStatusesItemOpen AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem = "open"
-	AnalyticsRecordsDrilldownInputConfigFiltersStatusesItemWon  AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem = "won"
-	AnalyticsRecordsDrilldownInputConfigFiltersStatusesItemLost AnalyticsRecordsDrilldownInputConfigFiltersStatusesItem = "lost"
-)
-
-// AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem is an element of
-// [AnalyticsRecordsDrilldownInputConfigFilters.TaskStatuses].
-type AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem].
-const (
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemOpen      AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "open"
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemScheduled AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "scheduled"
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemResolved  AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "resolved"
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItemCancelled AnalyticsRecordsDrilldownInputConfigFiltersTaskStatusesItem = "cancelled"
-)
-
-// AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem is an element of
-// [AnalyticsRecordsDrilldownInputConfigFilters.TaskTypes].
-type AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem].
-const (
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemCall     AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "call"
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemWhatsapp AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "whatsapp"
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemMeeting  AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "meeting"
-	AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItemTask     AnalyticsRecordsDrilldownInputConfigFiltersTaskTypesItem = "task"
-)
-
-// AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem is an element of
-// [AnalyticsRecordsDrilldownInputConfigFilters.Temperatures].
-type AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem].
-const (
-	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemHot    AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "hot"
-	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemWarm   AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "warm"
-	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemCold   AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "cold"
-	AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItemFrozen AnalyticsRecordsDrilldownInputConfigFiltersTemperaturesItem = "frozen"
-)
-
-// AnalyticsRecordsDrilldownInputConfigInterval is the type of
-// [AnalyticsRecordsDrilldownInputConfig.Interval].
-type AnalyticsRecordsDrilldownInputConfigInterval string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigInterval].
-const (
-	AnalyticsRecordsDrilldownInputConfigIntervalDaily   AnalyticsRecordsDrilldownInputConfigInterval = "daily"
-	AnalyticsRecordsDrilldownInputConfigIntervalWeekly  AnalyticsRecordsDrilldownInputConfigInterval = "weekly"
-	AnalyticsRecordsDrilldownInputConfigIntervalMonthly AnalyticsRecordsDrilldownInputConfigInterval = "monthly"
-)
-
-// AnalyticsRecordsDrilldownInputConfigMeasure is the type of
-// [AnalyticsRecordsDrilldownInputConfig.Measure].
-type AnalyticsRecordsDrilldownInputConfigMeasure string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigMeasure].
-const (
-	AnalyticsRecordsDrilldownInputConfigMeasureCount AnalyticsRecordsDrilldownInputConfigMeasure = "count"
-	AnalyticsRecordsDrilldownInputConfigMeasureValue AnalyticsRecordsDrilldownInputConfigMeasure = "value"
-)
-
-// AnalyticsRecordsDrilldownInputConfigMeetingAttendantField is the type of
-// [AnalyticsRecordsDrilldownInputConfig.MeetingAttendantField].
-type AnalyticsRecordsDrilldownInputConfigMeetingAttendantField string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigMeetingAttendantField].
-const (
-	AnalyticsRecordsDrilldownInputConfigMeetingAttendantFieldAttendant AnalyticsRecordsDrilldownInputConfigMeetingAttendantField = "attendant"
-	AnalyticsRecordsDrilldownInputConfigMeetingAttendantFieldScheduler AnalyticsRecordsDrilldownInputConfigMeetingAttendantField = "scheduler"
-)
-
-// AnalyticsRecordsDrilldownInputConfigReportType is the type of
-// [AnalyticsRecordsDrilldownInputConfig.ReportType].
-type AnalyticsRecordsDrilldownInputConfigReportType string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigReportType].
-const (
-	AnalyticsRecordsDrilldownInputConfigReportTypePerformance      AnalyticsRecordsDrilldownInputConfigReportType = "performance"
-	AnalyticsRecordsDrilldownInputConfigReportTypeConversion       AnalyticsRecordsDrilldownInputConfigReportType = "conversion"
-	AnalyticsRecordsDrilldownInputConfigReportTypeDuration         AnalyticsRecordsDrilldownInputConfigReportType = "duration"
-	AnalyticsRecordsDrilldownInputConfigReportTypeProgress         AnalyticsRecordsDrilldownInputConfigReportType = "progress"
-	AnalyticsRecordsDrilldownInputConfigReportTypeProducts         AnalyticsRecordsDrilldownInputConfigReportType = "products"
-	AnalyticsRecordsDrilldownInputConfigReportTypeTicket           AnalyticsRecordsDrilldownInputConfigReportType = "ticket"
-	AnalyticsRecordsDrilldownInputConfigReportTypeCompletion       AnalyticsRecordsDrilldownInputConfigReportType = "completion"
-	AnalyticsRecordsDrilldownInputConfigReportTypeOverdue          AnalyticsRecordsDrilldownInputConfigReportType = "overdue"
-	AnalyticsRecordsDrilldownInputConfigReportTypeStagetime        AnalyticsRecordsDrilldownInputConfigReportType = "stagetime"
-	AnalyticsRecordsDrilldownInputConfigReportTypeFunnel           AnalyticsRecordsDrilldownInputConfigReportType = "funnel"
-	AnalyticsRecordsDrilldownInputConfigReportTypeStageConversion  AnalyticsRecordsDrilldownInputConfigReportType = "stageConversion"
-	AnalyticsRecordsDrilldownInputConfigReportTypeForecast         AnalyticsRecordsDrilldownInputConfigReportType = "forecast"
-	AnalyticsRecordsDrilldownInputConfigReportTypeForecastUpcoming AnalyticsRecordsDrilldownInputConfigReportType = "forecastUpcoming"
-	AnalyticsRecordsDrilldownInputConfigReportTypeStageflow        AnalyticsRecordsDrilldownInputConfigReportType = "stageflow"
-	AnalyticsRecordsDrilldownInputConfigReportTypeTeamOverview     AnalyticsRecordsDrilldownInputConfigReportType = "teamOverview"
-	AnalyticsRecordsDrilldownInputConfigReportTypeFollowup         AnalyticsRecordsDrilldownInputConfigReportType = "followup"
-	AnalyticsRecordsDrilldownInputConfigReportTypeLossBreakdown    AnalyticsRecordsDrilldownInputConfigReportType = "lossBreakdown"
-	AnalyticsRecordsDrilldownInputConfigReportTypeLeadTime         AnalyticsRecordsDrilldownInputConfigReportType = "leadTime"
-	AnalyticsRecordsDrilldownInputConfigReportTypeMeetingHandoff   AnalyticsRecordsDrilldownInputConfigReportType = "meetingHandoff"
-	AnalyticsRecordsDrilldownInputConfigReportTypeRecovered        AnalyticsRecordsDrilldownInputConfigReportType = "recovered"
-	AnalyticsRecordsDrilldownInputConfigReportTypeCohortProgress   AnalyticsRecordsDrilldownInputConfigReportType = "cohortProgress"
-	AnalyticsRecordsDrilldownInputConfigReportTypeCohortOutcome    AnalyticsRecordsDrilldownInputConfigReportType = "cohortOutcome"
-	AnalyticsRecordsDrilldownInputConfigReportTypeCohortCycle      AnalyticsRecordsDrilldownInputConfigReportType = "cohortCycle"
-)
-
-// AnalyticsRecordsDrilldownInputConfigSegmentBy is the type of
-// [AnalyticsRecordsDrilldownInputConfig.SegmentBy].
-type AnalyticsRecordsDrilldownInputConfigSegmentBy string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigSegmentBy].
-const (
-	AnalyticsRecordsDrilldownInputConfigSegmentByNone                AnalyticsRecordsDrilldownInputConfigSegmentBy = "none"
-	AnalyticsRecordsDrilldownInputConfigSegmentByStatus              AnalyticsRecordsDrilldownInputConfigSegmentBy = "status"
-	AnalyticsRecordsDrilldownInputConfigSegmentByPipeline            AnalyticsRecordsDrilldownInputConfigSegmentBy = "pipeline"
-	AnalyticsRecordsDrilldownInputConfigSegmentByStage               AnalyticsRecordsDrilldownInputConfigSegmentBy = "stage"
-	AnalyticsRecordsDrilldownInputConfigSegmentByAttendant           AnalyticsRecordsDrilldownInputConfigSegmentBy = "attendant"
-	AnalyticsRecordsDrilldownInputConfigSegmentByScheduler           AnalyticsRecordsDrilldownInputConfigSegmentBy = "scheduler"
-	AnalyticsRecordsDrilldownInputConfigSegmentByAppointmentSchedule AnalyticsRecordsDrilldownInputConfigSegmentBy = "appointmentSchedule"
-	AnalyticsRecordsDrilldownInputConfigSegmentByTemperature         AnalyticsRecordsDrilldownInputConfigSegmentBy = "temperature"
-	AnalyticsRecordsDrilldownInputConfigSegmentByPriority            AnalyticsRecordsDrilldownInputConfigSegmentBy = "priority"
-	AnalyticsRecordsDrilldownInputConfigSegmentByType                AnalyticsRecordsDrilldownInputConfigSegmentBy = "type"
-	AnalyticsRecordsDrilldownInputConfigSegmentByOrigin              AnalyticsRecordsDrilldownInputConfigSegmentBy = "origin"
-	AnalyticsRecordsDrilldownInputConfigSegmentByProduct             AnalyticsRecordsDrilldownInputConfigSegmentBy = "product"
-	AnalyticsRecordsDrilldownInputConfigSegmentByLossReason          AnalyticsRecordsDrilldownInputConfigSegmentBy = "lossReason"
-	AnalyticsRecordsDrilldownInputConfigSegmentByContactReason       AnalyticsRecordsDrilldownInputConfigSegmentBy = "contactReason"
-	AnalyticsRecordsDrilldownInputConfigSegmentByCustomField         AnalyticsRecordsDrilldownInputConfigSegmentBy = "customField"
-	AnalyticsRecordsDrilldownInputConfigSegmentByTag                 AnalyticsRecordsDrilldownInputConfigSegmentBy = "tag"
-	AnalyticsRecordsDrilldownInputConfigSegmentByCardTag             AnalyticsRecordsDrilldownInputConfigSegmentBy = "cardTag"
-	AnalyticsRecordsDrilldownInputConfigSegmentByUtmSource           AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmSource"
-	AnalyticsRecordsDrilldownInputConfigSegmentByUtmMedium           AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmMedium"
-	AnalyticsRecordsDrilldownInputConfigSegmentByUtmCampaign         AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmCampaign"
-	AnalyticsRecordsDrilldownInputConfigSegmentByUtmContent          AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmContent"
-	AnalyticsRecordsDrilldownInputConfigSegmentByUtmTerm             AnalyticsRecordsDrilldownInputConfigSegmentBy = "utmTerm"
-	AnalyticsRecordsDrilldownInputConfigSegmentByCaptureLink         AnalyticsRecordsDrilldownInputConfigSegmentBy = "captureLink"
-	AnalyticsRecordsDrilldownInputConfigSegmentByPaymentMethod       AnalyticsRecordsDrilldownInputConfigSegmentBy = "paymentMethod"
-	AnalyticsRecordsDrilldownInputConfigSegmentByRecoveryKind        AnalyticsRecordsDrilldownInputConfigSegmentBy = "recoveryKind"
-	AnalyticsRecordsDrilldownInputConfigSegmentByPlatform            AnalyticsRecordsDrilldownInputConfigSegmentBy = "platform"
-	AnalyticsRecordsDrilldownInputConfigSegmentByAffiliate           AnalyticsRecordsDrilldownInputConfigSegmentBy = "affiliate"
-	AnalyticsRecordsDrilldownInputConfigSegmentByDomain              AnalyticsRecordsDrilldownInputConfigSegmentBy = "domain"
-	AnalyticsRecordsDrilldownInputConfigSegmentByPage                AnalyticsRecordsDrilldownInputConfigSegmentBy = "page"
-	AnalyticsRecordsDrilldownInputConfigSegmentByFunnel              AnalyticsRecordsDrilldownInputConfigSegmentBy = "funnel"
-	AnalyticsRecordsDrilldownInputConfigSegmentByQuiz                AnalyticsRecordsDrilldownInputConfigSegmentBy = "quiz"
-	AnalyticsRecordsDrilldownInputConfigSegmentByWebinar             AnalyticsRecordsDrilldownInputConfigSegmentBy = "webinar"
-	AnalyticsRecordsDrilldownInputConfigSegmentByChatbot             AnalyticsRecordsDrilldownInputConfigSegmentBy = "chatbot"
-	AnalyticsRecordsDrilldownInputConfigSegmentByFlow                AnalyticsRecordsDrilldownInputConfigSegmentBy = "flow"
-	AnalyticsRecordsDrilldownInputConfigSegmentByBroadcast           AnalyticsRecordsDrilldownInputConfigSegmentBy = "broadcast"
-	AnalyticsRecordsDrilldownInputConfigSegmentByChannel             AnalyticsRecordsDrilldownInputConfigSegmentBy = "channel"
-)
-
-// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem is an element of
-// [AnalyticsRecordsDrilldownInputConfig.TeamFieldColumns].
-type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem struct {
-	ID            string                                                            `json:"id"`
-	Label         string                                                            `json:"label"`
-	Entity        AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity    `json:"entity"`
-	CustomFieldID string                                                            `json:"customFieldId"`
-	Aggregate     AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate `json:"aggregate"`
-	Value         *string                                                           `json:"value,omitzero"`
-	DealBase      *AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase `json:"dealBase,omitzero"`
-	Money         *bool                                                             `json:"money,omitzero"`
-}
-
-// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate is the type of
-// [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem.Aggregate].
-type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate].
-const (
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregateCount AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate = "count"
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregateSum   AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate = "sum"
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregateAvg   AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemAggregate = "avg"
-)
-
-// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase is the type of
-// [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem.DealBase].
-type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase].
-const (
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBaseCreated AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase = "created"
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBaseWon     AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemDealBase = "won"
-)
-
-// AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity is the type of
-// [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItem.Entity].
-type AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity].
-const (
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntityLead        AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity = "lead"
-	AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntityOpportunity AnalyticsRecordsDrilldownInputConfigTeamFieldColumnsItemEntity = "opportunity"
-)
-
-// AnalyticsRecordsDrilldownInputConfigViewBy is the type of
-// [AnalyticsRecordsDrilldownInputConfig.ViewBy].
-type AnalyticsRecordsDrilldownInputConfigViewBy string
-
-// Values of [AnalyticsRecordsDrilldownInputConfigViewBy].
-const (
-	AnalyticsRecordsDrilldownInputConfigViewByCreated         AnalyticsRecordsDrilldownInputConfigViewBy = "created"
-	AnalyticsRecordsDrilldownInputConfigViewByWon             AnalyticsRecordsDrilldownInputConfigViewBy = "won"
-	AnalyticsRecordsDrilldownInputConfigViewByLost            AnalyticsRecordsDrilldownInputConfigViewBy = "lost"
-	AnalyticsRecordsDrilldownInputConfigViewByScheduled       AnalyticsRecordsDrilldownInputConfigViewBy = "scheduled"
-	AnalyticsRecordsDrilldownInputConfigViewByAwaiting        AnalyticsRecordsDrilldownInputConfigViewBy = "awaiting"
-	AnalyticsRecordsDrilldownInputConfigViewByHeld            AnalyticsRecordsDrilldownInputConfigViewBy = "held"
-	AnalyticsRecordsDrilldownInputConfigViewByNoShow          AnalyticsRecordsDrilldownInputConfigViewBy = "noShow"
-	AnalyticsRecordsDrilldownInputConfigViewByMeetingOutcomes AnalyticsRecordsDrilldownInputConfigViewBy = "meetingOutcomes"
-	AnalyticsRecordsDrilldownInputConfigViewByPaid            AnalyticsRecordsDrilldownInputConfigViewBy = "paid"
-	AnalyticsRecordsDrilldownInputConfigViewByRefunded        AnalyticsRecordsDrilldownInputConfigViewBy = "refunded"
-	AnalyticsRecordsDrilldownInputConfigViewByChargedBack     AnalyticsRecordsDrilldownInputConfigViewBy = "chargedBack"
-	AnalyticsRecordsDrilldownInputConfigViewByCanceled        AnalyticsRecordsDrilldownInputConfigViewBy = "canceled"
-	AnalyticsRecordsDrilldownInputConfigViewByFailed          AnalyticsRecordsDrilldownInputConfigViewBy = "failed"
-	AnalyticsRecordsDrilldownInputConfigViewByPending         AnalyticsRecordsDrilldownInputConfigViewBy = "pending"
-	AnalyticsRecordsDrilldownInputConfigViewByAbandoned       AnalyticsRecordsDrilldownInputConfigViewBy = "abandoned"
-	AnalyticsRecordsDrilldownInputConfigViewByCommission      AnalyticsRecordsDrilldownInputConfigViewBy = "commission"
-	AnalyticsRecordsDrilldownInputConfigViewByVisitors        AnalyticsRecordsDrilldownInputConfigViewBy = "visitors"
-	AnalyticsRecordsDrilldownInputConfigViewBySessions        AnalyticsRecordsDrilldownInputConfigViewBy = "sessions"
-	AnalyticsRecordsDrilldownInputConfigViewByConverted       AnalyticsRecordsDrilldownInputConfigViewBy = "converted"
-	AnalyticsRecordsDrilldownInputConfigViewByStarted         AnalyticsRecordsDrilldownInputConfigViewBy = "started"
-	AnalyticsRecordsDrilldownInputConfigViewByFinished        AnalyticsRecordsDrilldownInputConfigViewBy = "finished"
-	AnalyticsRecordsDrilldownInputConfigViewBySent            AnalyticsRecordsDrilldownInputConfigViewBy = "sent"
-	AnalyticsRecordsDrilldownInputConfigViewByDelivered       AnalyticsRecordsDrilldownInputConfigViewBy = "delivered"
-	AnalyticsRecordsDrilldownInputConfigViewByOpened          AnalyticsRecordsDrilldownInputConfigViewBy = "opened"
-	AnalyticsRecordsDrilldownInputConfigViewByClicked         AnalyticsRecordsDrilldownInputConfigViewBy = "clicked"
-	AnalyticsRecordsDrilldownInputConfigViewByReceived        AnalyticsRecordsDrilldownInputConfigViewBy = "received"
-	AnalyticsRecordsDrilldownInputConfigViewByResolved        AnalyticsRecordsDrilldownInputConfigViewBy = "resolved"
-	AnalyticsRecordsDrilldownInputConfigViewByPublished       AnalyticsRecordsDrilldownInputConfigViewBy = "published"
-	AnalyticsRecordsDrilldownInputConfigViewByViews           AnalyticsRecordsDrilldownInputConfigViewBy = "views"
-	AnalyticsRecordsDrilldownInputConfigViewByEngagement      AnalyticsRecordsDrilldownInputConfigViewBy = "engagement"
-	AnalyticsRecordsDrilldownInputConfigViewByInteractions    AnalyticsRecordsDrilldownInputConfigViewBy = "interactions"
-	AnalyticsRecordsDrilldownInputConfigViewByFirstResponse   AnalyticsRecordsDrilldownInputConfigViewBy = "firstResponse"
-	AnalyticsRecordsDrilldownInputConfigViewByResolution      AnalyticsRecordsDrilldownInputConfigViewBy = "resolution"
-	AnalyticsRecordsDrilldownInputConfigViewByQueueWait       AnalyticsRecordsDrilldownInputConfigViewBy = "queueWait"
-)
-
-// AnalyticsRecordsDrilldownOutput is the response of
-// [AnalyticsDashboardsService.AnalyticsRecordsDrilldown].
-type AnalyticsRecordsDrilldownOutput struct {
-	Rows  []AnalyticsRecordsDrilldownOutputRowsItem `json:"rows"`
-	Money bool                                      `json:"money"`
-	Meta  AnalyticsRecordsDrilldownOutputMeta       `json:"meta"`
-}
-
-// AnalyticsRecordsDrilldownOutputMeta is the type of [AnalyticsRecordsDrilldownOutput.Meta].
-type AnalyticsRecordsDrilldownOutputMeta struct {
-	CountItens int64 `json:"countItens"`
-	CountPages int64 `json:"countPages"`
-	PerPage    int64 `json:"perPage"`
-}
-
-// AnalyticsRecordsDrilldownOutputRowsItem is an element of [AnalyticsRecordsDrilldownOutput.Rows].
-type AnalyticsRecordsDrilldownOutputRowsItem struct {
-	ID       string     `json:"id"`
-	At       *time.Time `json:"at"`
-	Title    string     `json:"title"`
-	Subtitle *string    `json:"subtitle"`
-	Value    *float64   `json:"value"`
-	Status   *string    `json:"status"`
-	LeadID   *string    `json:"leadId"`
-}

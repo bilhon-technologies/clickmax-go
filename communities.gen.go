@@ -206,6 +206,21 @@ func (s *CommunitiesService) Get(ctx context.Context, params CommunitiesGetParam
 	return &out, nil
 }
 
+// List communities of the members area.
+//
+// Returns the paginated communities of the workspace (`search` by name) with their id, status, linked
+// areas and member/category counts. Resolves a community name into the `communityId` that
+// `leads_bulk_member_access` and the `communities_*` tools need.
+//
+// Calls GET /communities/list.
+func (s *CommunitiesService) List(ctx context.Context, params CommunitiesListParams, opts ...Option) (*CommunitiesListOutput, error) {
+	var out CommunitiesListOutput
+	if err := s.client.do(ctx, "GET", "/communities/list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Invite someone to a community.
 //
 // Adds one person by e-mail (creating the student if needed) with a role, and e-mails the invite
@@ -1018,6 +1033,72 @@ type CommunitiesGetParams struct {
 func (p CommunitiesGetParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "id", &p.ID)
+	return v
+}
+
+// CommunitiesListOutput is the response of [CommunitiesService.List].
+type CommunitiesListOutput struct {
+	Data []CommunitiesListOutputDataItem `json:"data"`
+	Meta CommunitiesListOutputMeta       `json:"meta"`
+}
+
+// CommunitiesListOutputDataItem is an element of [CommunitiesListOutput.Data].
+type CommunitiesListOutputDataItem struct {
+	ID               string                                     `json:"id"`
+	Name             string                                     `json:"name"`
+	Description      *string                                    `json:"description,omitzero"`
+	CoverImage       *string                                    `json:"coverImage,omitzero"`
+	CoverVideo       *string                                    `json:"coverVideo,omitzero"`
+	Settings         any                                        `json:"settings,omitzero"`
+	Status           string                                     `json:"status"`
+	Theme            string                                     `json:"theme"`
+	AccentColor      *string                                    `json:"accentColor,omitzero"`
+	CoverPattern     *string                                    `json:"coverPattern,omitzero"`
+	LogoLight        *string                                    `json:"logoLight,omitzero"`
+	LogoDark         *string                                    `json:"logoDark,omitzero"`
+	PointsPerPost    int64                                      `json:"pointsPerPost"`
+	PointsPerComment int64                                      `json:"pointsPerComment"`
+	PointsPerLike    int64                                      `json:"pointsPerLike"`
+	RankingEnabled   bool                                       `json:"rankingEnabled"`
+	MessagesEnabled  bool                                       `json:"messagesEnabled"`
+	OwnerID          string                                     `json:"ownerId"`
+	Slug             *string                                    `json:"slug,omitzero"`
+	SalesURL         *string                                    `json:"salesUrl,omitzero"`
+	PortalID         *string                                    `json:"portalId,omitzero"`
+	PortalSubdomain  *string                                    `json:"portalSubdomain,omitzero"`
+	Portals          []CommunitiesListOutputDataItemPortalsItem `json:"portals"`
+	CreatedAt        time.Time                                  `json:"createdAt"`
+	UpdatedAt        time.Time                                  `json:"updatedAt"`
+	MembersCount     int64                                      `json:"membersCount"`
+	CategoriesCount  int64                                      `json:"categoriesCount"`
+}
+
+// CommunitiesListOutputDataItemPortalsItem is an element of [CommunitiesListOutputDataItem.Portals].
+type CommunitiesListOutputDataItemPortalsItem struct {
+	PortalID  string `json:"portalId"`
+	Subdomain string `json:"subdomain"`
+	Name      string `json:"name"`
+}
+
+// CommunitiesListOutputMeta is the type of [CommunitiesListOutput.Meta].
+type CommunitiesListOutputMeta struct {
+	CountItens float64 `json:"countItens"`
+	CountPages float64 `json:"countPages"`
+	PerPage    float64 `json:"perPage"`
+}
+
+// CommunitiesListParams holds the query parameters of [CommunitiesService.List].
+type CommunitiesListParams struct {
+	Page    *float64
+	PerPage *float64
+	Search  *string
+}
+
+func (p CommunitiesListParams) values() url.Values {
+	v := url.Values{}
+	addFloat(v, "page", p.Page)
+	addFloat(v, "perPage", p.PerPage)
+	addString(v, "search", p.Search)
 	return v
 }
 

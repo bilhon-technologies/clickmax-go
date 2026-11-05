@@ -16,7 +16,7 @@ type FlowsService struct {
 // List addable flow nodes.
 //
 // The catalog of addable flow nodes: each entry has a stable `key`, a friendly `label`/`description`,
-// the palette `section` it belongs to, the `stepType` to pass `flows_step_create`'s `type`, and (when
+// the palette `section` it belongs to, the `stepType` to pass `flows_steps_create`'s `type`, and (when
 // applicable) the `action` name, `send_message` `channel`, or `httpRequest` preset. `comingSoon: true`
 // means the node is a locked UI stub with no engine support yet — never create a step matching one
 // of these. Use this before building anything beyond `delay`/`conditional` by hand, so the
@@ -35,7 +35,7 @@ func (s *FlowsService) ActionsCatalog(ctx context.Context, opts ...Option) (*Flo
 //
 // Publishes a flow (mode → `active`): an event-triggered flow starts matching its trigger events and
 // processing real contacts (sending messages, applying tags, etc.); a flow with the "Início manual"
-// trigger only goes live and sends nothing until a run is started with `flows_run_start`. Accepts
+// trigger only goes live and sends nothing until a run is started with `flows_runs_start`. Accepts
 // `draft`, `scheduled` and `closed` (paused) flows — so it is also the RESUME of a flow paused with
 // `flows_close`, and it releases the messages held while paused; 417 for
 // `active`/`archived`/`template`. 417 also when the flow has no steps, its start step is not a
@@ -76,13 +76,13 @@ func (s *FlowsService) Archive(ctx context.Context, body FlowsArchiveInput, opts
 // Close a flow.
 //
 // Pauses an `active` flow (mode → `closed`; any other mode is 417): no new contacts enter from the
-// trigger, and its scheduled or running manual run (`flows_run_start`) is CANCELLED (pending blocks
+// trigger, and its scheduled or running manual run (`flows_runs_start`) is CANCELLED (pending blocks
 // never go out). Executions already in progress are NOT canceled: they keep running, but for a regular
 // flow the messages they send are held until the flow is resumed with `flows_activate` (managed
 // pipeline/agenda/LiveChat automations are not held). A paused flow can be edited and resumed with
 // `flows_activate` — managed ones included. Returns the updated flow. Use to pause/stop a running
 // automation (this is the lifecycle action — `flows_delete` is permanent removal; to stop one
-// contact use `flows_execution_cancel`, to stop only a run use `flows_run_cancel`).
+// contact use `flows_executions_cancel`, to stop only a run use `flows_runs_cancel`).
 //
 // Calls POST /flows/close.
 func (s *FlowsService) Close(ctx context.Context, body FlowsCloseInput, opts ...Option) (*FlowsCloseOutput, error) {
@@ -99,7 +99,7 @@ func (s *FlowsService) Close(ctx context.Context, body FlowsCloseInput, opts ...
 // in `statements[].type`, a friendly `label`/`description`, and `fields` (each with `field` name,
 // `label`, `valueType`, optional `enumValues`, and an `entity` hint when the field is a real id to
 // resolve — tag/list/page/etc. — never invent one). Use this before calling
-// `flows_step_create`/`flows_step_update` for a `conditional` step, or before editing one's
+// `flows_steps_create`/`flows_steps_update` for a `conditional` step, or before editing one's
 // `statements`, so every statement matches a real, engine-executable shape instead of a guess.
 //
 // Calls GET /flows/conditionals-catalog.
@@ -114,7 +114,7 @@ func (s *FlowsService) ConditionalsCatalog(ctx context.Context, opts ...Option) 
 // Create a flow.
 //
 // Creates an empty `draft` flow in a project. Requires `name` + `projectId`; optional `category`,
-// `icon`, `goal`, `useCases`, `funnelId`. Add steps with `flows_step_create`. Leave `funnelId` unset
+// `icon`, `goal`, `useCases`, `funnelId`. Add steps with `flows_steps_create`. Leave `funnelId` unset
 // here: for a funnel-embedded automation, create the funnel `workflow` node first and link this flow
 // to it with `funnels_workflow_flow_set` (it owns the funnelId + syncs the funnel triggers onto the
 // flow); for a standalone flow, scope its trigger with a `funnelId`/`pageId` constraint instead. Do
@@ -133,8 +133,8 @@ func (s *FlowsService) Create(ctx context.Context, body FlowsCreateInput, opts .
 //
 // Deletes a flow (soft delete): it disappears from listings, stops reacting to its trigger, its queued
 // executions and those asleep on a timer are canceled (any other in-progress one is canceled the next
-// time it would run a step), its scheduled or running manual run (`flows_run_start`) is cancelled, and
-// execution history/metrics are preserved. Works on any mode except managed flows
+// time it would run a step), its scheduled or running manual run (`flows_runs_start`) is cancelled,
+// and execution history/metrics are preserved. Works on any mode except managed flows
 // (pipeline/funnel/agenda automations), which are rejected (409). Not undoable from the UI — confirm
 // with the user first. Emits `flow.deleted.v1`.
 //
@@ -147,11 +147,160 @@ func (s *FlowsService) Delete(ctx context.Context, body FlowsDeleteInput, opts .
 	return &out, nil
 }
 
+// Resolve ids in an execution to names.
+//
+// Turns raw ids found in an execution `state` or a step `input`/`output` into the entity itself
+// (`type`, `label`, `description`, `color`, optional `meta` pairs) so you can report names instead of
+// UUIDs. Send `refs: [{ key, id }]` (max 200), where `key` is the JSON key the id came from — it
+// decides the entity: `leadId`/`contactId`, `tagId`, `listId`, `segmentId`, `cardId`/`opportunityId`,
+// `pipelineId`, `stageId` (prefixed keys like `toStageId` map to the base one), `attendantId`,
+// `teamId`, `taskId`, `meetingId`, `offerId`, `productId`, `transactionId`, `subscriptionId`,
+// `buyerId`, `couponId`, `planId`, `funnelId`, `pageId`, `formId`, `flowId`, `flowStepId`,
+// `channelInstanceId`, `gupshupAppId`, `messageId`, `broadcastId`, and more. Only what resolved comes
+// back: an unknown key, a deleted entity or one from another workspace is simply absent (keep the raw
+// id, do not treat it as an error). Read-only enrichment — for full records use the entity's own get
+// tool.
+//
+// Calls POST /flows/entity-refs-resolve.
+func (s *FlowsService) EntityRefsResolve(ctx context.Context, body FlowsEntityRefsResolveInput, opts ...Option) (*FlowsEntityRefsResolveOutput, error) {
+	var out FlowsEntityRefsResolveOutput
+	if err := s.client.do(ctx, "POST", "/flows/entity-refs-resolve", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Stop one running flow execution.
+//
+// Stops ONE in-progress execution (`queued`, waiting on a timer/reply, or scheduled) for good: its
+// status becomes `canceled` and no later step runs; it cannot be resumed (start a new run instead). A
+// step that is executing at that instant may still finish its current effect — an in-flight HTTP
+// call or message cannot be undone. Returns `{ instanceId, status: 'canceled' }`. 409 when there is
+// nothing to stop: already `finished`/`failed`/`canceled`, or the id is not in this flow (the two are
+// deliberately indistinguishable). It affects only that one contact's run: it does NOT stop the flow
+// from taking new contacts (`flows_close`) nor remove the flow (`flows_delete`), and there is no bulk
+// cancel. Confirm with the user, naming the contact when known.
+//
+// Calls DELETE /flows/executions-cancel.
+func (s *FlowsService) ExecutionsCancel(ctx context.Context, body FlowsExecutionsCancelInput, opts ...Option) (*FlowsExecutionsCancelOutput, error) {
+	var out FlowsExecutionsCancelOutput
+	if err := s.client.do(ctx, "DELETE", "/flows/executions-cancel", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Get one flow execution step by step.
+//
+// One execution read like a debugger: `status`, `haltReason` (`running` | `waitingTimer` = asleep in a
+// delay/timeout | `waitingReply` = parked on a capture step | `finished` | `failed` | `canceled`)
+// which answers 'where did it stop and why', the contact, `state`, and `steps[]` ordered by `sequence`
+// with `type`/`action`, `outcome` (the branch actually taken), `error` and `isCurrent`. Test runs
+// (`kind: 'testLive'`) also carry the per-step trace: `enteredAt`/`leftAt`/`durationMs`, for
+// conditionals an `evaluation` (each condition's actual vs expected value and whether it matched),
+// `effect` (what the step really did: channel, recipient, details) and `input`/`output` (sensitive
+// keys masked, oversized values replaced by `{ truncated: true, preview }`). Production runs have NO
+// trace: only the step order and, for the step that failed, its error —
+// `enteredAt`/`evaluation`/`effect`/`input`/`output` come back null. In BOTH kinds, an AI SDR step
+// (`action: 'aiConversation'`) that opened its conversation carries `aiSdr`: session `status`
+// (`active`/`ended`), `exit` + `exitReason` (which door it left by and why), AI message count vs
+// `maxMessages`, `consecutiveErrors`, `askedQuestions`, `noReplyDeadlineAt`, `fields[]` (each
+// qualification field, whether `required`, the contact's CURRENT `value` and its `source` such as
+// `ai`/`manual`) and `toolCalls[]` (each tool the AI called in that session with `status`, `input`,
+// `output`, `errorCode`) — the answer to 'what did the AI find out, did it try to save the field,
+// and why did it exit there?'. Null on every other step. Read-only. Get the `instanceId` from
+// `flows_executions_list` or from `flows_test_runs_start`. To debug 'why did the test go down the
+// false branch?', read the conditional step's `evaluation`.
+//
+// Calls GET /flows/executions-get.
+func (s *FlowsService) ExecutionsGet(ctx context.Context, params FlowsExecutionsGetParams, opts ...Option) (*FlowsExecutionsGetOutput, error) {
+	var out FlowsExecutionsGetOutput
+	if err := s.client.do(ctx, "GET", "/flows/executions-get", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List flow executions.
+//
+// Paginated execution history of ONE flow — one row = one contact's run through it. Each row:
+// `status` (`queued`/`pending`/`scheduled` = running or waiting, `finished`, `failed`, `canceled`),
+// `kind` (`production`, or `testLive` = a run started by `flows_test_runs_start`), the contact,
+// `error`, `history` (step ids passed), the raw `state` payload, and the messages the run sent with
+// delivery status. The response also has flow-wide `counts` by status (scoped by `kind` only — NOT
+// narrowed by `status`/`q`/dates), `totalSteps` and `topErrors`: the top 10 failure reasons by
+// frequency, where `kind: 'execution'` entries are the exact `error` labels
+// `flows_executions_retry_by_error` takes. Filters: `status`; `q` (contact name/email/phone);
+// `startDate`/`endDate` (run creation time); `stepId` (runs positioned at OR that already passed
+// through that step — combine with `status` for the per-node success/failure drill-down); add
+// `stepScope: 'current'` to keep only the runs positioned at that step right now — with `status:
+// 'scheduled'` on a timer step, that is exactly who is waiting there); `kind` (omitted = production
+// only; `test` = test runs only; `all` = both); `runId` (only the executions created by one manual run
+// — id from `flows_runs_list`/`flows_runs_start`; each row also carries its `runId`, null for
+// event-triggered and test runs). Keep `perPage` small (default 10): every row embeds its full `state`
+// and messages. Use for 'did this contact go through the automation?', 'why are runs failing?', 'how
+// many are stuck?', 'who failed in yesterday's run?'. Contacts a run skipped by the cooldown never
+// become executions (see `debouncedCount` on the run). For the step-by-step of one run use
+// `flows_executions_get`. Read-only; it does not export a CSV.
+//
+// Calls GET /flows/executions-list.
+func (s *FlowsService) ExecutionsList(ctx context.Context, params FlowsExecutionsListParams, opts ...Option) (*FlowsExecutionsListOutput, error) {
+	var out FlowsExecutionsListOutput
+	if err := s.client.do(ctx, "GET", "/flows/executions-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Retry one failed flow execution.
+//
+// Re-queues ONE `failed` execution at the node where it failed and continues down the graph from
+// there. It REPEATS that node's side effect (a failed message send is sent again; a failed HTTP
+// request is called again), clears the error and drops the failed attempt from the step history.
+// Retrying without fixing the cause (disconnected number, unapproved template, broken step config)
+// just fails again at the same node — diagnose first with `flows_executions_get`. Returns `{
+// instanceId, status: 'queued' }` at once; the outcome shows up later in `flows_executions_get`. 409
+// when it cannot be retried: no longer `failed`, a legacy dry-run test, or the flow is archived (a
+// paused/`closed` flow CAN be retried). For all runs behind one failure reason use
+// `flows_executions_retry_by_error`. Confirm with the user first — it re-sends to a real contact.
+//
+// Calls POST /flows/executions-retry.
+func (s *FlowsService) ExecutionsRetry(ctx context.Context, body FlowsExecutionsRetryInput, opts ...Option) (*FlowsExecutionsRetryOutput, error) {
+	var out FlowsExecutionsRetryOutput
+	if err := s.client.do(ctx, "POST", "/flows/executions-retry", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Retry all failed executions with one error.
+//
+// Bulk retry of the failed executions behind one row of the flow's top errors. `errors` = the EXACT
+// `error` labels (1–10) from `flows_executions_list` → `topErrors` entries with `kind:
+// 'execution'` (send failures, `kind: 'message'`, are a different grain and are not retryable here);
+// optional `stepId` limits it to executions that stopped at that node. Re-queues at most 1000 per
+// call, most recently updated first; `retried` is how many went back to the queue and `remaining` how
+// many still failed with that error beyond the cap — call again to continue. Same effect per
+// execution as `flows_executions_retry`: the failed node runs again, so messages are re-sent,
+// potentially to many contacts, and unfixed causes fail again. Before calling, size it with
+// `flows_executions_list` (`status: 'failed'`, `topErrors[].count`) and tell the user how many
+// contacts it touches. 409 when the flow is archived. Only production/test runs that actually executed
+// are eligible.
+//
+// Calls POST /flows/executions-retry-by-error.
+func (s *FlowsService) ExecutionsRetryByError(ctx context.Context, body FlowsExecutionsRetryByErrorInput, opts ...Option) (*FlowsExecutionsRetryByErrorOutput, error) {
+	var out FlowsExecutionsRetryByErrorOutput
+	if err := s.client.do(ctx, "POST", "/flows/executions-retry-by-error", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Get a flow.
 //
 // Full flow record (name, mode, category, projectId/funnelId, startStepId, steps). Pass `analytics:
 // true` to get `analytics` (`totalExecutions`, `uniqueContacts`, `emailsCollected`, `phonesCollected`
-// — only runs that actually executed, production plus `flows_test_run_start` runs) and per-step
+// — only runs that actually executed, production plus `flows_test_runs_start` runs) and per-step
 // analytics on each step; that branch returns instead of `layoutSummary`, so do not combine them. Pass
 // `layoutSummary: true` only when you need the canvas thumbnail (nodes + edges) to render; it costs an
 // extra scan of the steps. For just the step graph + edges, prefer `flows_structure_get`; for
@@ -224,19 +373,107 @@ func (s *FlowsService) GraphApply(ctx context.Context, body FlowsGraphApplyInput
 	return &out, nil
 }
 
-// List Instagram posts.
+// Where contacts are in their message automations.
 //
-// Paginated list of the workspace's connected Instagram account posts (id, caption, permalink,
-// thumbnail, counts), newest first. Use the returned `id` as the `mediaId` value when narrowing an
-// `hermes.instagram.comment.received.v1` trigger to specific post(s) (the `mediaId` scope from
-// `flows_triggers_catalog`). Pass the previous call's `meta.next` as `after` to page forward. Show the
-// user enough (caption/thumbnail/permalink) to recognize the post before committing to a `mediaId` —
-// never guess or fabricate one.
+// Answers 'which message of which automation is this contact on, what comes next and when?' for
+// 1–100 contacts at once (`leadIds`; for an opportunity, take its contacts' lead ids from
+// `cards_get`). Returns the PRODUCTION executions of those contacts in flows that contain at least one
+// message step (WhatsApp/email/SMS/Telegram/voice/Instagram reply), newest first, at most 50 in total
+// across all the contacts — `truncated: true` means older ones were left out (ask for fewer contacts
+// to see more of each). Flows without message steps (tags, webhooks only) and test runs are not
+// included. Each item: `flowName`, `flowDeleted`, the execution `status`
+// (`queued`/`pending`/`scheduled` = still running or waiting, `finished`, `failed`, `canceled`),
+// `error`, `startedAt`/`updatedAt`, `resumesAt` (when a `scheduled` execution wakes up from its wait;
+// null otherwise) and `steps` = the flow's message steps in graph order from the start (main path
+// first, alternative branches after), each with `channel` (`gupshup` = WhatsApp), `preview` (email
+// subject, message text or WhatsApp template name), `waits` (delay/timeout between the previous
+// message and this one: `when` in hours or an ISO date, per `mode`), `deliveries` (status +
+// queued/sent/delivered/read/clicked/failed times, `error`) and `state`: `sent` (already passed, or a
+// delivery is recorded), `current` (the execution is parked on this message waiting for a
+// reply/timeout), `next` (the next message it will send), `upcoming` (further ahead), `skipped`
+// (another branch, or the execution ended without it). When the execution waits on a step whose
+// branches lead to different messages (replied vs no reply, buttons), no step is `next` — they all
+// show as `upcoming` because it depends on the contact. The steps reflect the flow as it is NOW (an
+// edited flow may differ from what the contact saw; recorded deliveries still mark `sent`). Read-only,
+// workspace-scoped (contacts of another workspace just return nothing). It does not include the AI SDR
+// step's conversation messages — for that read the execution with `flows_executions_get`
+// (`steps[].aiSdr`). To stop one execution use `flows_executions_cancel` with its `flowId` +
+// `instanceId`.
 //
-// Calls GET /flows/instagram-posts-list.
-func (s *FlowsService) InstagramPostsList(ctx context.Context, params InstagramPostsListParams, opts ...Option) (*InstagramPostsListOutput, error) {
-	var out InstagramPostsListOutput
-	if err := s.client.do(ctx, "GET", "/flows/instagram-posts-list", params.values(), nil, &out, opts); err != nil {
+// Calls POST /flows/lead-cadences.
+func (s *FlowsService) LeadCadences(ctx context.Context, body FlowsLeadCadencesInput, opts ...Option) (*FlowsLeadCadencesOutput, error) {
+	var out FlowsLeadCadencesOutput
+	if err := s.client.do(ctx, "POST", "/flows/lead-cadences", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List automations that feed a tag/stage/message.
+//
+// Which OTHER automations PRODUCE what a trigger listens to: given refs (the tag/stage/send-step a
+// flow's entry trigger is scoped to), returns the flows that have a step doing it — an
+// `addTag`/`removeTag`/`assignOpportunity`/`updateOpportunityCard` step with that literal id, or the
+// flow that owns that send node. Answers 'who applies the tag that starts this automation?', 'why did
+// this flow start for the contact?'. It only sees steps that store the id literally in the flow (a
+// step that picks the tag dynamically is not detectable) and only flows in `draft`/`active`/`closed`.
+// `refs` (1–100) use `kind:<uuid>` or bare `kind`: `tag:<tagId>` (tag applied),
+// `tagRemoved:<tagId>`, `stage:<stageId>` (card moved to / entered that stage), `won` / `lost`
+// (opportunity won/lost — no id; they only match triggers NOT scoped to a pipeline/stage, because
+// the producing action does not know the pipeline), `emailClicked:<sendStepId>` /
+// `emailOpened:<sendStepId>` / `emailDelivered:<sendStepId>` / `emailFailed:<sendStepId>` (engagement
+// with ONE email send node), `linkClicked:<sendStepId>` (tracked link in a send node of
+// email/SMS/WhatsApp/Telegram/Instagram), `callResult:<sendStepId>` (outcome of a voice/IVR call
+// node), `webhook:<id>` (an HTTP-request node that calls another flow's webhook URL — in
+// `flows_link_targets_list` the id is that HTTP-request STEP; in `flows_link_sources_list` it is the
+// webhook a "webhook received" trigger points at). Malformed or unknown refs are silently ignored (no 400).
+// Each item: `flowId`, `name`, `mode` (`draft`/`active`/`closed` only — archived, templates and
+// deleted flows never appear), `kind` + `valueUuid` (which ref matched) and `stats` = production runs
+// only (`executions`, `finished`, `failed`; test runs excluded). Active flows first, then newest; at
+// most 200 rows; one item per (ref, flow). Scoped to the workspace; `excludeFlowId` removes one flow
+// (usually the one you are inspecting, so a flow that both applies and listens to the same tag does
+// not list itself). `action` = the step action that produces the ref. Read-only; the reverse question
+// is `flows_link_targets_list`.
+//
+// Calls POST /flows/link-sources-list.
+func (s *FlowsService) LinkSourcesList(ctx context.Context, body FlowsLinkSourcesListInput, opts ...Option) (*FlowsLinkSourcesListOutput, error) {
+	var out FlowsLinkSourcesListOutput
+	if err := s.client.do(ctx, "POST", "/flows/link-sources-list", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List automations triggered by a tag/stage/message.
+//
+// Which OTHER automations react to what a step produces: given refs (a tag applied, a stage entered,
+// an opportunity won, an email/link/call outcome of a send node…), returns the flows whose ENTRY
+// trigger listens to exactly that (exit triggers do not count, and a flow only matches when its
+// trigger constraint carries that same id). Answers 'if I apply tag X here, what else starts?', 'what
+// happens downstream of this email step?'. Draft and paused flows are included — they exist but do
+// not run, so check `mode` before saying something will fire. `refs` (1–100) use `kind:<uuid>` or
+// bare `kind`: `tag:<tagId>` (tag applied), `tagRemoved:<tagId>`, `stage:<stageId>` (card moved to /
+// entered that stage), `won` / `lost` (opportunity won/lost — no id; they only match triggers NOT
+// scoped to a pipeline/stage, because the producing action does not know the pipeline),
+// `emailClicked:<sendStepId>` / `emailOpened:<sendStepId>` / `emailDelivered:<sendStepId>` /
+// `emailFailed:<sendStepId>` (engagement with ONE email send node), `linkClicked:<sendStepId>`
+// (tracked link in a send node of email/SMS/WhatsApp/Telegram/Instagram), `callResult:<sendStepId>`
+// (outcome of a voice/IVR call node), `webhook:<id>` (an HTTP-request node that calls another flow's
+// webhook URL — in `flows_link_targets_list` the id is that HTTP-request STEP; in
+// `flows_link_sources_list` it is the webhook a "webhook received" trigger points at). Malformed or
+// unknown refs are silently ignored (no 400). Each item: `flowId`, `name`, `mode`
+// (`draft`/`active`/`closed` only — archived, templates and deleted flows never appear), `kind` +
+// `valueUuid` (which ref matched) and `stats` = production runs only (`executions`, `finished`,
+// `failed`; test runs excluded). Active flows first, then newest; at most 200 rows; one item per (ref,
+// flow). Scoped to the workspace; `excludeFlowId` removes one flow (usually the one you are
+// inspecting, so a flow that both applies and listens to the same tag does not list itself).
+// `eventName` = the trigger event that matched. Read-only; the reverse question is
+// `flows_link_sources_list`.
+//
+// Calls POST /flows/link-targets-list.
+func (s *FlowsService) LinkTargetsList(ctx context.Context, body FlowsLinkTargetsListInput, opts ...Option) (*FlowsLinkTargetsListOutput, error) {
+	var out FlowsLinkTargetsListOutput
+	if err := s.client.do(ctx, "POST", "/flows/link-targets-list", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -264,6 +501,168 @@ func (s *FlowsService) List(ctx context.Context, body FlowsListInput, opts ...Op
 	return &out, nil
 }
 
+// List the dispatch blocks of a run.
+//
+// The dispatch blocks (cycles) of one run, in `blockIndex` order — ALL of them, unpaginated (up to 5000).
+// Each block: `status` (`pending` = waiting for its time, `running`, `done`, `cancelled`, `failed`
+// with `errorMessage`), `scheduledAt` (when it is planned to enter; 'now' after a promote),
+// `startedAt`/`completedAt` and `recipientCount` (contacts it actually put into the flow, after the
+// cooldown). The last pending block's `scheduledAt` is the expected finish. Use to answer 'when does
+// my send finish?' or 'which cycle failed?'; for plain progress the `blocks` counts on
+// `flows_runs_list` are enough. Blocks only wait for their time when the flow paces them with an
+// interval; with the default interval 0 they all enter at once. 404 if the run is not in this flow.
+// Read-only.
+//
+// Calls GET /flows/runs-blocks-list.
+func (s *FlowsService) RunsBlocksList(ctx context.Context, params FlowsRunsBlocksListParams, opts ...Option) (*FlowsRunsBlocksListOutput, error) {
+	var out FlowsRunsBlocksListOutput
+	if err := s.client.do(ctx, "GET", "/flows/runs-blocks-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Send a pending block of a run now.
+//
+// Pulls ONE `pending` block of a `running` run forward: it leaves its planned wait and enters the
+// queue now, so its contacts start receiving immediately; its `scheduledAt` becomes now and the other
+// blocks keep their schedule. It sends to real contacts earlier than planned (they would have received
+// it anyway). 409 unless the run is `running` and the block is still `pending` and waiting in the
+// queue; 404 for an unknown run/block. Returns the updated block. `blockIndex` from
+// `flows_runs_blocks_list`. Only meaningful when the flow spaces blocks with an interval; it does not
+// change the pace of the rest of the run.
+//
+// Calls POST /flows/runs-blocks-promote.
+func (s *FlowsService) RunsBlocksPromote(ctx context.Context, body FlowsRunsBlocksPromoteInput, opts ...Option) (*FlowsRunsBlocksPromoteOutput, error) {
+	var out FlowsRunsBlocksPromoteOutput
+	if err := s.client.do(ctx, "POST", "/flows/runs-blocks-promote", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Cancel a manual run of a flow.
+//
+// Cancels one `scheduled` or `running` run (`runId` from `flows_runs_list` or `flows_runs_start`):
+// what has not gone out does not go out — the scheduled launch is dropped and every block still
+// `pending` is cancelled, so the contacts in those blocks never enter. It does NOT cancel the
+// executions the run already created: those contacts keep going through the flow (stop one with
+// `flows_executions_cancel`); a block that was being materialized at that instant may still finish.
+// The flow stays published and keeps reacting to its trigger event (to stop that use `flows_close`,
+// which also cancels the live run). Returns the run with `status: 'cancelled'`. 409 when the run
+// already finished (`done`/`cancelled`/`failed`); 404 if it is not a run of this flow. Not undoable
+// — a new run with the same source would re-send to the contacts already reached unless the cooldown
+// skips them. Confirm with the user, saying how many contacts are still pending (`totalCount` −
+// `recipientCount`).
+//
+// Calls DELETE /flows/runs-cancel.
+func (s *FlowsService) RunsCancel(ctx context.Context, body FlowsRunsCancelInput, opts ...Option) (*FlowsRunsStartOutput, error) {
+	var out FlowsRunsStartOutput
+	if err := s.client.do(ctx, "DELETE", "/flows/runs-cancel", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Estimate a manual run of a flow.
+//
+// Sizes a manual run BEFORE starting it, for the same `source` `flows_runs_start` takes: `{ kind:
+// 'leads', leadIds }` (1–500 contacts), `{ kind: 'list', listId }`, `{ kind: 'tag', tagId }` or `{
+// kind: 'segment', segmentId }` (the segment is evaluated live now). Returns `audience` (how many
+// contacts the source has right now), `steps` = the message steps priced (`channel`, where `gupshup` =
+// WhatsApp, and `unitCost` in credits), `totalCost = audience × Σ unitCost`, `available` (workspace
+// credit balance; `null` = unlimited, can be negative) and `enough`, plus `debounceSeconds` = the
+// flow's cooldown: contacts who went through this flow within that window are SKIPPED by the run
+// unless it is started with `skipDebounce`. How to read the cost: it only prices the messages EVERY
+// contact is guaranteed to reach — the sends from the start step until the first branch, wait
+// (delay/timeout), reply capture or AI SDR step; messages after that point are NOT counted, so a long
+// flow can cost more. On the other hand `audience` counts every member, including contacts with no
+// valid phone/email or opted out, who are later skipped at send time, so for that first stretch it
+// overstates. Treat it as an order of magnitude, not a quote. Read-only: creates no run and sends
+// nothing. Works on a flow that is not published yet, but it must have a start step (412 otherwise).
+// 404 when the flow, the list/tag/segment or any of the `leadIds` is not in this workspace (a list
+// must be a regular list, not a segment's synced list). Use it to confirm the audience size (and cost)
+// with the user before `flows_runs_start`; `audience` minus the contacts on cooldown is roughly how
+// many will enter.
+//
+// Calls POST /flows/runs-estimate.
+func (s *FlowsService) RunsEstimate(ctx context.Context, body FlowsRunsEstimateInput, opts ...Option) (*FlowsRunsEstimateOutput, error) {
+	var out FlowsRunsEstimateOutput
+	if err := s.client.do(ctx, "POST", "/flows/runs-estimate", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List the manual runs of a flow.
+//
+// The flow's 20 most recent manual runs, newest first (older ones are not returned; there is no
+// paging). Each run: `status` (`scheduled` | `running` | `done` | `cancelled` | `failed`),
+// `errorMessage` (why it failed/was cancelled, e.g. empty audience or insufficient credits at the
+// scheduled time), the source (`sourceKind` + `sourceLabel` = list/tag/segment name at the time;
+// `leads` = contacts picked one by one), `scheduledAt`/`startedAt`/`completedAt`, `totalCount`
+// (audience frozen), `recipientCount` (executions created), `debouncedCount` (skipped by the
+// cooldown), `skipDebounce`, the pace used (`batchSize`, `intervalMinutes`), `executions` {total,
+// finished, failed} and `blocks` counts per status (progress of a running run), and `startedByName`
+// (who started it; null for runs migrated from old mass-send triggers). Use for 'did my send go out?',
+// 'how many entered / failed?', 'is something scheduled?'. Empty `data` = the flow was never run
+// manually. Read-only. Drill into the contacts of one run with `flows_executions_list` + `runId`.
+//
+// Calls GET /flows/runs-list.
+func (s *FlowsService) RunsList(ctx context.Context, params FlowsRunsListParams, opts ...Option) (*FlowsRunsListOutput, error) {
+	var out FlowsRunsListOutput
+	if err := s.client.do(ctx, "GET", "/flows/runs-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Run a published flow for a list, tag, segment or contacts.
+//
+// Starts a manual run (the editor's "Executar"): every contact of `source` enters the PUBLISHED flow
+// at its start step — `{ kind: 'leads', leadIds }` (1–500), `{ kind: 'list', listId }`, `{ kind:
+// 'tag', tagId }` or `{ kind: 'segment', segmentId }`. THIS IS A REAL MASS SEND: each contact gets a
+// real execution that sends WhatsApp/email/SMS, applies tags, moves cards, calls integrations and
+// spends credits, exactly like the trigger event would. Works for any published flow, whether its
+// trigger is "Início manual" or an event (the event keeps firing normally). Call
+// `flows_runs_estimate` first and confirm with the user the flow, the audience (source name + how many
+// contacts) and whether contacts on cooldown should be included. Options: `skipDebounce: true` = also
+// send to contacts who went through this flow within its cooldown (`debounceSeconds` from the
+// estimate); default false = they are skipped and counted in `debouncedCount`. `scheduledAt` (ISO
+// date, must be in the future, else 400) = do not send now: the run is created `scheduled` and
+// launches at that time. Pace: contacts enter in blocks of the flow's `dispatchBatchSize` (default 250)
+// spaced by `dispatchIntervalMinutes` (default 0 = all blocks queued at once, throughput limited by
+// the channel); both are copied when the run launches and can be changed beforehand with
+// `flows_update`. A plan above 5000 blocks is refused (400, raise the batch size). The audience is
+// FROZEN when the run launches (now, or at `scheduledAt`): contacts who join the list/tag/segment
+// later do not receive it; a segment is evaluated live at that moment. Refusals: 412 if the flow is
+// not published (`active` — publish with `flows_activate` first; drafts are tested with
+// `flows_test_runs_start` instead), has no start step, or contains a step that needs the trigger
+// context (Instagram comment/story reply, WhatsApp through the number that received the conversation)
+// and therefore cannot run manually; 417 if its WhatsApp number is down or a message step has no
+// sender configured; 409 if the flow already has a `scheduled` or `running` run (one live run per flow
+// — wait, or `flows_runs_cancel` it); 404 when the source or any contact is not in this workspace
+// (lists: regular lists only); 417 "No contacts found" when the audience is empty — that attempt is
+// still recorded as a `failed` run. Credits: an IMMEDIATE run does not check the balance up front —
+// sends beyond the balance fail at send time; a SCHEDULED run is checked when it fires and, if the
+// balance does not cover it, becomes `failed` and the owner is notified (a scheduled run also becomes
+// `cancelled` if the flow is no longer published or its number is down at that time). Returns the run:
+// `status` (`scheduled` | `running` | `done` when the last block finished | `cancelled` | `failed`
+// with `errorMessage`), `sourceKind`/`sourceLabel`, `totalCount` (audience frozen), `recipientCount`
+// (executions created so far), `debouncedCount`, `executions` {total, finished, failed}, `blocks`
+// counts per status, `startedByName`. Follow it with `flows_runs_list`, its blocks with
+// `flows_runs_blocks_list`, and the individual contacts with `flows_executions_list` + `runId`. Not
+// the same as `flows_test_runs_start` (one contact, works on drafts, ignores cooldown).
+//
+// Calls POST /flows/runs-start.
+func (s *FlowsService) RunsStart(ctx context.Context, body FlowsRunsStartInput, opts ...Option) (*FlowsRunsStartOutput, error) {
+	var out FlowsRunsStartOutput
+	if err := s.client.do(ctx, "POST", "/flows/runs-start", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Add an email message step.
 //
 // Adds an EMAIL message node to a flow (Hermes transactional send). Three body modes — `format:
@@ -282,8 +681,8 @@ func (s *FlowsService) List(ctx context.Context, body FlowsListInput, opts ...Op
 // until you connect it (`flows_graph_apply`).
 //
 // Calls POST /flows/send-email.
-func (s *FlowsService) SendEmail(ctx context.Context, body FlowsSendEmailInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
+func (s *FlowsService) SendEmail(ctx context.Context, body FlowsSendEmailInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
 	if err := s.client.do(ctx, "POST", "/flows/send-email", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -300,8 +699,8 @@ func (s *FlowsService) SendEmail(ctx context.Context, body FlowsSendEmailInput, 
 // (`flows_graph_apply`).
 //
 // Calls POST /flows/send-instagram.
-func (s *FlowsService) SendInstagram(ctx context.Context, body FlowsSendInstagramInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
+func (s *FlowsService) SendInstagram(ctx context.Context, body FlowsSendInstagramInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
 	if err := s.client.do(ctx, "POST", "/flows/send-instagram", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -317,8 +716,8 @@ func (s *FlowsService) SendInstagram(ctx context.Context, body FlowsSendInstagra
 // message created with neither stays orphan until you connect it (`flows_graph_apply`).
 //
 // Calls POST /flows/send-sms.
-func (s *FlowsService) SendSMS(ctx context.Context, body FlowsSendSMSInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
+func (s *FlowsService) SendSMS(ctx context.Context, body FlowsSendSMSInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
 	if err := s.client.do(ctx, "POST", "/flows/send-sms", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -340,8 +739,8 @@ func (s *FlowsService) SendSMS(ctx context.Context, body FlowsSendSMSInput, opts
 // (`flows_graph_apply`).
 //
 // Calls POST /flows/send-telegram.
-func (s *FlowsService) SendTelegram(ctx context.Context, body FlowsSendTelegramInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
+func (s *FlowsService) SendTelegram(ctx context.Context, body FlowsSendTelegramInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
 	if err := s.client.do(ctx, "POST", "/flows/send-telegram", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -358,8 +757,8 @@ func (s *FlowsService) SendTelegram(ctx context.Context, body FlowsSendTelegramI
 // until you connect it (`flows_graph_apply`).
 //
 // Calls POST /flows/send-voice.
-func (s *FlowsService) SendVoice(ctx context.Context, body FlowsSendVoiceInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
+func (s *FlowsService) SendVoice(ctx context.Context, body FlowsSendVoiceInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
 	if err := s.client.do(ctx, "POST", "/flows/send-voice", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -397,8 +796,8 @@ func (s *FlowsService) SendVoice(ctx context.Context, body FlowsSendVoiceInput, 
 // message created with neither stays orphan until you connect it (`flows_graph_apply`).
 //
 // Calls POST /flows/send-whatsapp.
-func (s *FlowsService) SendWhatsapp(ctx context.Context, body FlowsSendWhatsappInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
+func (s *FlowsService) SendWhatsapp(ctx context.Context, body FlowsSendWhatsappInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
 	if err := s.client.do(ctx, "POST", "/flows/send-whatsapp", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
@@ -417,10 +816,10 @@ func (s *FlowsService) SendWhatsapp(ctx context.Context, body FlowsSendWhatsappI
 // makes the worker reprocess the automation from the start forever (infinite loop); the backend
 // rejects this with a 400, but do not attempt it.
 //
-// Calls POST /flows/step-connect.
-func (s *FlowsService) StepConnect(ctx context.Context, body FlowsStepConnectInput, opts ...Option) (*FlowsStepConnectOutput, error) {
-	var out FlowsStepConnectOutput
-	if err := s.client.do(ctx, "POST", "/flows/step-connect", nil, body, &out, opts); err != nil {
+// Calls POST /flows/steps-connect.
+func (s *FlowsService) StepsConnect(ctx context.Context, body FlowsStepsConnectInput, opts ...Option) (*FlowsStepsConnectOutput, error) {
+	var out FlowsStepsConnectOutput
+	if err := s.client.do(ctx, "POST", "/flows/steps-connect", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -447,10 +846,10 @@ func (s *FlowsService) StepConnect(ctx context.Context, body FlowsStepConnectInp
 // trigger step id: it is the entry point only, and any step pointing back at it makes the worker
 // reprocess the automation from the start forever (infinite loop) — the backend rejects this with a 400.
 //
-// Calls POST /flows/step-create.
-func (s *FlowsService) StepCreate(ctx context.Context, body FlowsStepCreateInput, opts ...Option) (*FlowsStepCreateOutput, error) {
-	var out FlowsStepCreateOutput
-	if err := s.client.do(ctx, "POST", "/flows/step-create", nil, body, &out, opts); err != nil {
+// Calls POST /flows/steps-create.
+func (s *FlowsService) StepsCreate(ctx context.Context, body FlowsStepsCreateInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
+	var out FlowsStepsCreateOutput
+	if err := s.client.do(ctx, "POST", "/flows/steps-create", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -464,10 +863,10 @@ func (s *FlowsService) StepCreate(ctx context.Context, body FlowsStepCreateInput
 // true). Destructive. Works on draft and paused (`closed`) flows; executions paused on the removed
 // step are cancelled.
 //
-// Calls DELETE /flows/step-delete.
-func (s *FlowsService) StepDelete(ctx context.Context, body FlowsStepDeleteInput, opts ...Option) (*FlowsStepDeleteOutput, error) {
-	var out FlowsStepDeleteOutput
-	if err := s.client.do(ctx, "DELETE", "/flows/step-delete", nil, body, &out, opts); err != nil {
+// Calls DELETE /flows/steps-delete.
+func (s *FlowsService) StepsDelete(ctx context.Context, body FlowsStepsDeleteInput, opts ...Option) (*FlowsStepsDeleteOutput, error) {
+	var out FlowsStepsDeleteOutput
+	if err := s.client.do(ctx, "DELETE", "/flows/steps-delete", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -487,10 +886,10 @@ func (s *FlowsService) StepDelete(ctx context.Context, body FlowsStepDeleteInput
 // this is rejected. `draft`/`template` flows only; on a paused (`closed`) flow use `flows_graph_apply`
 // `setTriggers` (same semantics).
 //
-// Calls POST /flows/step-triggers-set.
-func (s *FlowsService) StepTriggersSet(ctx context.Context, body FlowsStepTriggersSetInput, opts ...Option) (*FlowsStepTriggersSetOutput, error) {
-	var out FlowsStepTriggersSetOutput
-	if err := s.client.do(ctx, "POST", "/flows/step-triggers-set", nil, body, &out, opts); err != nil {
+// Calls POST /flows/steps-triggers-set.
+func (s *FlowsService) StepsTriggersSet(ctx context.Context, body FlowsStepsTriggersSetInput, opts ...Option) (*FlowsStepsTriggersSetOutput, error) {
+	var out FlowsStepsTriggersSetOutput
+	if err := s.client.do(ctx, "POST", "/flows/steps-triggers-set", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -499,14 +898,14 @@ func (s *FlowsService) StepTriggersSet(ctx context.Context, body FlowsStepTrigge
 // Update a flow step.
 //
 // Updates a step `input` / `action` / `dependencies` / `meta` on a `draft`/`template` flow. Does not
-// change connections (use `flows_graph_apply` / `flows_step_connect`). On a paused (`closed`) flow,
+// change connections (use `flows_graph_apply` / `flows_steps_connect`). On a paused (`closed`) flow,
 // change `input`/`action` with `flows_graph_apply` `update` instead (it also keeps a message's
 // reply-capture chain intact).
 //
-// Calls POST /flows/step-update.
-func (s *FlowsService) StepUpdate(ctx context.Context, body FlowsStepUpdateInput, opts ...Option) (*FlowsStepUpdateOutput, error) {
-	var out FlowsStepUpdateOutput
-	if err := s.client.do(ctx, "POST", "/flows/step-update", nil, body, &out, opts); err != nil {
+// Calls POST /flows/steps-update.
+func (s *FlowsService) StepsUpdate(ctx context.Context, body FlowsStepsUpdateInput, opts ...Option) (*FlowsStepsUpdateOutput, error) {
+	var out FlowsStepsUpdateOutput
+	if err := s.client.do(ctx, "POST", "/flows/steps-update", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -532,6 +931,52 @@ func (s *FlowsService) StructureGet(ctx context.Context, params FlowsStructureGe
 	return &out, nil
 }
 
+// Run a flow now for one real contact.
+//
+// Starts ONE execution of the flow right now for a chosen contact (`leadId`), without waiting for the
+// trigger event. THIS IS A REAL RUN, not a simulation: it sends real WhatsApp/email/SMS to that
+// contact, applies tags, moves cards, calls integrations, spends credits, honors delays/timeouts (a
+// 'wait 2 days' step holds it for 2 days) and COUNTS in the flow's success rate and per-step counters
+// (it shows as `kind: 'testLive'`). Only test on the user's own contact, and name the recipient when
+// confirming. Not the same as `flows_activate`: it affects only that one contact, needs no published
+// flow (works on `draft`) and skips the same-contact debounce, so re-running for the same contact
+// always works. It starts directly at the flow's start step — it does NOT prove the real trigger
+// event would fire the flow (activate and observe for that) — and runs the SAVED graph. Payload: it
+// is deduced from the entry trigger's constraints (a flow scoped to offer X gets `offerId = X`); pass
+// `payload` (max 64 keys, keys up to 64 chars) only to fill fields the trigger does not pin or to
+// override them — take a real one from `flows_trigger_samples_list`; `leadId` always wins. 404 if
+// the contact is not in this workspace; 409 if the flow has no start step yet. Returns `{ instanceId,
+// kind }` immediately while the run proceeds asynchronously: poll `flows_executions_get` with that id
+// (per-step trace, conditional evaluation, effects) or find it in `flows_executions_list` with `kind:
+// 'test'`. Do not use on an archived flow: the worker cancels its executions at the first step.
+//
+// Calls POST /flows/test-runs-start.
+func (s *FlowsService) TestRunsStart(ctx context.Context, body FlowsTestRunsStartInput, opts ...Option) (*FlowsTestRunsStartOutput, error) {
+	var out FlowsTestRunsStartOutput
+	if err := s.client.do(ctx, "POST", "/flows/test-runs-start", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List recent trigger occurrences of a flow.
+//
+// Up to the 10 most recent PRODUCTION executions of the flow, each with its contact and `payload` =
+// the execution `state`. Use to reuse a real event as the `payload` of `flows_test_runs_start`, or to
+// answer 'what did the event carry when it fired for that contact?'. Test runs are excluded. Caveat:
+// `payload` is the whole instance state as stored now, so beyond the trigger fields (offer, pipeline,
+// stage…) it can include values the run collected or wrote later. Empty `data` when the flow never
+// ran in production. Read-only.
+//
+// Calls GET /flows/trigger-samples-list.
+func (s *FlowsService) TriggerSamplesList(ctx context.Context, params FlowsTriggerSamplesListParams, opts ...Option) (*FlowsTriggerSamplesListOutput, error) {
+	var out FlowsTriggerSamplesListOutput
+	if err := s.client.do(ctx, "GET", "/flows/trigger-samples-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // List trigger events.
 //
 // The catalog of flow trigger events. The full catalog is large (260+ events): ALWAYS narrow it with
@@ -541,7 +986,7 @@ func (s *FlowsService) StructureGet(ctx context.Context, params FlowsStructureGe
 // need every event. Each entry has a friendly `label`, a `description`, the `group` it belongs to, and
 // the `scopes` (`field`/`label`/`valueType`/`op`) it can be narrowed by. Use it to (1) translate a
 // stored event into its friendly label before talking to the user, and (2) pick a valid `eventName`
-// before calling `flows_step_triggers_set` — see that tool's description for how to shape a scope
+// before calling `flows_steps_triggers_set` — see that tool's description for how to shape a scope
 // into a constraint. Never invent an event name; never show `eventName` to the user. For an entity
 // scope (e.g. `mediaId`/post -> `instagram_posts_list`, `listId`/list -> `lists_list`), resolve the
 // real id with that scope's picker tool first — never guess or fabricate one. For a scope with no
@@ -561,7 +1006,7 @@ func (s *FlowsService) TriggersCatalog(ctx context.Context, params FlowsTriggers
 //
 // Edits a flow's metadata fields (`name`, `category`, `icon`, `goal`, `useCases`, `projectId`,
 // `funnelId`, `startStepId`). Partial — only the passed fields change. Does not edit the step graph
-// (use the `flows_step_*` tools).
+// (use the `flows_steps_*` tools).
 //
 // Calls POST /flows/update.
 func (s *FlowsService) Update(ctx context.Context, body FlowsUpdateInput, opts ...Option) (*FlowsUpdateOutput, error) {
@@ -592,8 +1037,8 @@ func (s *FlowsService) Update(ctx context.Context, body FlowsUpdateInput, opts .
 // 'context'`). Note that `flows_activate` itself only refuses a missing entry trigger and incomplete
 // channel nodes — the other `error` codes are NOT blocked at activation but the sends will fail, so
 // fix them first. A step targeting the trigger step (infinite loop) is rejected at write time by
-// `flows_step_connect`/`flows_step_create`, so this check does not look for it. To test with a real
-// contact instead, see `flows_test_run_start`. Also returned: `triggerWithoutOutput` — the trigger
+// `flows_steps_connect`/`flows_steps_create`, so this check does not look for it. To test with a real
+// contact instead, see `flows_test_runs_start`. Also returned: `triggerWithoutOutput` — the trigger
 // connects to nothing while other steps exist, so the automation fires and does nothing.
 // `orphanStepIds` and `triggerWithoutOutput` are what YOU must clear before telling the user the flow
 // is ready (fix them with `flows_graph_apply`), even though neither makes `valid` false.
@@ -735,6 +1180,7 @@ type FlowsArchiveOutputModeMeta struct {
 //   - kind, source, automationId
 //   - kind, source, webinarId
 //   - kind, source, funnelId, nodeId
+//   - kind, source, broadcastId
 type FlowsArchiveOutputModeMetaManaged struct {
 	Kind         *FlowsArchiveOutputModeMetaManagedKind  `json:"kind,omitzero"`
 	Source       FlowsArchiveOutputModeMetaManagedSource `json:"source"`
@@ -745,6 +1191,7 @@ type FlowsArchiveOutputModeMetaManaged struct {
 	WebinarID    *string                                 `json:"webinarId,omitzero"`
 	FunnelID     *string                                 `json:"funnelId,omitzero"`
 	NodeID       *string                                 `json:"nodeId,omitzero"`
+	BroadcastID  *string                                 `json:"broadcastId,omitzero"`
 }
 
 // FlowsArchiveOutputModeMetaManagedKind is the type of [FlowsArchiveOutputModeMetaManaged.Kind].
@@ -757,6 +1204,7 @@ const (
 	FlowsArchiveOutputModeMetaManagedKindLivechat   FlowsArchiveOutputModeMetaManagedKind = "livechat"
 	FlowsArchiveOutputModeMetaManagedKindWebinar    FlowsArchiveOutputModeMetaManagedKind = "webinar"
 	FlowsArchiveOutputModeMetaManagedKindFunnel     FlowsArchiveOutputModeMetaManagedKind = "funnel"
+	FlowsArchiveOutputModeMetaManagedKindBroadcast  FlowsArchiveOutputModeMetaManagedKind = "broadcast"
 )
 
 // FlowsArchiveOutputModeMetaManagedSource is the type of [FlowsArchiveOutputModeMetaManaged.Source].
@@ -764,19 +1212,21 @@ type FlowsArchiveOutputModeMetaManagedSource string
 
 // Values of [FlowsArchiveOutputModeMetaManagedSource].
 const (
-	FlowsArchiveOutputModeMetaManagedSourceEntradaExterna  FlowsArchiveOutputModeMetaManagedSource = "entrada_externa"
-	FlowsArchiveOutputModeMetaManagedSourceGatilhoPassagem FlowsArchiveOutputModeMetaManagedSource = "gatilho_passagem"
-	FlowsArchiveOutputModeMetaManagedSourceAtribuicao      FlowsArchiveOutputModeMetaManagedSource = "atribuicao"
-	FlowsArchiveOutputModeMetaManagedSourceAcaoDelay       FlowsArchiveOutputModeMetaManagedSource = "acao_delay"
-	FlowsArchiveOutputModeMetaManagedSourceNotificacao     FlowsArchiveOutputModeMetaManagedSource = "notificacao"
-	FlowsArchiveOutputModeMetaManagedSourceAutomacao       FlowsArchiveOutputModeMetaManagedSource = "automacao"
-	FlowsArchiveOutputModeMetaManagedSourcePosInscricao    FlowsArchiveOutputModeMetaManagedSource = "pos_inscricao"
-	FlowsArchiveOutputModeMetaManagedSourceLembrete        FlowsArchiveOutputModeMetaManagedSource = "lembrete"
-	FlowsArchiveOutputModeMetaManagedSourcePresenca        FlowsArchiveOutputModeMetaManagedSource = "presenca"
-	FlowsArchiveOutputModeMetaManagedSourceEngajamento     FlowsArchiveOutputModeMetaManagedSource = "engajamento"
-	FlowsArchiveOutputModeMetaManagedSourceOferta          FlowsArchiveOutputModeMetaManagedSource = "oferta"
-	FlowsArchiveOutputModeMetaManagedSourcePosEvento       FlowsArchiveOutputModeMetaManagedSource = "pos_evento"
-	FlowsArchiveOutputModeMetaManagedSourcePipelineNode    FlowsArchiveOutputModeMetaManagedSource = "pipeline_node"
+	FlowsArchiveOutputModeMetaManagedSourceEntradaExterna           FlowsArchiveOutputModeMetaManagedSource = "entrada_externa"
+	FlowsArchiveOutputModeMetaManagedSourceGatilhoPassagem          FlowsArchiveOutputModeMetaManagedSource = "gatilho_passagem"
+	FlowsArchiveOutputModeMetaManagedSourceAtribuicao               FlowsArchiveOutputModeMetaManagedSource = "atribuicao"
+	FlowsArchiveOutputModeMetaManagedSourceAcaoDelay                FlowsArchiveOutputModeMetaManagedSource = "acao_delay"
+	FlowsArchiveOutputModeMetaManagedSourceNotificacao              FlowsArchiveOutputModeMetaManagedSource = "notificacao"
+	FlowsArchiveOutputModeMetaManagedSourceAutomacao                FlowsArchiveOutputModeMetaManagedSource = "automacao"
+	FlowsArchiveOutputModeMetaManagedSourcePosInscricao             FlowsArchiveOutputModeMetaManagedSource = "pos_inscricao"
+	FlowsArchiveOutputModeMetaManagedSourceLembrete                 FlowsArchiveOutputModeMetaManagedSource = "lembrete"
+	FlowsArchiveOutputModeMetaManagedSourcePresenca                 FlowsArchiveOutputModeMetaManagedSource = "presenca"
+	FlowsArchiveOutputModeMetaManagedSourceEngajamento              FlowsArchiveOutputModeMetaManagedSource = "engajamento"
+	FlowsArchiveOutputModeMetaManagedSourceOferta                   FlowsArchiveOutputModeMetaManagedSource = "oferta"
+	FlowsArchiveOutputModeMetaManagedSourcePosEvento                FlowsArchiveOutputModeMetaManagedSource = "pos_evento"
+	FlowsArchiveOutputModeMetaManagedSourcePipelineNode             FlowsArchiveOutputModeMetaManagedSource = "pipeline_node"
+	FlowsArchiveOutputModeMetaManagedSourceBroadcastFollowUp        FlowsArchiveOutputModeMetaManagedSource = "broadcast_follow_up"
+	FlowsArchiveOutputModeMetaManagedSourceBroadcastFollowUpMessage FlowsArchiveOutputModeMetaManagedSource = "broadcast_follow_up_message"
 )
 
 // FlowsArchiveOutputModeMetaSuspendedByChannel is the type of
@@ -894,6 +1344,7 @@ type FlowsCloseOutputModeMeta struct {
 //   - kind, source, automationId
 //   - kind, source, webinarId
 //   - kind, source, funnelId, nodeId
+//   - kind, source, broadcastId
 type FlowsCloseOutputModeMetaManaged struct {
 	Kind         *FlowsCloseOutputModeMetaManagedKind  `json:"kind,omitzero"`
 	Source       FlowsCloseOutputModeMetaManagedSource `json:"source"`
@@ -904,6 +1355,7 @@ type FlowsCloseOutputModeMetaManaged struct {
 	WebinarID    *string                               `json:"webinarId,omitzero"`
 	FunnelID     *string                               `json:"funnelId,omitzero"`
 	NodeID       *string                               `json:"nodeId,omitzero"`
+	BroadcastID  *string                               `json:"broadcastId,omitzero"`
 }
 
 // FlowsCloseOutputModeMetaManagedKind is the type of [FlowsCloseOutputModeMetaManaged.Kind].
@@ -916,6 +1368,7 @@ const (
 	FlowsCloseOutputModeMetaManagedKindLivechat   FlowsCloseOutputModeMetaManagedKind = "livechat"
 	FlowsCloseOutputModeMetaManagedKindWebinar    FlowsCloseOutputModeMetaManagedKind = "webinar"
 	FlowsCloseOutputModeMetaManagedKindFunnel     FlowsCloseOutputModeMetaManagedKind = "funnel"
+	FlowsCloseOutputModeMetaManagedKindBroadcast  FlowsCloseOutputModeMetaManagedKind = "broadcast"
 )
 
 // FlowsCloseOutputModeMetaManagedSource is the type of [FlowsCloseOutputModeMetaManaged.Source].
@@ -923,19 +1376,21 @@ type FlowsCloseOutputModeMetaManagedSource string
 
 // Values of [FlowsCloseOutputModeMetaManagedSource].
 const (
-	FlowsCloseOutputModeMetaManagedSourceEntradaExterna  FlowsCloseOutputModeMetaManagedSource = "entrada_externa"
-	FlowsCloseOutputModeMetaManagedSourceGatilhoPassagem FlowsCloseOutputModeMetaManagedSource = "gatilho_passagem"
-	FlowsCloseOutputModeMetaManagedSourceAtribuicao      FlowsCloseOutputModeMetaManagedSource = "atribuicao"
-	FlowsCloseOutputModeMetaManagedSourceAcaoDelay       FlowsCloseOutputModeMetaManagedSource = "acao_delay"
-	FlowsCloseOutputModeMetaManagedSourceNotificacao     FlowsCloseOutputModeMetaManagedSource = "notificacao"
-	FlowsCloseOutputModeMetaManagedSourceAutomacao       FlowsCloseOutputModeMetaManagedSource = "automacao"
-	FlowsCloseOutputModeMetaManagedSourcePosInscricao    FlowsCloseOutputModeMetaManagedSource = "pos_inscricao"
-	FlowsCloseOutputModeMetaManagedSourceLembrete        FlowsCloseOutputModeMetaManagedSource = "lembrete"
-	FlowsCloseOutputModeMetaManagedSourcePresenca        FlowsCloseOutputModeMetaManagedSource = "presenca"
-	FlowsCloseOutputModeMetaManagedSourceEngajamento     FlowsCloseOutputModeMetaManagedSource = "engajamento"
-	FlowsCloseOutputModeMetaManagedSourceOferta          FlowsCloseOutputModeMetaManagedSource = "oferta"
-	FlowsCloseOutputModeMetaManagedSourcePosEvento       FlowsCloseOutputModeMetaManagedSource = "pos_evento"
-	FlowsCloseOutputModeMetaManagedSourcePipelineNode    FlowsCloseOutputModeMetaManagedSource = "pipeline_node"
+	FlowsCloseOutputModeMetaManagedSourceEntradaExterna           FlowsCloseOutputModeMetaManagedSource = "entrada_externa"
+	FlowsCloseOutputModeMetaManagedSourceGatilhoPassagem          FlowsCloseOutputModeMetaManagedSource = "gatilho_passagem"
+	FlowsCloseOutputModeMetaManagedSourceAtribuicao               FlowsCloseOutputModeMetaManagedSource = "atribuicao"
+	FlowsCloseOutputModeMetaManagedSourceAcaoDelay                FlowsCloseOutputModeMetaManagedSource = "acao_delay"
+	FlowsCloseOutputModeMetaManagedSourceNotificacao              FlowsCloseOutputModeMetaManagedSource = "notificacao"
+	FlowsCloseOutputModeMetaManagedSourceAutomacao                FlowsCloseOutputModeMetaManagedSource = "automacao"
+	FlowsCloseOutputModeMetaManagedSourcePosInscricao             FlowsCloseOutputModeMetaManagedSource = "pos_inscricao"
+	FlowsCloseOutputModeMetaManagedSourceLembrete                 FlowsCloseOutputModeMetaManagedSource = "lembrete"
+	FlowsCloseOutputModeMetaManagedSourcePresenca                 FlowsCloseOutputModeMetaManagedSource = "presenca"
+	FlowsCloseOutputModeMetaManagedSourceEngajamento              FlowsCloseOutputModeMetaManagedSource = "engajamento"
+	FlowsCloseOutputModeMetaManagedSourceOferta                   FlowsCloseOutputModeMetaManagedSource = "oferta"
+	FlowsCloseOutputModeMetaManagedSourcePosEvento                FlowsCloseOutputModeMetaManagedSource = "pos_evento"
+	FlowsCloseOutputModeMetaManagedSourcePipelineNode             FlowsCloseOutputModeMetaManagedSource = "pipeline_node"
+	FlowsCloseOutputModeMetaManagedSourceBroadcastFollowUp        FlowsCloseOutputModeMetaManagedSource = "broadcast_follow_up"
+	FlowsCloseOutputModeMetaManagedSourceBroadcastFollowUpMessage FlowsCloseOutputModeMetaManagedSource = "broadcast_follow_up_message"
 )
 
 // FlowsCloseOutputModeMetaSuspendedByChannel is the type of
@@ -1110,6 +1565,7 @@ type FlowsCreateOutputModeMeta struct {
 //   - kind, source, automationId
 //   - kind, source, webinarId
 //   - kind, source, funnelId, nodeId
+//   - kind, source, broadcastId
 type FlowsCreateOutputModeMetaManaged struct {
 	Kind         *FlowsCreateOutputModeMetaManagedKind  `json:"kind,omitzero"`
 	Source       FlowsCreateOutputModeMetaManagedSource `json:"source"`
@@ -1120,6 +1576,7 @@ type FlowsCreateOutputModeMetaManaged struct {
 	WebinarID    *string                                `json:"webinarId,omitzero"`
 	FunnelID     *string                                `json:"funnelId,omitzero"`
 	NodeID       *string                                `json:"nodeId,omitzero"`
+	BroadcastID  *string                                `json:"broadcastId,omitzero"`
 }
 
 // FlowsCreateOutputModeMetaManagedKind is the type of [FlowsCreateOutputModeMetaManaged.Kind].
@@ -1132,6 +1589,7 @@ const (
 	FlowsCreateOutputModeMetaManagedKindLivechat   FlowsCreateOutputModeMetaManagedKind = "livechat"
 	FlowsCreateOutputModeMetaManagedKindWebinar    FlowsCreateOutputModeMetaManagedKind = "webinar"
 	FlowsCreateOutputModeMetaManagedKindFunnel     FlowsCreateOutputModeMetaManagedKind = "funnel"
+	FlowsCreateOutputModeMetaManagedKindBroadcast  FlowsCreateOutputModeMetaManagedKind = "broadcast"
 )
 
 // FlowsCreateOutputModeMetaManagedSource is the type of [FlowsCreateOutputModeMetaManaged.Source].
@@ -1139,19 +1597,21 @@ type FlowsCreateOutputModeMetaManagedSource string
 
 // Values of [FlowsCreateOutputModeMetaManagedSource].
 const (
-	FlowsCreateOutputModeMetaManagedSourceEntradaExterna  FlowsCreateOutputModeMetaManagedSource = "entrada_externa"
-	FlowsCreateOutputModeMetaManagedSourceGatilhoPassagem FlowsCreateOutputModeMetaManagedSource = "gatilho_passagem"
-	FlowsCreateOutputModeMetaManagedSourceAtribuicao      FlowsCreateOutputModeMetaManagedSource = "atribuicao"
-	FlowsCreateOutputModeMetaManagedSourceAcaoDelay       FlowsCreateOutputModeMetaManagedSource = "acao_delay"
-	FlowsCreateOutputModeMetaManagedSourceNotificacao     FlowsCreateOutputModeMetaManagedSource = "notificacao"
-	FlowsCreateOutputModeMetaManagedSourceAutomacao       FlowsCreateOutputModeMetaManagedSource = "automacao"
-	FlowsCreateOutputModeMetaManagedSourcePosInscricao    FlowsCreateOutputModeMetaManagedSource = "pos_inscricao"
-	FlowsCreateOutputModeMetaManagedSourceLembrete        FlowsCreateOutputModeMetaManagedSource = "lembrete"
-	FlowsCreateOutputModeMetaManagedSourcePresenca        FlowsCreateOutputModeMetaManagedSource = "presenca"
-	FlowsCreateOutputModeMetaManagedSourceEngajamento     FlowsCreateOutputModeMetaManagedSource = "engajamento"
-	FlowsCreateOutputModeMetaManagedSourceOferta          FlowsCreateOutputModeMetaManagedSource = "oferta"
-	FlowsCreateOutputModeMetaManagedSourcePosEvento       FlowsCreateOutputModeMetaManagedSource = "pos_evento"
-	FlowsCreateOutputModeMetaManagedSourcePipelineNode    FlowsCreateOutputModeMetaManagedSource = "pipeline_node"
+	FlowsCreateOutputModeMetaManagedSourceEntradaExterna           FlowsCreateOutputModeMetaManagedSource = "entrada_externa"
+	FlowsCreateOutputModeMetaManagedSourceGatilhoPassagem          FlowsCreateOutputModeMetaManagedSource = "gatilho_passagem"
+	FlowsCreateOutputModeMetaManagedSourceAtribuicao               FlowsCreateOutputModeMetaManagedSource = "atribuicao"
+	FlowsCreateOutputModeMetaManagedSourceAcaoDelay                FlowsCreateOutputModeMetaManagedSource = "acao_delay"
+	FlowsCreateOutputModeMetaManagedSourceNotificacao              FlowsCreateOutputModeMetaManagedSource = "notificacao"
+	FlowsCreateOutputModeMetaManagedSourceAutomacao                FlowsCreateOutputModeMetaManagedSource = "automacao"
+	FlowsCreateOutputModeMetaManagedSourcePosInscricao             FlowsCreateOutputModeMetaManagedSource = "pos_inscricao"
+	FlowsCreateOutputModeMetaManagedSourceLembrete                 FlowsCreateOutputModeMetaManagedSource = "lembrete"
+	FlowsCreateOutputModeMetaManagedSourcePresenca                 FlowsCreateOutputModeMetaManagedSource = "presenca"
+	FlowsCreateOutputModeMetaManagedSourceEngajamento              FlowsCreateOutputModeMetaManagedSource = "engajamento"
+	FlowsCreateOutputModeMetaManagedSourceOferta                   FlowsCreateOutputModeMetaManagedSource = "oferta"
+	FlowsCreateOutputModeMetaManagedSourcePosEvento                FlowsCreateOutputModeMetaManagedSource = "pos_evento"
+	FlowsCreateOutputModeMetaManagedSourcePipelineNode             FlowsCreateOutputModeMetaManagedSource = "pipeline_node"
+	FlowsCreateOutputModeMetaManagedSourceBroadcastFollowUp        FlowsCreateOutputModeMetaManagedSource = "broadcast_follow_up"
+	FlowsCreateOutputModeMetaManagedSourceBroadcastFollowUpMessage FlowsCreateOutputModeMetaManagedSource = "broadcast_follow_up_message"
 )
 
 // FlowsCreateOutputModeMetaSuspendedByChannel is the type of
@@ -1192,6 +1652,538 @@ type FlowsDeleteInput struct {
 type FlowsDeleteOutput struct {
 	Deleted bool `json:"deleted"`
 }
+
+// FlowsEntityRefsResolveInput is the request body of [FlowsService.EntityRefsResolve].
+type FlowsEntityRefsResolveInput struct {
+	Refs []FlowsEntityRefsResolveInputRefsItem `json:"refs"`
+}
+
+// FlowsEntityRefsResolveInputRefsItem is an element of [FlowsEntityRefsResolveInput.Refs].
+type FlowsEntityRefsResolveInputRefsItem struct {
+	Key string `json:"key"`
+	ID  string `json:"id"`
+}
+
+// FlowsEntityRefsResolveOutput is the response of [FlowsService.EntityRefsResolve].
+type FlowsEntityRefsResolveOutput struct {
+	Data []FlowsEntityRefsResolveOutputDataItem `json:"data"`
+}
+
+// FlowsEntityRefsResolveOutputDataItem is an element of [FlowsEntityRefsResolveOutput.Data].
+type FlowsEntityRefsResolveOutputDataItem struct {
+	Key            string                                              `json:"key"`
+	ID             string                                              `json:"id"`
+	Type           string                                              `json:"type"`
+	Label          string                                              `json:"label"`
+	Description    *string                                             `json:"description"`
+	Color          *string                                             `json:"color"`
+	Href           *string                                             `json:"href"`
+	Meta           []FlowsEntityRefsResolveOutputDataItemMetaItem      `json:"meta"`
+	ImageURL       *string                                             `json:"imageUrl,omitzero"`
+	PublicRef      map[string]string                                   `json:"publicRef,omitzero"`
+	Calendar       *FlowsEntityRefsResolveOutputDataItemCalendar       `json:"calendar,omitzero"`
+	WebinarMetrics *FlowsEntityRefsResolveOutputDataItemWebinarMetrics `json:"webinarMetrics,omitzero"`
+}
+
+// FlowsEntityRefsResolveOutputDataItemCalendar is the type of
+// [FlowsEntityRefsResolveOutputDataItem.Calendar].
+type FlowsEntityRefsResolveOutputDataItemCalendar struct {
+	// YYYY-MM no fuso America/Sao_Paulo
+	Month  string  `json:"month"`
+	Counts []int64 `json:"counts"`
+}
+
+// FlowsEntityRefsResolveOutputDataItemMetaItem is an element of
+// [FlowsEntityRefsResolveOutputDataItem.Meta].
+type FlowsEntityRefsResolveOutputDataItemMetaItem struct {
+	Field string `json:"field"`
+	Value string `json:"value"`
+}
+
+// FlowsEntityRefsResolveOutputDataItemWebinarMetrics is the type of
+// [FlowsEntityRefsResolveOutputDataItem.WebinarMetrics].
+type FlowsEntityRefsResolveOutputDataItemWebinarMetrics struct {
+	RegistrationsTotal        int64   `json:"registrationsTotal"`
+	LeadsTotal                int64   `json:"leadsTotal"`
+	ConversionPercent         float64 `json:"conversionPercent"`
+	RegistrationsTrendPercent float64 `json:"registrationsTrendPercent"`
+	RegistrationsSparkline    []int64 `json:"registrationsSparkline"`
+}
+
+// FlowsExecutionsCancelInput is the request body of [FlowsService.ExecutionsCancel].
+type FlowsExecutionsCancelInput struct {
+	FlowID     string `json:"flowId"`
+	InstanceID string `json:"instanceId"`
+}
+
+// FlowsExecutionsCancelOutput is the response of [FlowsService.ExecutionsCancel].
+type FlowsExecutionsCancelOutput struct {
+	InstanceID string                            `json:"instanceId"`
+	Status     FlowsExecutionsCancelOutputStatus `json:"status"`
+}
+
+// FlowsExecutionsCancelOutputStatus is the type of [FlowsExecutionsCancelOutput.Status].
+type FlowsExecutionsCancelOutputStatus string
+
+// Values of [FlowsExecutionsCancelOutputStatus].
+const (
+	FlowsExecutionsCancelOutputStatusCanceled FlowsExecutionsCancelOutputStatus = "canceled"
+)
+
+// FlowsExecutionsGetOutput is the response of [FlowsService.ExecutionsGet].
+type FlowsExecutionsGetOutput struct {
+	ID         string                              `json:"id"`
+	Status     FlowsExecutionsGetOutputStatus      `json:"status"`
+	Kind       FlowsExecutionsGetOutputKind        `json:"kind"`
+	Error      *string                             `json:"error,omitzero"`
+	CreatedAt  time.Time                           `json:"createdAt"`
+	UpdatedAt  time.Time                           `json:"updatedAt"`
+	State      map[string]any                      `json:"state"`
+	Lead       *FlowsExecutionsGetOutputLead       `json:"lead,omitzero"`
+	HaltReason FlowsExecutionsGetOutputHaltReason  `json:"haltReason"`
+	Steps      []FlowsExecutionsGetOutputStepsItem `json:"steps"`
+	Replay     *FlowsExecutionsGetOutputReplay     `json:"replay,omitzero"`
+}
+
+// FlowsExecutionsGetOutputHaltReason is the type of [FlowsExecutionsGetOutput.HaltReason].
+type FlowsExecutionsGetOutputHaltReason string
+
+// Values of [FlowsExecutionsGetOutputHaltReason].
+const (
+	FlowsExecutionsGetOutputHaltReasonRunning      FlowsExecutionsGetOutputHaltReason = "running"
+	FlowsExecutionsGetOutputHaltReasonWaitingTimer FlowsExecutionsGetOutputHaltReason = "waitingTimer"
+	FlowsExecutionsGetOutputHaltReasonWaitingReply FlowsExecutionsGetOutputHaltReason = "waitingReply"
+	FlowsExecutionsGetOutputHaltReasonFinished     FlowsExecutionsGetOutputHaltReason = "finished"
+	FlowsExecutionsGetOutputHaltReasonFailed       FlowsExecutionsGetOutputHaltReason = "failed"
+	FlowsExecutionsGetOutputHaltReasonCanceled     FlowsExecutionsGetOutputHaltReason = "canceled"
+	FlowsExecutionsGetOutputHaltReasonPaused       FlowsExecutionsGetOutputHaltReason = "paused"
+)
+
+// FlowsExecutionsGetOutputKind is the type of [FlowsExecutionsGetOutput.Kind].
+type FlowsExecutionsGetOutputKind string
+
+// Values of [FlowsExecutionsGetOutputKind].
+const (
+	FlowsExecutionsGetOutputKindProduction FlowsExecutionsGetOutputKind = "production"
+	FlowsExecutionsGetOutputKindTestDry    FlowsExecutionsGetOutputKind = "testDry"
+	FlowsExecutionsGetOutputKindTestLive   FlowsExecutionsGetOutputKind = "testLive"
+)
+
+// FlowsExecutionsGetOutputLead is the type of [FlowsExecutionsGetOutput.Lead].
+type FlowsExecutionsGetOutputLead struct {
+	ID    string  `json:"id"`
+	Name  *string `json:"name,omitzero"`
+	Email *string `json:"email,omitzero"`
+}
+
+// FlowsExecutionsGetOutputReplay is the type of [FlowsExecutionsGetOutput.Replay].
+type FlowsExecutionsGetOutputReplay struct {
+	OfInstanceID string                             `json:"ofInstanceId"`
+	FromSequence float64                            `json:"fromSequence"`
+	Mode         FlowsExecutionsGetOutputReplayMode `json:"mode"`
+}
+
+// FlowsExecutionsGetOutputReplayMode is the type of [FlowsExecutionsGetOutputReplay.Mode].
+type FlowsExecutionsGetOutputReplayMode string
+
+// Values of [FlowsExecutionsGetOutputReplayMode].
+const (
+	FlowsExecutionsGetOutputReplayModeSingle   FlowsExecutionsGetOutputReplayMode = "single"
+	FlowsExecutionsGetOutputReplayModeContinue FlowsExecutionsGetOutputReplayMode = "continue"
+)
+
+// FlowsExecutionsGetOutputStatus is the type of [FlowsExecutionsGetOutput.Status].
+type FlowsExecutionsGetOutputStatus string
+
+// Values of [FlowsExecutionsGetOutputStatus].
+const (
+	FlowsExecutionsGetOutputStatusFailed    FlowsExecutionsGetOutputStatus = "failed"
+	FlowsExecutionsGetOutputStatusQueued    FlowsExecutionsGetOutputStatus = "queued"
+	FlowsExecutionsGetOutputStatusPending   FlowsExecutionsGetOutputStatus = "pending"
+	FlowsExecutionsGetOutputStatusScheduled FlowsExecutionsGetOutputStatus = "scheduled"
+	FlowsExecutionsGetOutputStatusFinished  FlowsExecutionsGetOutputStatus = "finished"
+	FlowsExecutionsGetOutputStatusCanceled  FlowsExecutionsGetOutputStatus = "canceled"
+	FlowsExecutionsGetOutputStatusPaused    FlowsExecutionsGetOutputStatus = "paused"
+)
+
+// FlowsExecutionsGetOutputStepsItem is an element of [FlowsExecutionsGetOutput.Steps].
+type FlowsExecutionsGetOutputStepsItem struct {
+	StepID     string                                       `json:"stepId"`
+	Type       FlowsExecutionsGetOutputStepsItemType        `json:"type"`
+	Action     *string                                      `json:"action,omitzero"`
+	Sequence   float64                                      `json:"sequence"`
+	EnteredAt  *time.Time                                   `json:"enteredAt,omitzero"`
+	LeftAt     *time.Time                                   `json:"leftAt,omitzero"`
+	DurationMs *float64                                     `json:"durationMs,omitzero"`
+	Outcome    *string                                      `json:"outcome,omitzero"`
+	Evaluation *FlowsExecutionsGetOutputStepsItemEvaluation `json:"evaluation,omitzero"`
+	Effect     *FlowsExecutionsGetOutputStepsItemEffect     `json:"effect,omitzero"`
+	Error      *string                                      `json:"error,omitzero"`
+	Input      any                                          `json:"input,omitzero"`
+	Output     any                                          `json:"output,omitzero"`
+	AISdr      *FlowsExecutionsGetOutputStepsItemAISdr      `json:"aiSdr,omitzero"`
+	Replayable bool                                         `json:"replayable"`
+	IsCurrent  bool                                         `json:"isCurrent"`
+}
+
+// FlowsExecutionsGetOutputStepsItemAISdr is the type of [FlowsExecutionsGetOutputStepsItem.AISdr].
+type FlowsExecutionsGetOutputStepsItemAISdr struct {
+	Status            FlowsExecutionsGetOutputStepsItemAISdrStatus          `json:"status"`
+	Exit              *string                                               `json:"exit,omitzero"`
+	ExitReason        *string                                               `json:"exitReason,omitzero"`
+	AIMessages        int64                                                 `json:"aiMessages"`
+	MaxMessages       int64                                                 `json:"maxMessages"`
+	ConsecutiveErrors int64                                                 `json:"consecutiveErrors"`
+	QualifyMinFields  int64                                                 `json:"qualifyMinFields"`
+	AskedQuestions    []string                                              `json:"askedQuestions"`
+	StartedAt         time.Time                                             `json:"startedAt"`
+	EndedAt           *time.Time                                            `json:"endedAt,omitzero"`
+	NoReplyDeadlineAt *time.Time                                            `json:"noReplyDeadlineAt,omitzero"`
+	ConversationID    *string                                               `json:"conversationId,omitzero"`
+	Fields            []FlowsExecutionsGetOutputStepsItemAISdrFieldsItem    `json:"fields"`
+	ToolCalls         []FlowsExecutionsGetOutputStepsItemAISdrToolCallsItem `json:"toolCalls"`
+}
+
+// FlowsExecutionsGetOutputStepsItemAISdrFieldsItem is an element of
+// [FlowsExecutionsGetOutputStepsItemAISdr.Fields].
+type FlowsExecutionsGetOutputStepsItemAISdrFieldsItem struct {
+	FieldID  string  `json:"fieldId"`
+	Name     string  `json:"name"`
+	Required bool    `json:"required"`
+	Value    *string `json:"value,omitzero"`
+	Source   *string `json:"source,omitzero"`
+}
+
+// FlowsExecutionsGetOutputStepsItemAISdrStatus is the type of
+// [FlowsExecutionsGetOutputStepsItemAISdr.Status].
+type FlowsExecutionsGetOutputStepsItemAISdrStatus string
+
+// Values of [FlowsExecutionsGetOutputStepsItemAISdrStatus].
+const (
+	FlowsExecutionsGetOutputStepsItemAISdrStatusActive FlowsExecutionsGetOutputStepsItemAISdrStatus = "active"
+	FlowsExecutionsGetOutputStepsItemAISdrStatusEnded  FlowsExecutionsGetOutputStepsItemAISdrStatus = "ended"
+)
+
+// FlowsExecutionsGetOutputStepsItemAISdrToolCallsItem is an element of
+// [FlowsExecutionsGetOutputStepsItemAISdr.ToolCalls].
+type FlowsExecutionsGetOutputStepsItemAISdrToolCallsItem struct {
+	Tool      string    `json:"tool"`
+	Status    string    `json:"status"`
+	Input     any       `json:"input"`
+	Output    any       `json:"output"`
+	ErrorCode *string   `json:"errorCode,omitzero"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// FlowsExecutionsGetOutputStepsItemEffect is the type of [FlowsExecutionsGetOutputStepsItem.Effect].
+type FlowsExecutionsGetOutputStepsItemEffect struct {
+	Outcome   FlowsExecutionsGetOutputStepsItemEffectOutcome       `json:"outcome"`
+	Kind      string                                               `json:"kind"`
+	Channel   *string                                              `json:"channel,omitzero"`
+	Recipient *string                                              `json:"recipient,omitzero"`
+	Details   []FlowsExecutionsGetOutputStepsItemEffectDetailsItem `json:"details,omitzero"`
+}
+
+// FlowsExecutionsGetOutputStepsItemEffectDetailsItem is an element of
+// [FlowsExecutionsGetOutputStepsItemEffect.Details].
+type FlowsExecutionsGetOutputStepsItemEffectDetailsItem struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+// FlowsExecutionsGetOutputStepsItemEffectOutcome is the type of
+// [FlowsExecutionsGetOutputStepsItemEffect.Outcome].
+type FlowsExecutionsGetOutputStepsItemEffectOutcome string
+
+// Values of [FlowsExecutionsGetOutputStepsItemEffectOutcome].
+const (
+	FlowsExecutionsGetOutputStepsItemEffectOutcomeExecuted  FlowsExecutionsGetOutputStepsItemEffectOutcome = "executed"
+	FlowsExecutionsGetOutputStepsItemEffectOutcomeSimulated FlowsExecutionsGetOutputStepsItemEffectOutcome = "simulated"
+)
+
+// FlowsExecutionsGetOutputStepsItemEvaluation is the type of
+// [FlowsExecutionsGetOutputStepsItem.Evaluation].
+type FlowsExecutionsGetOutputStepsItemEvaluation struct {
+	Mode       FlowsExecutionsGetOutputStepsItemEvaluationMode             `json:"mode"`
+	Branch     string                                                      `json:"branch"`
+	Conditions []FlowsExecutionsGetOutputStepsItemEvaluationConditionsItem `json:"conditions"`
+}
+
+// FlowsExecutionsGetOutputStepsItemEvaluationConditionsItem is an element of
+// [FlowsExecutionsGetOutputStepsItemEvaluation.Conditions].
+type FlowsExecutionsGetOutputStepsItemEvaluationConditionsItem struct {
+	Field    string   `json:"field"`
+	Operator string   `json:"operator"`
+	Actual   *string  `json:"actual,omitzero"`
+	Expected []string `json:"expected"`
+	Matched  bool     `json:"matched"`
+}
+
+// FlowsExecutionsGetOutputStepsItemEvaluationMode is the type of
+// [FlowsExecutionsGetOutputStepsItemEvaluation.Mode].
+type FlowsExecutionsGetOutputStepsItemEvaluationMode string
+
+// Values of [FlowsExecutionsGetOutputStepsItemEvaluationMode].
+const (
+	FlowsExecutionsGetOutputStepsItemEvaluationModeSingle FlowsExecutionsGetOutputStepsItemEvaluationMode = "single"
+	FlowsExecutionsGetOutputStepsItemEvaluationModeAnd    FlowsExecutionsGetOutputStepsItemEvaluationMode = "and"
+	FlowsExecutionsGetOutputStepsItemEvaluationModeOr     FlowsExecutionsGetOutputStepsItemEvaluationMode = "or"
+)
+
+// FlowsExecutionsGetOutputStepsItemType is the type of [FlowsExecutionsGetOutputStepsItem.Type].
+type FlowsExecutionsGetOutputStepsItemType string
+
+// Values of [FlowsExecutionsGetOutputStepsItemType].
+const (
+	FlowsExecutionsGetOutputStepsItemTypeAction                FlowsExecutionsGetOutputStepsItemType = "action"
+	FlowsExecutionsGetOutputStepsItemTypeCollect               FlowsExecutionsGetOutputStepsItemType = "collect"
+	FlowsExecutionsGetOutputStepsItemTypeConditional           FlowsExecutionsGetOutputStepsItemType = "conditional"
+	FlowsExecutionsGetOutputStepsItemTypeDebug                 FlowsExecutionsGetOutputStepsItemType = "debug"
+	FlowsExecutionsGetOutputStepsItemTypeDelay                 FlowsExecutionsGetOutputStepsItemType = "delay"
+	FlowsExecutionsGetOutputStepsItemTypeInstagramCommentReply FlowsExecutionsGetOutputStepsItemType = "instagram_comment_reply"
+	FlowsExecutionsGetOutputStepsItemTypeInstagramMessageReply FlowsExecutionsGetOutputStepsItemType = "instagram_message_reply"
+	FlowsExecutionsGetOutputStepsItemTypeInstagramStoryReply   FlowsExecutionsGetOutputStepsItemType = "instagram_story_reply"
+	FlowsExecutionsGetOutputStepsItemTypeInvoke                FlowsExecutionsGetOutputStepsItemType = "invoke"
+	FlowsExecutionsGetOutputStepsItemTypeSequence              FlowsExecutionsGetOutputStepsItemType = "sequence"
+	FlowsExecutionsGetOutputStepsItemTypeSendMessage           FlowsExecutionsGetOutputStepsItemType = "send_message"
+	FlowsExecutionsGetOutputStepsItemTypeTimeout               FlowsExecutionsGetOutputStepsItemType = "timeout"
+	FlowsExecutionsGetOutputStepsItemTypeTrigger               FlowsExecutionsGetOutputStepsItemType = "trigger"
+	FlowsExecutionsGetOutputStepsItemTypeWait                  FlowsExecutionsGetOutputStepsItemType = "wait"
+	FlowsExecutionsGetOutputStepsItemTypePostit                FlowsExecutionsGetOutputStepsItemType = "postit"
+	FlowsExecutionsGetOutputStepsItemTypeRandomizer            FlowsExecutionsGetOutputStepsItemType = "randomizer"
+	FlowsExecutionsGetOutputStepsItemTypeSwitch                FlowsExecutionsGetOutputStepsItemType = "switch"
+)
+
+// FlowsExecutionsGetParams holds the query parameters of [FlowsService.ExecutionsGet].
+type FlowsExecutionsGetParams struct {
+	FlowID     string
+	InstanceID string
+}
+
+func (p FlowsExecutionsGetParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "flowId", &p.FlowID)
+	addString(v, "instanceId", &p.InstanceID)
+	return v
+}
+
+// FlowsExecutionsListOutput is the response of [FlowsService.ExecutionsList].
+type FlowsExecutionsListOutput struct {
+	Data       []FlowsExecutionsListOutputDataItem      `json:"data"`
+	Meta       FlowsExecutionsListOutputMeta            `json:"meta"`
+	Counts     FlowsExecutionsListOutputCounts          `json:"counts"`
+	TotalSteps float64                                  `json:"totalSteps"`
+	TopErrors  []FlowsExecutionsListOutputTopErrorsItem `json:"topErrors"`
+}
+
+// FlowsExecutionsListOutputCounts is the type of [FlowsExecutionsListOutput.Counts].
+type FlowsExecutionsListOutputCounts struct {
+	All       float64 `json:"all"`
+	Finished  float64 `json:"finished"`
+	Failed    float64 `json:"failed"`
+	Queued    float64 `json:"queued"`
+	Pending   float64 `json:"pending"`
+	Scheduled float64 `json:"scheduled"`
+	Canceled  float64 `json:"canceled"`
+}
+
+// FlowsExecutionsListOutputDataItem is an element of [FlowsExecutionsListOutput.Data].
+type FlowsExecutionsListOutputDataItem struct {
+	ID             string                                          `json:"id"`
+	Status         FlowsExecutionsListOutputDataItemStatus         `json:"status"`
+	Kind           FlowsExecutionsListOutputDataItemKind           `json:"kind"`
+	RunID          *string                                         `json:"runId,omitzero"`
+	Error          *string                                         `json:"error,omitzero"`
+	JobID          *string                                         `json:"jobId,omitzero"`
+	PositionID     *string                                         `json:"positionId,omitzero"`
+	History        []string                                        `json:"history"`
+	StepsCompleted float64                                         `json:"stepsCompleted"`
+	CreatedAt      time.Time                                       `json:"createdAt"`
+	UpdatedAt      time.Time                                       `json:"updatedAt"`
+	State          map[string]any                                  `json:"state"`
+	Lead           *FlowsExecutionsListOutputDataItemLead          `json:"lead,omitzero"`
+	Messages       []FlowsExecutionsListOutputDataItemMessagesItem `json:"messages"`
+}
+
+// FlowsExecutionsListOutputDataItemKind is the type of [FlowsExecutionsListOutputDataItem.Kind].
+type FlowsExecutionsListOutputDataItemKind string
+
+// Values of [FlowsExecutionsListOutputDataItemKind].
+const (
+	FlowsExecutionsListOutputDataItemKindProduction FlowsExecutionsListOutputDataItemKind = "production"
+	FlowsExecutionsListOutputDataItemKindTestDry    FlowsExecutionsListOutputDataItemKind = "testDry"
+	FlowsExecutionsListOutputDataItemKindTestLive   FlowsExecutionsListOutputDataItemKind = "testLive"
+)
+
+// FlowsExecutionsListOutputDataItemLead is the type of [FlowsExecutionsListOutputDataItem.Lead].
+type FlowsExecutionsListOutputDataItemLead struct {
+	ID    string  `json:"id"`
+	Name  *string `json:"name,omitzero"`
+	Email *string `json:"email,omitzero"`
+}
+
+// FlowsExecutionsListOutputDataItemMessagesItem is an element of
+// [FlowsExecutionsListOutputDataItem.Messages].
+type FlowsExecutionsListOutputDataItemMessagesItem struct {
+	FlowStepID   *string                                                     `json:"flowStepId,omitzero"`
+	Platform     string                                                      `json:"platform"`
+	EmailSubject *string                                                     `json:"emailSubject,omitzero"`
+	Status       string                                                      `json:"status"`
+	Channel      *string                                                     `json:"channel,omitzero"`
+	CreditCost   *int64                                                      `json:"creditCost,omitzero"`
+	Error        *string                                                     `json:"error,omitzero"`
+	ErrorMessage *string                                                     `json:"errorMessage,omitzero"`
+	QueuedAt     time.Time                                                   `json:"queuedAt"`
+	SentAt       *time.Time                                                  `json:"sentAt,omitzero"`
+	DeliveredAt  *time.Time                                                  `json:"deliveredAt,omitzero"`
+	VisualizedAt *time.Time                                                  `json:"visualizedAt,omitzero"`
+	FailedAt     *time.Time                                                  `json:"failedAt,omitzero"`
+	Contents     []FlowsExecutionsListOutputDataItemMessagesItemContentsItem `json:"contents"`
+}
+
+// FlowsExecutionsListOutputDataItemMessagesItemContentsItem is an element of
+// [FlowsExecutionsListOutputDataItemMessagesItem.Contents].
+type FlowsExecutionsListOutputDataItemMessagesItemContentsItem struct {
+	Content string  `json:"content"`
+	Format  string  `json:"format"`
+	Order   float64 `json:"order"`
+}
+
+// FlowsExecutionsListOutputDataItemStatus is the type of [FlowsExecutionsListOutputDataItem.Status].
+type FlowsExecutionsListOutputDataItemStatus string
+
+// Values of [FlowsExecutionsListOutputDataItemStatus].
+const (
+	FlowsExecutionsListOutputDataItemStatusFailed    FlowsExecutionsListOutputDataItemStatus = "failed"
+	FlowsExecutionsListOutputDataItemStatusQueued    FlowsExecutionsListOutputDataItemStatus = "queued"
+	FlowsExecutionsListOutputDataItemStatusPending   FlowsExecutionsListOutputDataItemStatus = "pending"
+	FlowsExecutionsListOutputDataItemStatusScheduled FlowsExecutionsListOutputDataItemStatus = "scheduled"
+	FlowsExecutionsListOutputDataItemStatusFinished  FlowsExecutionsListOutputDataItemStatus = "finished"
+	FlowsExecutionsListOutputDataItemStatusCanceled  FlowsExecutionsListOutputDataItemStatus = "canceled"
+	FlowsExecutionsListOutputDataItemStatusPaused    FlowsExecutionsListOutputDataItemStatus = "paused"
+)
+
+// FlowsExecutionsListOutputMeta is the type of [FlowsExecutionsListOutput.Meta].
+type FlowsExecutionsListOutputMeta struct {
+	CountItens float64 `json:"countItens"`
+	CountPages float64 `json:"countPages"`
+	PerPage    float64 `json:"perPage"`
+}
+
+// FlowsExecutionsListOutputTopErrorsItem is an element of [FlowsExecutionsListOutput.TopErrors].
+type FlowsExecutionsListOutputTopErrorsItem struct {
+	Error string                                     `json:"error"`
+	Count float64                                    `json:"count"`
+	Kind  FlowsExecutionsListOutputTopErrorsItemKind `json:"kind"`
+}
+
+// FlowsExecutionsListOutputTopErrorsItemKind is the type of
+// [FlowsExecutionsListOutputTopErrorsItem.Kind].
+type FlowsExecutionsListOutputTopErrorsItemKind string
+
+// Values of [FlowsExecutionsListOutputTopErrorsItemKind].
+const (
+	FlowsExecutionsListOutputTopErrorsItemKindMessage   FlowsExecutionsListOutputTopErrorsItemKind = "message"
+	FlowsExecutionsListOutputTopErrorsItemKindExecution FlowsExecutionsListOutputTopErrorsItemKind = "execution"
+)
+
+// FlowsExecutionsListParams holds the query parameters of [FlowsService.ExecutionsList].
+type FlowsExecutionsListParams struct {
+	FlowID    string
+	Page      *float64
+	PerPage   *float64
+	Status    *FlowsExecutionsListParamsStatus
+	Q         *string
+	StartDate *time.Time
+	EndDate   *time.Time
+	StepID    *string
+	StepScope *FlowsExecutionsListParamsStepScope
+	Kind      *FlowsExecutionsListParamsKind
+	RunID     *string
+}
+
+func (p FlowsExecutionsListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "flowId", &p.FlowID)
+	addFloat(v, "page", p.Page)
+	addFloat(v, "perPage", p.PerPage)
+	addString(v, "status", (*string)(p.Status))
+	addString(v, "q", p.Q)
+	addTime(v, "startDate", p.StartDate)
+	addTime(v, "endDate", p.EndDate)
+	addString(v, "stepId", p.StepID)
+	addString(v, "stepScope", (*string)(p.StepScope))
+	addString(v, "kind", (*string)(p.Kind))
+	addString(v, "runId", p.RunID)
+	return v
+}
+
+// FlowsExecutionsListParamsKind is the type of [FlowsExecutionsListParams.Kind].
+type FlowsExecutionsListParamsKind string
+
+// Values of [FlowsExecutionsListParamsKind].
+const (
+	FlowsExecutionsListParamsKindProduction FlowsExecutionsListParamsKind = "production"
+	FlowsExecutionsListParamsKindTest       FlowsExecutionsListParamsKind = "test"
+	FlowsExecutionsListParamsKindAll        FlowsExecutionsListParamsKind = "all"
+)
+
+// FlowsExecutionsListParamsStatus is the type of [FlowsExecutionsListParams.Status].
+type FlowsExecutionsListParamsStatus string
+
+// Values of [FlowsExecutionsListParamsStatus].
+const (
+	FlowsExecutionsListParamsStatusFailed    FlowsExecutionsListParamsStatus = "failed"
+	FlowsExecutionsListParamsStatusQueued    FlowsExecutionsListParamsStatus = "queued"
+	FlowsExecutionsListParamsStatusPending   FlowsExecutionsListParamsStatus = "pending"
+	FlowsExecutionsListParamsStatusScheduled FlowsExecutionsListParamsStatus = "scheduled"
+	FlowsExecutionsListParamsStatusFinished  FlowsExecutionsListParamsStatus = "finished"
+	FlowsExecutionsListParamsStatusCanceled  FlowsExecutionsListParamsStatus = "canceled"
+	FlowsExecutionsListParamsStatusPaused    FlowsExecutionsListParamsStatus = "paused"
+	FlowsExecutionsListParamsStatusRunning   FlowsExecutionsListParamsStatus = "running"
+)
+
+// FlowsExecutionsListParamsStepScope is the type of [FlowsExecutionsListParams.StepScope].
+type FlowsExecutionsListParamsStepScope string
+
+// Values of [FlowsExecutionsListParamsStepScope].
+const (
+	FlowsExecutionsListParamsStepScopeVisited FlowsExecutionsListParamsStepScope = "visited"
+	FlowsExecutionsListParamsStepScopeCurrent FlowsExecutionsListParamsStepScope = "current"
+)
+
+// FlowsExecutionsRetryByErrorInput is the request body of [FlowsService.ExecutionsRetryByError].
+type FlowsExecutionsRetryByErrorInput struct {
+	FlowID string   `json:"flowId"`
+	Errors []string `json:"errors"`
+	StepID *string  `json:"stepId,omitzero"`
+}
+
+// FlowsExecutionsRetryByErrorOutput is the response of [FlowsService.ExecutionsRetryByError].
+type FlowsExecutionsRetryByErrorOutput struct {
+	Retried   float64 `json:"retried"`
+	Remaining float64 `json:"remaining"`
+}
+
+// FlowsExecutionsRetryInput is the request body of [FlowsService.ExecutionsRetry].
+type FlowsExecutionsRetryInput struct {
+	FlowID     string `json:"flowId"`
+	InstanceID string `json:"instanceId"`
+}
+
+// FlowsExecutionsRetryOutput is the response of [FlowsService.ExecutionsRetry].
+type FlowsExecutionsRetryOutput struct {
+	InstanceID string                           `json:"instanceId"`
+	Status     FlowsExecutionsRetryOutputStatus `json:"status"`
+}
+
+// FlowsExecutionsRetryOutputStatus is the type of [FlowsExecutionsRetryOutput.Status].
+type FlowsExecutionsRetryOutputStatus string
+
+// Values of [FlowsExecutionsRetryOutputStatus].
+const (
+	FlowsExecutionsRetryOutputStatusQueued FlowsExecutionsRetryOutputStatus = "queued"
+)
 
 // FlowsGetModeOutput is the response of [FlowsService.GetMode].
 type FlowsGetModeOutput struct {
@@ -1428,6 +2420,7 @@ type FlowsGetOutputModeMeta struct {
 //   - kind, source, automationId
 //   - kind, source, webinarId
 //   - kind, source, funnelId, nodeId
+//   - kind, source, broadcastId
 type FlowsGetOutputModeMetaManaged struct {
 	Kind         *FlowsGetOutputModeMetaManagedKind  `json:"kind,omitzero"`
 	Source       FlowsGetOutputModeMetaManagedSource `json:"source"`
@@ -1438,6 +2431,7 @@ type FlowsGetOutputModeMetaManaged struct {
 	WebinarID    *string                             `json:"webinarId,omitzero"`
 	FunnelID     *string                             `json:"funnelId,omitzero"`
 	NodeID       *string                             `json:"nodeId,omitzero"`
+	BroadcastID  *string                             `json:"broadcastId,omitzero"`
 }
 
 // FlowsGetOutputModeMetaManagedKind is the type of [FlowsGetOutputModeMetaManaged.Kind].
@@ -1450,6 +2444,7 @@ const (
 	FlowsGetOutputModeMetaManagedKindLivechat   FlowsGetOutputModeMetaManagedKind = "livechat"
 	FlowsGetOutputModeMetaManagedKindWebinar    FlowsGetOutputModeMetaManagedKind = "webinar"
 	FlowsGetOutputModeMetaManagedKindFunnel     FlowsGetOutputModeMetaManagedKind = "funnel"
+	FlowsGetOutputModeMetaManagedKindBroadcast  FlowsGetOutputModeMetaManagedKind = "broadcast"
 )
 
 // FlowsGetOutputModeMetaManagedSource is the type of [FlowsGetOutputModeMetaManaged.Source].
@@ -1457,19 +2452,21 @@ type FlowsGetOutputModeMetaManagedSource string
 
 // Values of [FlowsGetOutputModeMetaManagedSource].
 const (
-	FlowsGetOutputModeMetaManagedSourceEntradaExterna  FlowsGetOutputModeMetaManagedSource = "entrada_externa"
-	FlowsGetOutputModeMetaManagedSourceGatilhoPassagem FlowsGetOutputModeMetaManagedSource = "gatilho_passagem"
-	FlowsGetOutputModeMetaManagedSourceAtribuicao      FlowsGetOutputModeMetaManagedSource = "atribuicao"
-	FlowsGetOutputModeMetaManagedSourceAcaoDelay       FlowsGetOutputModeMetaManagedSource = "acao_delay"
-	FlowsGetOutputModeMetaManagedSourceNotificacao     FlowsGetOutputModeMetaManagedSource = "notificacao"
-	FlowsGetOutputModeMetaManagedSourceAutomacao       FlowsGetOutputModeMetaManagedSource = "automacao"
-	FlowsGetOutputModeMetaManagedSourcePosInscricao    FlowsGetOutputModeMetaManagedSource = "pos_inscricao"
-	FlowsGetOutputModeMetaManagedSourceLembrete        FlowsGetOutputModeMetaManagedSource = "lembrete"
-	FlowsGetOutputModeMetaManagedSourcePresenca        FlowsGetOutputModeMetaManagedSource = "presenca"
-	FlowsGetOutputModeMetaManagedSourceEngajamento     FlowsGetOutputModeMetaManagedSource = "engajamento"
-	FlowsGetOutputModeMetaManagedSourceOferta          FlowsGetOutputModeMetaManagedSource = "oferta"
-	FlowsGetOutputModeMetaManagedSourcePosEvento       FlowsGetOutputModeMetaManagedSource = "pos_evento"
-	FlowsGetOutputModeMetaManagedSourcePipelineNode    FlowsGetOutputModeMetaManagedSource = "pipeline_node"
+	FlowsGetOutputModeMetaManagedSourceEntradaExterna           FlowsGetOutputModeMetaManagedSource = "entrada_externa"
+	FlowsGetOutputModeMetaManagedSourceGatilhoPassagem          FlowsGetOutputModeMetaManagedSource = "gatilho_passagem"
+	FlowsGetOutputModeMetaManagedSourceAtribuicao               FlowsGetOutputModeMetaManagedSource = "atribuicao"
+	FlowsGetOutputModeMetaManagedSourceAcaoDelay                FlowsGetOutputModeMetaManagedSource = "acao_delay"
+	FlowsGetOutputModeMetaManagedSourceNotificacao              FlowsGetOutputModeMetaManagedSource = "notificacao"
+	FlowsGetOutputModeMetaManagedSourceAutomacao                FlowsGetOutputModeMetaManagedSource = "automacao"
+	FlowsGetOutputModeMetaManagedSourcePosInscricao             FlowsGetOutputModeMetaManagedSource = "pos_inscricao"
+	FlowsGetOutputModeMetaManagedSourceLembrete                 FlowsGetOutputModeMetaManagedSource = "lembrete"
+	FlowsGetOutputModeMetaManagedSourcePresenca                 FlowsGetOutputModeMetaManagedSource = "presenca"
+	FlowsGetOutputModeMetaManagedSourceEngajamento              FlowsGetOutputModeMetaManagedSource = "engajamento"
+	FlowsGetOutputModeMetaManagedSourceOferta                   FlowsGetOutputModeMetaManagedSource = "oferta"
+	FlowsGetOutputModeMetaManagedSourcePosEvento                FlowsGetOutputModeMetaManagedSource = "pos_evento"
+	FlowsGetOutputModeMetaManagedSourcePipelineNode             FlowsGetOutputModeMetaManagedSource = "pipeline_node"
+	FlowsGetOutputModeMetaManagedSourceBroadcastFollowUp        FlowsGetOutputModeMetaManagedSource = "broadcast_follow_up"
+	FlowsGetOutputModeMetaManagedSourceBroadcastFollowUpMessage FlowsGetOutputModeMetaManagedSource = "broadcast_follow_up_message"
 )
 
 // FlowsGetOutputModeMetaSuspendedByChannel is the type of [FlowsGetOutputModeMeta.SuspendedByChannel].
@@ -1844,6 +2841,356 @@ type FlowsGraphApplyOutputStepsItemOutputsItem struct {
 	Target *string `json:"target"`
 }
 
+// FlowsLeadCadencesInput is the request body of [FlowsService.LeadCadences].
+type FlowsLeadCadencesInput struct {
+	LeadIDs []string `json:"leadIds"`
+}
+
+// FlowsLeadCadencesOutput is the response of [FlowsService.LeadCadences].
+type FlowsLeadCadencesOutput struct {
+	Data      []FlowsLeadCadencesOutputDataItem `json:"data"`
+	Truncated bool                              `json:"truncated"`
+}
+
+// FlowsLeadCadencesOutputDataItem is an element of [FlowsLeadCadencesOutput.Data].
+type FlowsLeadCadencesOutputDataItem struct {
+	InstanceID  string                                     `json:"instanceId"`
+	LeadID      string                                     `json:"leadId"`
+	FlowID      string                                     `json:"flowId"`
+	FlowName    string                                     `json:"flowName"`
+	FlowDeleted bool                                       `json:"flowDeleted"`
+	Status      FlowsLeadCadencesOutputDataItemStatus      `json:"status"`
+	Error       *string                                    `json:"error,omitzero"`
+	StartedAt   time.Time                                  `json:"startedAt"`
+	UpdatedAt   time.Time                                  `json:"updatedAt"`
+	ResumesAt   *time.Time                                 `json:"resumesAt,omitzero"`
+	Steps       []FlowsLeadCadencesOutputDataItemStepsItem `json:"steps"`
+}
+
+// FlowsLeadCadencesOutputDataItemStatus is the type of [FlowsLeadCadencesOutputDataItem.Status].
+type FlowsLeadCadencesOutputDataItemStatus string
+
+// Values of [FlowsLeadCadencesOutputDataItemStatus].
+const (
+	FlowsLeadCadencesOutputDataItemStatusFailed    FlowsLeadCadencesOutputDataItemStatus = "failed"
+	FlowsLeadCadencesOutputDataItemStatusQueued    FlowsLeadCadencesOutputDataItemStatus = "queued"
+	FlowsLeadCadencesOutputDataItemStatusPending   FlowsLeadCadencesOutputDataItemStatus = "pending"
+	FlowsLeadCadencesOutputDataItemStatusScheduled FlowsLeadCadencesOutputDataItemStatus = "scheduled"
+	FlowsLeadCadencesOutputDataItemStatusFinished  FlowsLeadCadencesOutputDataItemStatus = "finished"
+	FlowsLeadCadencesOutputDataItemStatusCanceled  FlowsLeadCadencesOutputDataItemStatus = "canceled"
+	FlowsLeadCadencesOutputDataItemStatusPaused    FlowsLeadCadencesOutputDataItemStatus = "paused"
+)
+
+// FlowsLeadCadencesOutputDataItemStepsItem is an element of [FlowsLeadCadencesOutputDataItem.Steps].
+type FlowsLeadCadencesOutputDataItemStepsItem struct {
+	StepID     string                                                   `json:"stepId"`
+	Channel    FlowsLeadCadencesOutputDataItemStepsItemChannel          `json:"channel"`
+	Preview    *string                                                  `json:"preview,omitzero"`
+	Waits      []FlowsLeadCadencesOutputDataItemStepsItemWaitsItem      `json:"waits"`
+	State      FlowsLeadCadencesOutputDataItemStepsItemState            `json:"state"`
+	Deliveries []FlowsLeadCadencesOutputDataItemStepsItemDeliveriesItem `json:"deliveries"`
+}
+
+// FlowsLeadCadencesOutputDataItemStepsItemChannel is the type of
+// [FlowsLeadCadencesOutputDataItemStepsItem.Channel].
+type FlowsLeadCadencesOutputDataItemStepsItemChannel string
+
+// Values of [FlowsLeadCadencesOutputDataItemStepsItemChannel].
+const (
+	FlowsLeadCadencesOutputDataItemStepsItemChannelGupshup   FlowsLeadCadencesOutputDataItemStepsItemChannel = "gupshup"
+	FlowsLeadCadencesOutputDataItemStepsItemChannelEmail     FlowsLeadCadencesOutputDataItemStepsItemChannel = "email"
+	FlowsLeadCadencesOutputDataItemStepsItemChannelSMS       FlowsLeadCadencesOutputDataItemStepsItemChannel = "sms"
+	FlowsLeadCadencesOutputDataItemStepsItemChannelTelegram  FlowsLeadCadencesOutputDataItemStepsItemChannel = "telegram"
+	FlowsLeadCadencesOutputDataItemStepsItemChannelVoice     FlowsLeadCadencesOutputDataItemStepsItemChannel = "voice"
+	FlowsLeadCadencesOutputDataItemStepsItemChannelInstagram FlowsLeadCadencesOutputDataItemStepsItemChannel = "instagram"
+	FlowsLeadCadencesOutputDataItemStepsItemChannelUnknown   FlowsLeadCadencesOutputDataItemStepsItemChannel = "unknown"
+)
+
+// FlowsLeadCadencesOutputDataItemStepsItemDeliveriesItem is an element of
+// [FlowsLeadCadencesOutputDataItemStepsItem.Deliveries].
+type FlowsLeadCadencesOutputDataItemStepsItemDeliveriesItem struct {
+	Status       string     `json:"status"`
+	Error        *string    `json:"error,omitzero"`
+	QueuedAt     time.Time  `json:"queuedAt"`
+	SentAt       *time.Time `json:"sentAt,omitzero"`
+	DeliveredAt  *time.Time `json:"deliveredAt,omitzero"`
+	VisualizedAt *time.Time `json:"visualizedAt,omitzero"`
+	ClickedAt    *time.Time `json:"clickedAt,omitzero"`
+	FailedAt     *time.Time `json:"failedAt,omitzero"`
+}
+
+// FlowsLeadCadencesOutputDataItemStepsItemState is the type of
+// [FlowsLeadCadencesOutputDataItemStepsItem.State].
+type FlowsLeadCadencesOutputDataItemStepsItemState string
+
+// Values of [FlowsLeadCadencesOutputDataItemStepsItemState].
+const (
+	FlowsLeadCadencesOutputDataItemStepsItemStateSent     FlowsLeadCadencesOutputDataItemStepsItemState = "sent"
+	FlowsLeadCadencesOutputDataItemStepsItemStateCurrent  FlowsLeadCadencesOutputDataItemStepsItemState = "current"
+	FlowsLeadCadencesOutputDataItemStepsItemStateNext     FlowsLeadCadencesOutputDataItemStepsItemState = "next"
+	FlowsLeadCadencesOutputDataItemStepsItemStateUpcoming FlowsLeadCadencesOutputDataItemStepsItemState = "upcoming"
+	FlowsLeadCadencesOutputDataItemStepsItemStateSkipped  FlowsLeadCadencesOutputDataItemStepsItemState = "skipped"
+)
+
+// FlowsLeadCadencesOutputDataItemStepsItemWaitsItem is an element of
+// [FlowsLeadCadencesOutputDataItemStepsItem.Waits].
+type FlowsLeadCadencesOutputDataItemStepsItemWaitsItem struct {
+	Type      FlowsLeadCadencesOutputDataItemStepsItemWaitsItemType       `json:"type"`
+	Mode      FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode       `json:"mode"`
+	When      any                                                         `json:"when"`
+	Direction *FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirection `json:"direction,omitzero"`
+}
+
+// FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirection is the type of
+// [FlowsLeadCadencesOutputDataItemStepsItemWaitsItem.Direction].
+type FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirection string
+
+// Values of [FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirection].
+const (
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirectionBefore FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirection = "before"
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirectionAfter  FlowsLeadCadencesOutputDataItemStepsItemWaitsItemDirection = "after"
+)
+
+// FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode is the type of
+// [FlowsLeadCadencesOutputDataItemStepsItemWaitsItem.Mode].
+type FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode string
+
+// Values of [FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode].
+const (
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemModeNow       FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode = "now"
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemModeScheduled FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode = "scheduled"
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemModeDateField FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode = "dateField"
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemModeAbsolute  FlowsLeadCadencesOutputDataItemStepsItemWaitsItemMode = "absolute"
+)
+
+// FlowsLeadCadencesOutputDataItemStepsItemWaitsItemType is the type of
+// [FlowsLeadCadencesOutputDataItemStepsItemWaitsItem.Type].
+type FlowsLeadCadencesOutputDataItemStepsItemWaitsItemType string
+
+// Values of [FlowsLeadCadencesOutputDataItemStepsItemWaitsItemType].
+const (
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemTypeDelay   FlowsLeadCadencesOutputDataItemStepsItemWaitsItemType = "delay"
+	FlowsLeadCadencesOutputDataItemStepsItemWaitsItemTypeTimeout FlowsLeadCadencesOutputDataItemStepsItemWaitsItemType = "timeout"
+)
+
+// FlowsLinkSourcesListInput is the request body of [FlowsService.LinkSourcesList].
+type FlowsLinkSourcesListInput struct {
+	Refs          []string `json:"refs"`
+	ExcludeFlowID *string  `json:"excludeFlowId,omitzero"`
+}
+
+// FlowsLinkSourcesListOutput is the response of [FlowsService.LinkSourcesList].
+type FlowsLinkSourcesListOutput struct {
+	Data []FlowsLinkSourcesListOutputDataItem `json:"data"`
+}
+
+// FlowsLinkSourcesListOutputDataItem is an element of [FlowsLinkSourcesListOutput.Data].
+type FlowsLinkSourcesListOutputDataItem struct {
+	Kind          FlowsLinkSourcesListOutputDataItemKind          `json:"kind"`
+	ValueUUID     *string                                         `json:"valueUuid,omitzero"`
+	FlowID        string                                          `json:"flowId"`
+	Name          string                                          `json:"name"`
+	Mode          FlowsLinkSourcesListOutputDataItemMode          `json:"mode"`
+	EventName     *string                                         `json:"eventName,omitzero"`
+	Action        *string                                         `json:"action,omitzero"`
+	Stats         FlowsLinkSourcesListOutputDataItemStats         `json:"stats"`
+	LayoutSummary FlowsLinkSourcesListOutputDataItemLayoutSummary `json:"layoutSummary"`
+}
+
+// FlowsLinkSourcesListOutputDataItemKind is the type of [FlowsLinkSourcesListOutputDataItem.Kind].
+type FlowsLinkSourcesListOutputDataItemKind string
+
+// Values of [FlowsLinkSourcesListOutputDataItemKind].
+const (
+	FlowsLinkSourcesListOutputDataItemKindTag            FlowsLinkSourcesListOutputDataItemKind = "tag"
+	FlowsLinkSourcesListOutputDataItemKindTagRemoved     FlowsLinkSourcesListOutputDataItemKind = "tagRemoved"
+	FlowsLinkSourcesListOutputDataItemKindStage          FlowsLinkSourcesListOutputDataItemKind = "stage"
+	FlowsLinkSourcesListOutputDataItemKindWon            FlowsLinkSourcesListOutputDataItemKind = "won"
+	FlowsLinkSourcesListOutputDataItemKindLost           FlowsLinkSourcesListOutputDataItemKind = "lost"
+	FlowsLinkSourcesListOutputDataItemKindEmailClicked   FlowsLinkSourcesListOutputDataItemKind = "emailClicked"
+	FlowsLinkSourcesListOutputDataItemKindEmailOpened    FlowsLinkSourcesListOutputDataItemKind = "emailOpened"
+	FlowsLinkSourcesListOutputDataItemKindEmailDelivered FlowsLinkSourcesListOutputDataItemKind = "emailDelivered"
+	FlowsLinkSourcesListOutputDataItemKindEmailFailed    FlowsLinkSourcesListOutputDataItemKind = "emailFailed"
+	FlowsLinkSourcesListOutputDataItemKindLinkClicked    FlowsLinkSourcesListOutputDataItemKind = "linkClicked"
+	FlowsLinkSourcesListOutputDataItemKindCallResult     FlowsLinkSourcesListOutputDataItemKind = "callResult"
+	FlowsLinkSourcesListOutputDataItemKindWebhook        FlowsLinkSourcesListOutputDataItemKind = "webhook"
+)
+
+// FlowsLinkSourcesListOutputDataItemLayoutSummary is the type of
+// [FlowsLinkSourcesListOutputDataItem.LayoutSummary].
+type FlowsLinkSourcesListOutputDataItemLayoutSummary struct {
+	Nodes []FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItem `json:"nodes"`
+	Edges []FlowsLinkSourcesListOutputDataItemLayoutSummaryEdgesItem `json:"edges"`
+}
+
+// FlowsLinkSourcesListOutputDataItemLayoutSummaryEdgesItem is an element of
+// [FlowsLinkSourcesListOutputDataItemLayoutSummary.Edges].
+type FlowsLinkSourcesListOutputDataItemLayoutSummaryEdgesItem struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+// FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItem is an element of
+// [FlowsLinkSourcesListOutputDataItemLayoutSummary.Nodes].
+type FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItem struct {
+	ID     string                                                       `json:"id"`
+	Type   FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType `json:"type"`
+	Action *string                                                      `json:"action,omitzero"`
+	X      float64                                                      `json:"x"`
+	Y      float64                                                      `json:"y"`
+}
+
+// FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType is the type of
+// [FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItem.Type].
+type FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType string
+
+// Values of [FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType].
+const (
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeAction                FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "action"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeCollect               FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "collect"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeConditional           FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "conditional"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeDebug                 FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "debug"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeDelay                 FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "delay"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeInstagramCommentReply FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "instagram_comment_reply"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeInstagramMessageReply FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "instagram_message_reply"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeInstagramStoryReply   FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "instagram_story_reply"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeInvoke                FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "invoke"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeSequence              FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "sequence"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeSendMessage           FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "send_message"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeTimeout               FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "timeout"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeTrigger               FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "trigger"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeWait                  FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "wait"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypePostit                FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "postit"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeRandomizer            FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "randomizer"
+	FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemTypeSwitch                FlowsLinkSourcesListOutputDataItemLayoutSummaryNodesItemType = "switch"
+)
+
+// FlowsLinkSourcesListOutputDataItemMode is the type of [FlowsLinkSourcesListOutputDataItem.Mode].
+type FlowsLinkSourcesListOutputDataItemMode string
+
+// Values of [FlowsLinkSourcesListOutputDataItemMode].
+const (
+	FlowsLinkSourcesListOutputDataItemModeDraft  FlowsLinkSourcesListOutputDataItemMode = "draft"
+	FlowsLinkSourcesListOutputDataItemModeActive FlowsLinkSourcesListOutputDataItemMode = "active"
+	FlowsLinkSourcesListOutputDataItemModeClosed FlowsLinkSourcesListOutputDataItemMode = "closed"
+)
+
+// FlowsLinkSourcesListOutputDataItemStats is the type of [FlowsLinkSourcesListOutputDataItem.Stats].
+type FlowsLinkSourcesListOutputDataItemStats struct {
+	Executions float64 `json:"executions"`
+	Finished   float64 `json:"finished"`
+	Failed     float64 `json:"failed"`
+}
+
+// FlowsLinkTargetsListInput is the request body of [FlowsService.LinkTargetsList].
+type FlowsLinkTargetsListInput struct {
+	Refs          []string `json:"refs"`
+	ExcludeFlowID *string  `json:"excludeFlowId,omitzero"`
+}
+
+// FlowsLinkTargetsListOutput is the response of [FlowsService.LinkTargetsList].
+type FlowsLinkTargetsListOutput struct {
+	Data []FlowsLinkTargetsListOutputDataItem `json:"data"`
+}
+
+// FlowsLinkTargetsListOutputDataItem is an element of [FlowsLinkTargetsListOutput.Data].
+type FlowsLinkTargetsListOutputDataItem struct {
+	Kind          FlowsLinkTargetsListOutputDataItemKind          `json:"kind"`
+	ValueUUID     *string                                         `json:"valueUuid,omitzero"`
+	FlowID        string                                          `json:"flowId"`
+	Name          string                                          `json:"name"`
+	Mode          FlowsLinkTargetsListOutputDataItemMode          `json:"mode"`
+	EventName     *string                                         `json:"eventName,omitzero"`
+	Action        *string                                         `json:"action,omitzero"`
+	Stats         FlowsLinkTargetsListOutputDataItemStats         `json:"stats"`
+	LayoutSummary FlowsLinkTargetsListOutputDataItemLayoutSummary `json:"layoutSummary"`
+}
+
+// FlowsLinkTargetsListOutputDataItemKind is the type of [FlowsLinkTargetsListOutputDataItem.Kind].
+type FlowsLinkTargetsListOutputDataItemKind string
+
+// Values of [FlowsLinkTargetsListOutputDataItemKind].
+const (
+	FlowsLinkTargetsListOutputDataItemKindTag            FlowsLinkTargetsListOutputDataItemKind = "tag"
+	FlowsLinkTargetsListOutputDataItemKindTagRemoved     FlowsLinkTargetsListOutputDataItemKind = "tagRemoved"
+	FlowsLinkTargetsListOutputDataItemKindStage          FlowsLinkTargetsListOutputDataItemKind = "stage"
+	FlowsLinkTargetsListOutputDataItemKindWon            FlowsLinkTargetsListOutputDataItemKind = "won"
+	FlowsLinkTargetsListOutputDataItemKindLost           FlowsLinkTargetsListOutputDataItemKind = "lost"
+	FlowsLinkTargetsListOutputDataItemKindEmailClicked   FlowsLinkTargetsListOutputDataItemKind = "emailClicked"
+	FlowsLinkTargetsListOutputDataItemKindEmailOpened    FlowsLinkTargetsListOutputDataItemKind = "emailOpened"
+	FlowsLinkTargetsListOutputDataItemKindEmailDelivered FlowsLinkTargetsListOutputDataItemKind = "emailDelivered"
+	FlowsLinkTargetsListOutputDataItemKindEmailFailed    FlowsLinkTargetsListOutputDataItemKind = "emailFailed"
+	FlowsLinkTargetsListOutputDataItemKindLinkClicked    FlowsLinkTargetsListOutputDataItemKind = "linkClicked"
+	FlowsLinkTargetsListOutputDataItemKindCallResult     FlowsLinkTargetsListOutputDataItemKind = "callResult"
+	FlowsLinkTargetsListOutputDataItemKindWebhook        FlowsLinkTargetsListOutputDataItemKind = "webhook"
+)
+
+// FlowsLinkTargetsListOutputDataItemLayoutSummary is the type of
+// [FlowsLinkTargetsListOutputDataItem.LayoutSummary].
+type FlowsLinkTargetsListOutputDataItemLayoutSummary struct {
+	Nodes []FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItem `json:"nodes"`
+	Edges []FlowsLinkTargetsListOutputDataItemLayoutSummaryEdgesItem `json:"edges"`
+}
+
+// FlowsLinkTargetsListOutputDataItemLayoutSummaryEdgesItem is an element of
+// [FlowsLinkTargetsListOutputDataItemLayoutSummary.Edges].
+type FlowsLinkTargetsListOutputDataItemLayoutSummaryEdgesItem struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+// FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItem is an element of
+// [FlowsLinkTargetsListOutputDataItemLayoutSummary.Nodes].
+type FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItem struct {
+	ID     string                                                       `json:"id"`
+	Type   FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType `json:"type"`
+	Action *string                                                      `json:"action,omitzero"`
+	X      float64                                                      `json:"x"`
+	Y      float64                                                      `json:"y"`
+}
+
+// FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType is the type of
+// [FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItem.Type].
+type FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType string
+
+// Values of [FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType].
+const (
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeAction                FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "action"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeCollect               FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "collect"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeConditional           FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "conditional"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeDebug                 FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "debug"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeDelay                 FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "delay"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeInstagramCommentReply FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "instagram_comment_reply"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeInstagramMessageReply FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "instagram_message_reply"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeInstagramStoryReply   FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "instagram_story_reply"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeInvoke                FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "invoke"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeSequence              FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "sequence"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeSendMessage           FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "send_message"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeTimeout               FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "timeout"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeTrigger               FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "trigger"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeWait                  FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "wait"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypePostit                FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "postit"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeRandomizer            FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "randomizer"
+	FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemTypeSwitch                FlowsLinkTargetsListOutputDataItemLayoutSummaryNodesItemType = "switch"
+)
+
+// FlowsLinkTargetsListOutputDataItemMode is the type of [FlowsLinkTargetsListOutputDataItem.Mode].
+type FlowsLinkTargetsListOutputDataItemMode string
+
+// Values of [FlowsLinkTargetsListOutputDataItemMode].
+const (
+	FlowsLinkTargetsListOutputDataItemModeDraft  FlowsLinkTargetsListOutputDataItemMode = "draft"
+	FlowsLinkTargetsListOutputDataItemModeActive FlowsLinkTargetsListOutputDataItemMode = "active"
+	FlowsLinkTargetsListOutputDataItemModeClosed FlowsLinkTargetsListOutputDataItemMode = "closed"
+)
+
+// FlowsLinkTargetsListOutputDataItemStats is the type of [FlowsLinkTargetsListOutputDataItem.Stats].
+type FlowsLinkTargetsListOutputDataItemStats struct {
+	Executions float64 `json:"executions"`
+	Finished   float64 `json:"finished"`
+	Failed     float64 `json:"failed"`
+}
+
 // FlowsListInput is the request body of [FlowsService.List].
 type FlowsListInput struct {
 	Page              *float64                            `json:"page,omitzero"`
@@ -2136,6 +3483,7 @@ type FlowsListOutputDataItemModeMeta struct {
 //   - kind, source, automationId
 //   - kind, source, webinarId
 //   - kind, source, funnelId, nodeId
+//   - kind, source, broadcastId
 type FlowsListOutputDataItemModeMetaManaged struct {
 	Kind         *FlowsListOutputDataItemModeMetaManagedKind  `json:"kind,omitzero"`
 	Source       FlowsListOutputDataItemModeMetaManagedSource `json:"source"`
@@ -2146,6 +3494,7 @@ type FlowsListOutputDataItemModeMetaManaged struct {
 	WebinarID    *string                                      `json:"webinarId,omitzero"`
 	FunnelID     *string                                      `json:"funnelId,omitzero"`
 	NodeID       *string                                      `json:"nodeId,omitzero"`
+	BroadcastID  *string                                      `json:"broadcastId,omitzero"`
 }
 
 // FlowsListOutputDataItemModeMetaManagedKind is the type of
@@ -2159,6 +3508,7 @@ const (
 	FlowsListOutputDataItemModeMetaManagedKindLivechat   FlowsListOutputDataItemModeMetaManagedKind = "livechat"
 	FlowsListOutputDataItemModeMetaManagedKindWebinar    FlowsListOutputDataItemModeMetaManagedKind = "webinar"
 	FlowsListOutputDataItemModeMetaManagedKindFunnel     FlowsListOutputDataItemModeMetaManagedKind = "funnel"
+	FlowsListOutputDataItemModeMetaManagedKindBroadcast  FlowsListOutputDataItemModeMetaManagedKind = "broadcast"
 )
 
 // FlowsListOutputDataItemModeMetaManagedSource is the type of
@@ -2167,19 +3517,21 @@ type FlowsListOutputDataItemModeMetaManagedSource string
 
 // Values of [FlowsListOutputDataItemModeMetaManagedSource].
 const (
-	FlowsListOutputDataItemModeMetaManagedSourceEntradaExterna  FlowsListOutputDataItemModeMetaManagedSource = "entrada_externa"
-	FlowsListOutputDataItemModeMetaManagedSourceGatilhoPassagem FlowsListOutputDataItemModeMetaManagedSource = "gatilho_passagem"
-	FlowsListOutputDataItemModeMetaManagedSourceAtribuicao      FlowsListOutputDataItemModeMetaManagedSource = "atribuicao"
-	FlowsListOutputDataItemModeMetaManagedSourceAcaoDelay       FlowsListOutputDataItemModeMetaManagedSource = "acao_delay"
-	FlowsListOutputDataItemModeMetaManagedSourceNotificacao     FlowsListOutputDataItemModeMetaManagedSource = "notificacao"
-	FlowsListOutputDataItemModeMetaManagedSourceAutomacao       FlowsListOutputDataItemModeMetaManagedSource = "automacao"
-	FlowsListOutputDataItemModeMetaManagedSourcePosInscricao    FlowsListOutputDataItemModeMetaManagedSource = "pos_inscricao"
-	FlowsListOutputDataItemModeMetaManagedSourceLembrete        FlowsListOutputDataItemModeMetaManagedSource = "lembrete"
-	FlowsListOutputDataItemModeMetaManagedSourcePresenca        FlowsListOutputDataItemModeMetaManagedSource = "presenca"
-	FlowsListOutputDataItemModeMetaManagedSourceEngajamento     FlowsListOutputDataItemModeMetaManagedSource = "engajamento"
-	FlowsListOutputDataItemModeMetaManagedSourceOferta          FlowsListOutputDataItemModeMetaManagedSource = "oferta"
-	FlowsListOutputDataItemModeMetaManagedSourcePosEvento       FlowsListOutputDataItemModeMetaManagedSource = "pos_evento"
-	FlowsListOutputDataItemModeMetaManagedSourcePipelineNode    FlowsListOutputDataItemModeMetaManagedSource = "pipeline_node"
+	FlowsListOutputDataItemModeMetaManagedSourceEntradaExterna           FlowsListOutputDataItemModeMetaManagedSource = "entrada_externa"
+	FlowsListOutputDataItemModeMetaManagedSourceGatilhoPassagem          FlowsListOutputDataItemModeMetaManagedSource = "gatilho_passagem"
+	FlowsListOutputDataItemModeMetaManagedSourceAtribuicao               FlowsListOutputDataItemModeMetaManagedSource = "atribuicao"
+	FlowsListOutputDataItemModeMetaManagedSourceAcaoDelay                FlowsListOutputDataItemModeMetaManagedSource = "acao_delay"
+	FlowsListOutputDataItemModeMetaManagedSourceNotificacao              FlowsListOutputDataItemModeMetaManagedSource = "notificacao"
+	FlowsListOutputDataItemModeMetaManagedSourceAutomacao                FlowsListOutputDataItemModeMetaManagedSource = "automacao"
+	FlowsListOutputDataItemModeMetaManagedSourcePosInscricao             FlowsListOutputDataItemModeMetaManagedSource = "pos_inscricao"
+	FlowsListOutputDataItemModeMetaManagedSourceLembrete                 FlowsListOutputDataItemModeMetaManagedSource = "lembrete"
+	FlowsListOutputDataItemModeMetaManagedSourcePresenca                 FlowsListOutputDataItemModeMetaManagedSource = "presenca"
+	FlowsListOutputDataItemModeMetaManagedSourceEngajamento              FlowsListOutputDataItemModeMetaManagedSource = "engajamento"
+	FlowsListOutputDataItemModeMetaManagedSourceOferta                   FlowsListOutputDataItemModeMetaManagedSource = "oferta"
+	FlowsListOutputDataItemModeMetaManagedSourcePosEvento                FlowsListOutputDataItemModeMetaManagedSource = "pos_evento"
+	FlowsListOutputDataItemModeMetaManagedSourcePipelineNode             FlowsListOutputDataItemModeMetaManagedSource = "pipeline_node"
+	FlowsListOutputDataItemModeMetaManagedSourceBroadcastFollowUp        FlowsListOutputDataItemModeMetaManagedSource = "broadcast_follow_up"
+	FlowsListOutputDataItemModeMetaManagedSourceBroadcastFollowUpMessage FlowsListOutputDataItemModeMetaManagedSource = "broadcast_follow_up_message"
 )
 
 // FlowsListOutputDataItemModeMetaSuspendedByChannel is the type of
@@ -2237,6 +3589,313 @@ type FlowsListOutputMeta struct {
 	CountPages float64 `json:"countPages"`
 	PerPage    float64 `json:"perPage"`
 }
+
+// FlowsRunsBlocksListOutput is the response of [FlowsService.RunsBlocksList].
+type FlowsRunsBlocksListOutput struct {
+	Data []FlowsRunsBlocksListOutputDataItem `json:"data"`
+}
+
+// FlowsRunsBlocksListOutputDataItem is an element of [FlowsRunsBlocksListOutput.Data].
+type FlowsRunsBlocksListOutputDataItem struct {
+	BlockIndex     int64                                   `json:"blockIndex"`
+	Status         FlowsRunsBlocksListOutputDataItemStatus `json:"status"`
+	ScheduledAt    time.Time                               `json:"scheduledAt"`
+	StartedAt      *time.Time                              `json:"startedAt,omitzero"`
+	CompletedAt    *time.Time                              `json:"completedAt,omitzero"`
+	RecipientCount int64                                   `json:"recipientCount"`
+	ErrorMessage   *string                                 `json:"errorMessage,omitzero"`
+}
+
+// FlowsRunsBlocksListOutputDataItemStatus is the type of [FlowsRunsBlocksListOutputDataItem.Status].
+type FlowsRunsBlocksListOutputDataItemStatus string
+
+// Values of [FlowsRunsBlocksListOutputDataItemStatus].
+const (
+	FlowsRunsBlocksListOutputDataItemStatusPending   FlowsRunsBlocksListOutputDataItemStatus = "pending"
+	FlowsRunsBlocksListOutputDataItemStatusRunning   FlowsRunsBlocksListOutputDataItemStatus = "running"
+	FlowsRunsBlocksListOutputDataItemStatusDone      FlowsRunsBlocksListOutputDataItemStatus = "done"
+	FlowsRunsBlocksListOutputDataItemStatusCancelled FlowsRunsBlocksListOutputDataItemStatus = "cancelled"
+	FlowsRunsBlocksListOutputDataItemStatusFailed    FlowsRunsBlocksListOutputDataItemStatus = "failed"
+)
+
+// FlowsRunsBlocksListParams holds the query parameters of [FlowsService.RunsBlocksList].
+type FlowsRunsBlocksListParams struct {
+	FlowID string
+	RunID  string
+}
+
+func (p FlowsRunsBlocksListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "flowId", &p.FlowID)
+	addString(v, "runId", &p.RunID)
+	return v
+}
+
+// FlowsRunsBlocksPromoteInput is the request body of [FlowsService.RunsBlocksPromote].
+type FlowsRunsBlocksPromoteInput struct {
+	FlowID     string `json:"flowId"`
+	RunID      string `json:"runId"`
+	BlockIndex int64  `json:"blockIndex"`
+}
+
+// FlowsRunsBlocksPromoteOutput is the response of [FlowsService.RunsBlocksPromote].
+type FlowsRunsBlocksPromoteOutput struct {
+	BlockIndex     int64                              `json:"blockIndex"`
+	Status         FlowsRunsBlocksPromoteOutputStatus `json:"status"`
+	ScheduledAt    time.Time                          `json:"scheduledAt"`
+	StartedAt      *time.Time                         `json:"startedAt,omitzero"`
+	CompletedAt    *time.Time                         `json:"completedAt,omitzero"`
+	RecipientCount int64                              `json:"recipientCount"`
+	ErrorMessage   *string                            `json:"errorMessage,omitzero"`
+}
+
+// FlowsRunsBlocksPromoteOutputStatus is the type of [FlowsRunsBlocksPromoteOutput.Status].
+type FlowsRunsBlocksPromoteOutputStatus string
+
+// Values of [FlowsRunsBlocksPromoteOutputStatus].
+const (
+	FlowsRunsBlocksPromoteOutputStatusPending   FlowsRunsBlocksPromoteOutputStatus = "pending"
+	FlowsRunsBlocksPromoteOutputStatusRunning   FlowsRunsBlocksPromoteOutputStatus = "running"
+	FlowsRunsBlocksPromoteOutputStatusDone      FlowsRunsBlocksPromoteOutputStatus = "done"
+	FlowsRunsBlocksPromoteOutputStatusCancelled FlowsRunsBlocksPromoteOutputStatus = "cancelled"
+	FlowsRunsBlocksPromoteOutputStatusFailed    FlowsRunsBlocksPromoteOutputStatus = "failed"
+)
+
+// FlowsRunsCancelInput is the request body of [FlowsService.RunsCancel].
+type FlowsRunsCancelInput struct {
+	FlowID string `json:"flowId"`
+	RunID  string `json:"runId"`
+}
+
+// FlowsRunsEstimateInput is the request body of [FlowsService.RunsEstimate].
+type FlowsRunsEstimateInput struct {
+	FlowID string                       `json:"flowId"`
+	Source FlowsRunsEstimateInputSource `json:"source"`
+}
+
+// FlowsRunsEstimateInputSource is the type of [FlowsRunsEstimateInput.Source].
+//
+// A value has one of these property sets:
+//   - kind, leadIds
+//   - kind, listId
+//   - kind, tagId
+//   - kind, segmentId
+type FlowsRunsEstimateInputSource struct {
+	Kind      FlowsRunsEstimateInputSourceKind `json:"kind"`
+	LeadIDs   []string                         `json:"leadIds,omitzero"`
+	ListID    *string                          `json:"listId,omitzero"`
+	TagID     *string                          `json:"tagId,omitzero"`
+	SegmentID *string                          `json:"segmentId,omitzero"`
+}
+
+// FlowsRunsEstimateInputSourceKind is the type of [FlowsRunsEstimateInputSource.Kind].
+type FlowsRunsEstimateInputSourceKind string
+
+// Values of [FlowsRunsEstimateInputSourceKind].
+const (
+	FlowsRunsEstimateInputSourceKindLeads   FlowsRunsEstimateInputSourceKind = "leads"
+	FlowsRunsEstimateInputSourceKindList    FlowsRunsEstimateInputSourceKind = "list"
+	FlowsRunsEstimateInputSourceKindTag     FlowsRunsEstimateInputSourceKind = "tag"
+	FlowsRunsEstimateInputSourceKindSegment FlowsRunsEstimateInputSourceKind = "segment"
+)
+
+// FlowsRunsEstimateOutput is the response of [FlowsService.RunsEstimate].
+type FlowsRunsEstimateOutput struct {
+	Audience        int64                              `json:"audience"`
+	Steps           []FlowsRunsEstimateOutputStepsItem `json:"steps"`
+	TotalCost       int64                              `json:"totalCost"`
+	Available       *int64                             `json:"available,omitzero"`
+	Enough          bool                               `json:"enough"`
+	DebounceSeconds int64                              `json:"debounceSeconds"`
+}
+
+// FlowsRunsEstimateOutputStepsItem is an element of [FlowsRunsEstimateOutput.Steps].
+type FlowsRunsEstimateOutputStepsItem struct {
+	StepID   string  `json:"stepId"`
+	Channel  string  `json:"channel"`
+	Resource *string `json:"resource,omitzero"`
+	UnitCost int64   `json:"unitCost"`
+}
+
+// FlowsRunsListOutput is the response of [FlowsService.RunsList].
+type FlowsRunsListOutput struct {
+	Data []FlowsRunsListOutputDataItem `json:"data"`
+}
+
+// FlowsRunsListOutputDataItem is an element of [FlowsRunsListOutput.Data].
+type FlowsRunsListOutputDataItem struct {
+	ID              string                                `json:"id"`
+	FlowID          string                                `json:"flowId"`
+	SourceKind      FlowsRunsListOutputDataItemSourceKind `json:"sourceKind"`
+	SourceID        *string                               `json:"sourceId,omitzero"`
+	SourceLabel     *string                               `json:"sourceLabel,omitzero"`
+	BatchSize       int64                                 `json:"batchSize"`
+	IntervalMinutes int64                                 `json:"intervalMinutes"`
+	SkipDebounce    bool                                  `json:"skipDebounce"`
+	Status          FlowsRunsListOutputDataItemStatus     `json:"status"`
+	TotalCount      int64                                 `json:"totalCount"`
+	RecipientCount  int64                                 `json:"recipientCount"`
+	DebouncedCount  int64                                 `json:"debouncedCount"`
+	ScheduledAt     *time.Time                            `json:"scheduledAt,omitzero"`
+	StartedByID     *string                               `json:"startedById,omitzero"`
+	ErrorMessage    *string                               `json:"errorMessage,omitzero"`
+	CreatedAt       time.Time                             `json:"createdAt"`
+	StartedAt       *time.Time                            `json:"startedAt,omitzero"`
+	CompletedAt     *time.Time                            `json:"completedAt,omitzero"`
+	StartedByName   *string                               `json:"startedByName,omitzero"`
+	Executions      FlowsRunsListOutputDataItemExecutions `json:"executions"`
+	Blocks          FlowsRunsListOutputDataItemBlocks     `json:"blocks"`
+}
+
+// FlowsRunsListOutputDataItemBlocks is the type of [FlowsRunsListOutputDataItem.Blocks].
+type FlowsRunsListOutputDataItemBlocks struct {
+	Total     int64 `json:"total"`
+	Pending   int64 `json:"pending"`
+	Running   int64 `json:"running"`
+	Done      int64 `json:"done"`
+	Failed    int64 `json:"failed"`
+	Cancelled int64 `json:"cancelled"`
+}
+
+// FlowsRunsListOutputDataItemExecutions is the type of [FlowsRunsListOutputDataItem.Executions].
+type FlowsRunsListOutputDataItemExecutions struct {
+	Total    int64 `json:"total"`
+	Finished int64 `json:"finished"`
+	Failed   int64 `json:"failed"`
+}
+
+// FlowsRunsListOutputDataItemSourceKind is the type of [FlowsRunsListOutputDataItem.SourceKind].
+type FlowsRunsListOutputDataItemSourceKind string
+
+// Values of [FlowsRunsListOutputDataItemSourceKind].
+const (
+	FlowsRunsListOutputDataItemSourceKindLeads   FlowsRunsListOutputDataItemSourceKind = "leads"
+	FlowsRunsListOutputDataItemSourceKindList    FlowsRunsListOutputDataItemSourceKind = "list"
+	FlowsRunsListOutputDataItemSourceKindTag     FlowsRunsListOutputDataItemSourceKind = "tag"
+	FlowsRunsListOutputDataItemSourceKindSegment FlowsRunsListOutputDataItemSourceKind = "segment"
+)
+
+// FlowsRunsListOutputDataItemStatus is the type of [FlowsRunsListOutputDataItem.Status].
+type FlowsRunsListOutputDataItemStatus string
+
+// Values of [FlowsRunsListOutputDataItemStatus].
+const (
+	FlowsRunsListOutputDataItemStatusScheduled FlowsRunsListOutputDataItemStatus = "scheduled"
+	FlowsRunsListOutputDataItemStatusRunning   FlowsRunsListOutputDataItemStatus = "running"
+	FlowsRunsListOutputDataItemStatusDone      FlowsRunsListOutputDataItemStatus = "done"
+	FlowsRunsListOutputDataItemStatusCancelled FlowsRunsListOutputDataItemStatus = "cancelled"
+	FlowsRunsListOutputDataItemStatusFailed    FlowsRunsListOutputDataItemStatus = "failed"
+)
+
+// FlowsRunsListParams holds the query parameters of [FlowsService.RunsList].
+type FlowsRunsListParams struct {
+	FlowID string
+}
+
+func (p FlowsRunsListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "flowId", &p.FlowID)
+	return v
+}
+
+// FlowsRunsStartInput is the request body of [FlowsService.RunsStart].
+type FlowsRunsStartInput struct {
+	FlowID       string                    `json:"flowId"`
+	Source       FlowsRunsStartInputSource `json:"source"`
+	SkipDebounce *bool                     `json:"skipDebounce,omitzero"`
+	ScheduledAt  *time.Time                `json:"scheduledAt,omitzero"`
+}
+
+// FlowsRunsStartInputSource is the type of [FlowsRunsStartInput.Source].
+//
+// A value has one of these property sets:
+//   - kind, leadIds
+//   - kind, listId
+//   - kind, tagId
+//   - kind, segmentId
+type FlowsRunsStartInputSource struct {
+	Kind      FlowsRunsStartInputSourceKind `json:"kind"`
+	LeadIDs   []string                      `json:"leadIds,omitzero"`
+	ListID    *string                       `json:"listId,omitzero"`
+	TagID     *string                       `json:"tagId,omitzero"`
+	SegmentID *string                       `json:"segmentId,omitzero"`
+}
+
+// FlowsRunsStartInputSourceKind is the type of [FlowsRunsStartInputSource.Kind].
+type FlowsRunsStartInputSourceKind string
+
+// Values of [FlowsRunsStartInputSourceKind].
+const (
+	FlowsRunsStartInputSourceKindLeads   FlowsRunsStartInputSourceKind = "leads"
+	FlowsRunsStartInputSourceKindList    FlowsRunsStartInputSourceKind = "list"
+	FlowsRunsStartInputSourceKindTag     FlowsRunsStartInputSourceKind = "tag"
+	FlowsRunsStartInputSourceKindSegment FlowsRunsStartInputSourceKind = "segment"
+)
+
+// FlowsRunsStartOutput is the response of [FlowsService.RunsCancel] and [FlowsService.RunsStart].
+type FlowsRunsStartOutput struct {
+	ID              string                         `json:"id"`
+	FlowID          string                         `json:"flowId"`
+	SourceKind      FlowsRunsStartOutputSourceKind `json:"sourceKind"`
+	SourceID        *string                        `json:"sourceId,omitzero"`
+	SourceLabel     *string                        `json:"sourceLabel,omitzero"`
+	BatchSize       int64                          `json:"batchSize"`
+	IntervalMinutes int64                          `json:"intervalMinutes"`
+	SkipDebounce    bool                           `json:"skipDebounce"`
+	Status          FlowsRunsStartOutputStatus     `json:"status"`
+	TotalCount      int64                          `json:"totalCount"`
+	RecipientCount  int64                          `json:"recipientCount"`
+	DebouncedCount  int64                          `json:"debouncedCount"`
+	ScheduledAt     *time.Time                     `json:"scheduledAt,omitzero"`
+	StartedByID     *string                        `json:"startedById,omitzero"`
+	ErrorMessage    *string                        `json:"errorMessage,omitzero"`
+	CreatedAt       time.Time                      `json:"createdAt"`
+	StartedAt       *time.Time                     `json:"startedAt,omitzero"`
+	CompletedAt     *time.Time                     `json:"completedAt,omitzero"`
+	StartedByName   *string                        `json:"startedByName,omitzero"`
+	Executions      FlowsRunsStartOutputExecutions `json:"executions"`
+	Blocks          FlowsRunsStartOutputBlocks     `json:"blocks"`
+}
+
+// FlowsRunsStartOutputBlocks is the type of [FlowsRunsStartOutput.Blocks].
+type FlowsRunsStartOutputBlocks struct {
+	Total     int64 `json:"total"`
+	Pending   int64 `json:"pending"`
+	Running   int64 `json:"running"`
+	Done      int64 `json:"done"`
+	Failed    int64 `json:"failed"`
+	Cancelled int64 `json:"cancelled"`
+}
+
+// FlowsRunsStartOutputExecutions is the type of [FlowsRunsStartOutput.Executions].
+type FlowsRunsStartOutputExecutions struct {
+	Total    int64 `json:"total"`
+	Finished int64 `json:"finished"`
+	Failed   int64 `json:"failed"`
+}
+
+// FlowsRunsStartOutputSourceKind is the type of [FlowsRunsStartOutput.SourceKind].
+type FlowsRunsStartOutputSourceKind string
+
+// Values of [FlowsRunsStartOutputSourceKind].
+const (
+	FlowsRunsStartOutputSourceKindLeads   FlowsRunsStartOutputSourceKind = "leads"
+	FlowsRunsStartOutputSourceKindList    FlowsRunsStartOutputSourceKind = "list"
+	FlowsRunsStartOutputSourceKindTag     FlowsRunsStartOutputSourceKind = "tag"
+	FlowsRunsStartOutputSourceKindSegment FlowsRunsStartOutputSourceKind = "segment"
+)
+
+// FlowsRunsStartOutputStatus is the type of [FlowsRunsStartOutput.Status].
+type FlowsRunsStartOutputStatus string
+
+// Values of [FlowsRunsStartOutputStatus].
+const (
+	FlowsRunsStartOutputStatusScheduled FlowsRunsStartOutputStatus = "scheduled"
+	FlowsRunsStartOutputStatusRunning   FlowsRunsStartOutputStatus = "running"
+	FlowsRunsStartOutputStatusDone      FlowsRunsStartOutputStatus = "done"
+	FlowsRunsStartOutputStatusCancelled FlowsRunsStartOutputStatus = "cancelled"
+	FlowsRunsStartOutputStatusFailed    FlowsRunsStartOutputStatus = "failed"
+)
 
 // FlowsSendEmailInput is the request body of [FlowsService.SendEmail].
 type FlowsSendEmailInput struct {
@@ -2635,129 +4294,49 @@ const (
 	FlowsSendWhatsappInputNumberStrategyFixed   FlowsSendWhatsappInputNumberStrategy = "fixed"
 )
 
-// FlowsStepConnectInput is the request body of [FlowsService.StepConnect].
-type FlowsStepConnectInput struct {
+// FlowsStepsConnectInput is the request body of [FlowsService.StepsConnect].
+type FlowsStepsConnectInput struct {
 	FlowID string           `json:"flowId"`
 	StepID string           `json:"stepId"`
 	Handle *string          `json:"handle,omitzero"`
 	Target Nullable[string] `json:"target,omitzero"`
 }
 
-// FlowsStepConnectOutput is the response of [FlowsService.StepConnect].
-type FlowsStepConnectOutput struct {
-	Step FlowsStepConnectOutputStep `json:"step"`
+// FlowsStepsConnectOutput is the response of [FlowsService.StepsConnect].
+type FlowsStepsConnectOutput struct {
+	Step FlowsStepsConnectOutputStep `json:"step"`
 }
 
-// FlowsStepConnectOutputStep is the type of [FlowsStepConnectOutput.Step].
-type FlowsStepConnectOutputStep struct {
-	ID           string                                       `json:"id"`
-	Type         string                                       `json:"type"`
-	Dependencies []string                                     `json:"dependencies,omitzero"`
-	Input        any                                          `json:"input,omitzero"`
-	Meta         any                                          `json:"meta,omitzero"`
-	Action       *string                                      `json:"action,omitzero"`
-	Target       any                                          `json:"target,omitzero"`
-	FlowID       *string                                      `json:"flowId,omitzero"`
-	TriggerStart []FlowsStepConnectOutputStepTriggerStartItem `json:"triggerStart,omitzero"`
-	TriggerExit  []FlowsStepConnectOutputStepTriggerExitItem  `json:"triggerExit,omitzero"`
+// FlowsStepsConnectOutputStep is the type of [FlowsStepsConnectOutput.Step].
+type FlowsStepsConnectOutputStep struct {
+	ID           string                                        `json:"id"`
+	Type         string                                        `json:"type"`
+	Dependencies []string                                      `json:"dependencies,omitzero"`
+	Input        any                                           `json:"input,omitzero"`
+	Meta         any                                           `json:"meta,omitzero"`
+	Action       *string                                       `json:"action,omitzero"`
+	Target       any                                           `json:"target,omitzero"`
+	FlowID       *string                                       `json:"flowId,omitzero"`
+	TriggerStart []FlowsStepsConnectOutputStepTriggerStartItem `json:"triggerStart,omitzero"`
+	TriggerExit  []FlowsStepsConnectOutputStepTriggerExitItem  `json:"triggerExit,omitzero"`
 }
 
-// FlowsStepConnectOutputStepTriggerExitItem is an element of [FlowsStepConnectOutputStep.TriggerExit].
-type FlowsStepConnectOutputStepTriggerExitItem struct {
-	Type        FlowsStepConnectOutputStepTriggerExitItemType              `json:"type"`
-	EventName   string                                                     `json:"eventName"`
-	ExitPurpose *FlowsStepConnectOutputStepTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                                     `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepConnectOutputStepTriggerExitItemConstraintsItem `json:"constraints"`
-}
-
-// FlowsStepConnectOutputStepTriggerExitItemConstraintsItem is an element of
-// [FlowsStepConnectOutputStepTriggerExitItem.Constraints].
-type FlowsStepConnectOutputStepTriggerExitItemConstraintsItem struct {
-	Field         string                                                            `json:"field"`
-	Op            FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                           `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                          `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                             `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                        `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                           `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                               `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                             `json:"caseSensitive,omitzero"`
-}
-
-// FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp is the type of
-// [FlowsStepConnectOutputStepTriggerExitItemConstraintsItem.Op].
-type FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp string
-
-// Values of [FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp].
-const (
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpEq          FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "EQ"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpNeq         FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "NEQ"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpGt          FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "GT"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpGte         FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "GTE"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpLt          FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "LT"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpLte         FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "LTE"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpExists      FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "EXISTS"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpIn          FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "IN"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpContains    FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "CONTAINS"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpNotContains FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpStartsWith  FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpRegex       FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "REGEX"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpWordMatch   FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOpNotIn       FlowsStepConnectOutputStepTriggerExitItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType is the type of
-// [FlowsStepConnectOutputStepTriggerExitItemConstraintsItem.ValueType].
-type FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType string
-
-// Values of [FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType].
-const (
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueTypeString  FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType = "STRING"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType = "NUMBER"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueTypeDate    FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType = "DATE"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType = "UUID"
-	FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueTypeSegment FlowsStepConnectOutputStepTriggerExitItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepConnectOutputStepTriggerExitItemExitPurpose is the type of
-// [FlowsStepConnectOutputStepTriggerExitItem.ExitPurpose].
-type FlowsStepConnectOutputStepTriggerExitItemExitPurpose string
-
-// Values of [FlowsStepConnectOutputStepTriggerExitItemExitPurpose].
-const (
-	FlowsStepConnectOutputStepTriggerExitItemExitPurposeGoal   FlowsStepConnectOutputStepTriggerExitItemExitPurpose = "goal"
-	FlowsStepConnectOutputStepTriggerExitItemExitPurposeSystem FlowsStepConnectOutputStepTriggerExitItemExitPurpose = "system"
-)
-
-// FlowsStepConnectOutputStepTriggerExitItemType is the type of
-// [FlowsStepConnectOutputStepTriggerExitItem.Type].
-type FlowsStepConnectOutputStepTriggerExitItemType string
-
-// Values of [FlowsStepConnectOutputStepTriggerExitItemType].
-const (
-	FlowsStepConnectOutputStepTriggerExitItemTypeStart FlowsStepConnectOutputStepTriggerExitItemType = "start"
-	FlowsStepConnectOutputStepTriggerExitItemTypeExit  FlowsStepConnectOutputStepTriggerExitItemType = "exit"
-)
-
-// FlowsStepConnectOutputStepTriggerStartItem is an element of
-// [FlowsStepConnectOutputStep.TriggerStart].
-type FlowsStepConnectOutputStepTriggerStartItem struct {
-	Type        FlowsStepConnectOutputStepTriggerStartItemType              `json:"type"`
+// FlowsStepsConnectOutputStepTriggerExitItem is an element of
+// [FlowsStepsConnectOutputStep.TriggerExit].
+type FlowsStepsConnectOutputStepTriggerExitItem struct {
+	Type        FlowsStepsConnectOutputStepTriggerExitItemType              `json:"type"`
 	EventName   string                                                      `json:"eventName"`
-	ExitPurpose *FlowsStepConnectOutputStepTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	ExitPurpose *FlowsStepsConnectOutputStepTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
 	GoalGroup   *int64                                                      `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepConnectOutputStepTriggerStartItemConstraintsItem `json:"constraints"`
+	Constraints []FlowsStepsConnectOutputStepTriggerExitItemConstraintsItem `json:"constraints"`
 }
 
-// FlowsStepConnectOutputStepTriggerStartItemConstraintsItem is an element of
-// [FlowsStepConnectOutputStepTriggerStartItem.Constraints].
-type FlowsStepConnectOutputStepTriggerStartItemConstraintsItem struct {
+// FlowsStepsConnectOutputStepTriggerExitItemConstraintsItem is an element of
+// [FlowsStepsConnectOutputStepTriggerExitItem.Constraints].
+type FlowsStepsConnectOutputStepTriggerExitItemConstraintsItem struct {
 	Field         string                                                             `json:"field"`
-	Op            FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	Op            FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType `json:"valueType"`
 	ValueString   *string                                                            `json:"valueString,omitzero"`
 	ValueNumber   *float64                                                           `json:"valueNumber,omitzero"`
 	ValueBoolean  *bool                                                              `json:"valueBoolean,omitzero"`
@@ -2767,169 +4346,171 @@ type FlowsStepConnectOutputStepTriggerStartItemConstraintsItem struct {
 	CaseSensitive *bool                                                              `json:"caseSensitive,omitzero"`
 }
 
-// FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp is the type of
-// [FlowsStepConnectOutputStepTriggerStartItemConstraintsItem.Op].
-type FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp string
+// FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp is the type of
+// [FlowsStepsConnectOutputStepTriggerExitItemConstraintsItem.Op].
+type FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp string
 
-// Values of [FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp].
+// Values of [FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp].
 const (
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpEq          FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "EQ"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpNeq         FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "NEQ"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpGt          FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "GT"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpGte         FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "GTE"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpLt          FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "LT"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpLte         FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "LTE"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpExists      FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "EXISTS"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpIn          FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "IN"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpContains    FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "CONTAINS"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpNotContains FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpStartsWith  FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpRegex       FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "REGEX"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpWordMatch   FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOpNotIn       FlowsStepConnectOutputStepTriggerStartItemConstraintsItemOp = "NOT_IN"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpEq          FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "EQ"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpNeq         FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "NEQ"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpGt          FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "GT"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpGte         FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "GTE"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpLt          FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "LT"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpLte         FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "LTE"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpExists      FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "EXISTS"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpIn          FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "IN"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpContains    FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpNotContains FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpStartsWith  FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpRegex       FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "REGEX"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpWordMatch   FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOpNotIn       FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemOp = "NOT_IN"
 )
 
-// FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType is the type of
-// [FlowsStepConnectOutputStepTriggerStartItemConstraintsItem.ValueType].
-type FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType string
+// FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType is the type of
+// [FlowsStepsConnectOutputStepTriggerExitItemConstraintsItem.ValueType].
+type FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType string
 
-// Values of [FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType].
+// Values of [FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType].
 const (
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueTypeString  FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType = "STRING"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType = "NUMBER"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueTypeDate    FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType = "DATE"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType = "UUID"
-	FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueTypeSegment FlowsStepConnectOutputStepTriggerStartItemConstraintsItemValueType = "SEGMENT"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueTypeString  FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType = "STRING"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueTypeDate    FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType = "DATE"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType = "UUID"
+	FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueTypeSegment FlowsStepsConnectOutputStepTriggerExitItemConstraintsItemValueType = "SEGMENT"
 )
 
-// FlowsStepConnectOutputStepTriggerStartItemExitPurpose is the type of
-// [FlowsStepConnectOutputStepTriggerStartItem.ExitPurpose].
-type FlowsStepConnectOutputStepTriggerStartItemExitPurpose string
+// FlowsStepsConnectOutputStepTriggerExitItemExitPurpose is the type of
+// [FlowsStepsConnectOutputStepTriggerExitItem.ExitPurpose].
+type FlowsStepsConnectOutputStepTriggerExitItemExitPurpose string
 
-// Values of [FlowsStepConnectOutputStepTriggerStartItemExitPurpose].
+// Values of [FlowsStepsConnectOutputStepTriggerExitItemExitPurpose].
 const (
-	FlowsStepConnectOutputStepTriggerStartItemExitPurposeGoal   FlowsStepConnectOutputStepTriggerStartItemExitPurpose = "goal"
-	FlowsStepConnectOutputStepTriggerStartItemExitPurposeSystem FlowsStepConnectOutputStepTriggerStartItemExitPurpose = "system"
+	FlowsStepsConnectOutputStepTriggerExitItemExitPurposeGoal   FlowsStepsConnectOutputStepTriggerExitItemExitPurpose = "goal"
+	FlowsStepsConnectOutputStepTriggerExitItemExitPurposeSystem FlowsStepsConnectOutputStepTriggerExitItemExitPurpose = "system"
 )
 
-// FlowsStepConnectOutputStepTriggerStartItemType is the type of
-// [FlowsStepConnectOutputStepTriggerStartItem.Type].
-type FlowsStepConnectOutputStepTriggerStartItemType string
+// FlowsStepsConnectOutputStepTriggerExitItemType is the type of
+// [FlowsStepsConnectOutputStepTriggerExitItem.Type].
+type FlowsStepsConnectOutputStepTriggerExitItemType string
 
-// Values of [FlowsStepConnectOutputStepTriggerStartItemType].
+// Values of [FlowsStepsConnectOutputStepTriggerExitItemType].
 const (
-	FlowsStepConnectOutputStepTriggerStartItemTypeStart FlowsStepConnectOutputStepTriggerStartItemType = "start"
-	FlowsStepConnectOutputStepTriggerStartItemTypeExit  FlowsStepConnectOutputStepTriggerStartItemType = "exit"
+	FlowsStepsConnectOutputStepTriggerExitItemTypeStart FlowsStepsConnectOutputStepTriggerExitItemType = "start"
+	FlowsStepsConnectOutputStepTriggerExitItemTypeExit  FlowsStepsConnectOutputStepTriggerExitItemType = "exit"
 )
 
-// FlowsStepCreateInput is the request body of [FlowsService.StepCreate].
-type FlowsStepCreateInput struct {
-	FlowID       string                                 `json:"flowId"`
-	Type         string                                 `json:"type"`
-	Input        any                                    `json:"input,omitzero"`
-	Action       *string                                `json:"action,omitzero"`
-	Target       any                                    `json:"target,omitzero"`
-	Dependencies []string                               `json:"dependencies,omitzero"`
-	Meta         any                                    `json:"meta,omitzero"`
-	TriggerStart []FlowsStepCreateInputTriggerStartItem `json:"triggerStart,omitzero"`
-	TriggerExit  []FlowsStepCreateInputTriggerExitItem  `json:"triggerExit,omitzero"`
+// FlowsStepsConnectOutputStepTriggerStartItem is an element of
+// [FlowsStepsConnectOutputStep.TriggerStart].
+type FlowsStepsConnectOutputStepTriggerStartItem struct {
+	Type        FlowsStepsConnectOutputStepTriggerStartItemType              `json:"type"`
+	EventName   string                                                       `json:"eventName"`
+	ExitPurpose *FlowsStepsConnectOutputStepTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                       `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsConnectOutputStepTriggerStartItemConstraintsItem `json:"constraints"`
 }
 
-// FlowsStepCreateInputTriggerExitItem is an element of [FlowsStepCreateInput.TriggerExit].
-type FlowsStepCreateInputTriggerExitItem struct {
-	Type        *FlowsStepCreateInputTriggerExitItemType             `json:"type,omitzero"`
-	EventName   string                                               `json:"eventName"`
-	ExitPurpose *FlowsStepCreateInputTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                               `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepCreateInputTriggerExitItemConstraintsItem `json:"constraints"`
+// FlowsStepsConnectOutputStepTriggerStartItemConstraintsItem is an element of
+// [FlowsStepsConnectOutputStepTriggerStartItem.Constraints].
+type FlowsStepsConnectOutputStepTriggerStartItemConstraintsItem struct {
+	Field         string                                                              `json:"field"`
+	Op            FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                             `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                            `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                               `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                          `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                             `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                                 `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                               `json:"caseSensitive,omitzero"`
 }
 
-// FlowsStepCreateInputTriggerExitItemConstraintsItem is an element of
-// [FlowsStepCreateInputTriggerExitItem.Constraints].
-type FlowsStepCreateInputTriggerExitItemConstraintsItem struct {
-	Field         string                                                      `json:"field"`
-	Op            FlowsStepCreateInputTriggerExitItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepCreateInputTriggerExitItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                     `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                    `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                       `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                  `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                     `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                         `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                       `json:"caseSensitive,omitzero"`
+// FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp is the type of
+// [FlowsStepsConnectOutputStepTriggerStartItemConstraintsItem.Op].
+type FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp string
+
+// Values of [FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp].
+const (
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpEq          FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "EQ"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpNeq         FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "NEQ"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpGt          FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "GT"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpGte         FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "GTE"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpLt          FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "LT"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpLte         FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "LTE"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpExists      FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "EXISTS"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpIn          FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "IN"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpContains    FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpNotContains FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpStartsWith  FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpRegex       FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "REGEX"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpWordMatch   FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOpNotIn       FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType is the type of
+// [FlowsStepsConnectOutputStepTriggerStartItemConstraintsItem.ValueType].
+type FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType string
+
+// Values of [FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType].
+const (
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueTypeString  FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType = "STRING"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueTypeDate    FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType = "DATE"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType = "UUID"
+	FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueTypeSegment FlowsStepsConnectOutputStepTriggerStartItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsConnectOutputStepTriggerStartItemExitPurpose is the type of
+// [FlowsStepsConnectOutputStepTriggerStartItem.ExitPurpose].
+type FlowsStepsConnectOutputStepTriggerStartItemExitPurpose string
+
+// Values of [FlowsStepsConnectOutputStepTriggerStartItemExitPurpose].
+const (
+	FlowsStepsConnectOutputStepTriggerStartItemExitPurposeGoal   FlowsStepsConnectOutputStepTriggerStartItemExitPurpose = "goal"
+	FlowsStepsConnectOutputStepTriggerStartItemExitPurposeSystem FlowsStepsConnectOutputStepTriggerStartItemExitPurpose = "system"
+)
+
+// FlowsStepsConnectOutputStepTriggerStartItemType is the type of
+// [FlowsStepsConnectOutputStepTriggerStartItem.Type].
+type FlowsStepsConnectOutputStepTriggerStartItemType string
+
+// Values of [FlowsStepsConnectOutputStepTriggerStartItemType].
+const (
+	FlowsStepsConnectOutputStepTriggerStartItemTypeStart FlowsStepsConnectOutputStepTriggerStartItemType = "start"
+	FlowsStepsConnectOutputStepTriggerStartItemTypeExit  FlowsStepsConnectOutputStepTriggerStartItemType = "exit"
+)
+
+// FlowsStepsCreateInput is the request body of [FlowsService.StepsCreate].
+type FlowsStepsCreateInput struct {
+	FlowID       string                                  `json:"flowId"`
+	Type         string                                  `json:"type"`
+	Input        any                                     `json:"input,omitzero"`
+	Action       *string                                 `json:"action,omitzero"`
+	Target       any                                     `json:"target,omitzero"`
+	Dependencies []string                                `json:"dependencies,omitzero"`
+	Meta         any                                     `json:"meta,omitzero"`
+	TriggerStart []FlowsStepsCreateInputTriggerStartItem `json:"triggerStart,omitzero"`
+	TriggerExit  []FlowsStepsCreateInputTriggerExitItem  `json:"triggerExit,omitzero"`
 }
 
-// FlowsStepCreateInputTriggerExitItemConstraintsItemOp is the type of
-// [FlowsStepCreateInputTriggerExitItemConstraintsItem.Op].
-type FlowsStepCreateInputTriggerExitItemConstraintsItemOp string
-
-// Values of [FlowsStepCreateInputTriggerExitItemConstraintsItemOp].
-const (
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpEq          FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "EQ"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpNeq         FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "NEQ"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpGt          FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "GT"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpGte         FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "GTE"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpLt          FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "LT"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpLte         FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "LTE"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpExists      FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "EXISTS"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpIn          FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "IN"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpContains    FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "CONTAINS"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpNotContains FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpStartsWith  FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpRegex       FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "REGEX"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpWordMatch   FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemOpNotIn       FlowsStepCreateInputTriggerExitItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepCreateInputTriggerExitItemConstraintsItemValueType is the type of
-// [FlowsStepCreateInputTriggerExitItemConstraintsItem.ValueType].
-type FlowsStepCreateInputTriggerExitItemConstraintsItemValueType string
-
-// Values of [FlowsStepCreateInputTriggerExitItemConstraintsItemValueType].
-const (
-	FlowsStepCreateInputTriggerExitItemConstraintsItemValueTypeString  FlowsStepCreateInputTriggerExitItemConstraintsItemValueType = "STRING"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepCreateInputTriggerExitItemConstraintsItemValueType = "NUMBER"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepCreateInputTriggerExitItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemValueTypeDate    FlowsStepCreateInputTriggerExitItemConstraintsItemValueType = "DATE"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepCreateInputTriggerExitItemConstraintsItemValueType = "UUID"
-	FlowsStepCreateInputTriggerExitItemConstraintsItemValueTypeSegment FlowsStepCreateInputTriggerExitItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepCreateInputTriggerExitItemExitPurpose is the type of
-// [FlowsStepCreateInputTriggerExitItem.ExitPurpose].
-type FlowsStepCreateInputTriggerExitItemExitPurpose string
-
-// Values of [FlowsStepCreateInputTriggerExitItemExitPurpose].
-const (
-	FlowsStepCreateInputTriggerExitItemExitPurposeGoal   FlowsStepCreateInputTriggerExitItemExitPurpose = "goal"
-	FlowsStepCreateInputTriggerExitItemExitPurposeSystem FlowsStepCreateInputTriggerExitItemExitPurpose = "system"
-)
-
-// FlowsStepCreateInputTriggerExitItemType is the type of [FlowsStepCreateInputTriggerExitItem.Type].
-type FlowsStepCreateInputTriggerExitItemType string
-
-// Values of [FlowsStepCreateInputTriggerExitItemType].
-const (
-	FlowsStepCreateInputTriggerExitItemTypeStart FlowsStepCreateInputTriggerExitItemType = "start"
-	FlowsStepCreateInputTriggerExitItemTypeExit  FlowsStepCreateInputTriggerExitItemType = "exit"
-)
-
-// FlowsStepCreateInputTriggerStartItem is an element of [FlowsStepCreateInput.TriggerStart].
-type FlowsStepCreateInputTriggerStartItem struct {
-	Type        *FlowsStepCreateInputTriggerStartItemType             `json:"type,omitzero"`
+// FlowsStepsCreateInputTriggerExitItem is an element of [FlowsStepsCreateInput.TriggerExit].
+type FlowsStepsCreateInputTriggerExitItem struct {
+	Type        *FlowsStepsCreateInputTriggerExitItemType             `json:"type,omitzero"`
 	EventName   string                                                `json:"eventName"`
-	ExitPurpose *FlowsStepCreateInputTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	ExitPurpose *FlowsStepsCreateInputTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
 	GoalGroup   *int64                                                `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepCreateInputTriggerStartItemConstraintsItem `json:"constraints"`
+	Constraints []FlowsStepsCreateInputTriggerExitItemConstraintsItem `json:"constraints"`
 }
 
-// FlowsStepCreateInputTriggerStartItemConstraintsItem is an element of
-// [FlowsStepCreateInputTriggerStartItem.Constraints].
-type FlowsStepCreateInputTriggerStartItemConstraintsItem struct {
+// FlowsStepsCreateInputTriggerExitItemConstraintsItem is an element of
+// [FlowsStepsCreateInputTriggerExitItem.Constraints].
+type FlowsStepsCreateInputTriggerExitItemConstraintsItem struct {
 	Field         string                                                       `json:"field"`
-	Op            FlowsStepCreateInputTriggerStartItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepCreateInputTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	Op            FlowsStepsCreateInputTriggerExitItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType `json:"valueType"`
 	ValueString   *string                                                      `json:"valueString,omitzero"`
 	ValueNumber   *float64                                                     `json:"valueNumber,omitzero"`
 	ValueBoolean  *bool                                                        `json:"valueBoolean,omitzero"`
@@ -2939,177 +4520,177 @@ type FlowsStepCreateInputTriggerStartItemConstraintsItem struct {
 	CaseSensitive *bool                                                        `json:"caseSensitive,omitzero"`
 }
 
-// FlowsStepCreateInputTriggerStartItemConstraintsItemOp is the type of
-// [FlowsStepCreateInputTriggerStartItemConstraintsItem.Op].
-type FlowsStepCreateInputTriggerStartItemConstraintsItemOp string
+// FlowsStepsCreateInputTriggerExitItemConstraintsItemOp is the type of
+// [FlowsStepsCreateInputTriggerExitItemConstraintsItem.Op].
+type FlowsStepsCreateInputTriggerExitItemConstraintsItemOp string
 
-// Values of [FlowsStepCreateInputTriggerStartItemConstraintsItemOp].
+// Values of [FlowsStepsCreateInputTriggerExitItemConstraintsItemOp].
 const (
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpEq          FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "EQ"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpNeq         FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "NEQ"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpGt          FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "GT"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpGte         FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "GTE"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpLt          FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "LT"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpLte         FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "LTE"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpExists      FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "EXISTS"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpIn          FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "IN"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpContains    FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "CONTAINS"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpNotContains FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpStartsWith  FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpRegex       FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "REGEX"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpWordMatch   FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemOpNotIn       FlowsStepCreateInputTriggerStartItemConstraintsItemOp = "NOT_IN"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpEq          FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "EQ"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpNeq         FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "NEQ"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpGt          FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "GT"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpGte         FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "GTE"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpLt          FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "LT"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpLte         FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "LTE"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpExists      FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "EXISTS"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpIn          FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "IN"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpContains    FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpNotContains FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpStartsWith  FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpRegex       FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "REGEX"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpWordMatch   FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemOpNotIn       FlowsStepsCreateInputTriggerExitItemConstraintsItemOp = "NOT_IN"
 )
 
-// FlowsStepCreateInputTriggerStartItemConstraintsItemValueType is the type of
-// [FlowsStepCreateInputTriggerStartItemConstraintsItem.ValueType].
-type FlowsStepCreateInputTriggerStartItemConstraintsItemValueType string
+// FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType is the type of
+// [FlowsStepsCreateInputTriggerExitItemConstraintsItem.ValueType].
+type FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType string
 
-// Values of [FlowsStepCreateInputTriggerStartItemConstraintsItemValueType].
+// Values of [FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType].
 const (
-	FlowsStepCreateInputTriggerStartItemConstraintsItemValueTypeString  FlowsStepCreateInputTriggerStartItemConstraintsItemValueType = "STRING"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepCreateInputTriggerStartItemConstraintsItemValueType = "NUMBER"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepCreateInputTriggerStartItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemValueTypeDate    FlowsStepCreateInputTriggerStartItemConstraintsItemValueType = "DATE"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepCreateInputTriggerStartItemConstraintsItemValueType = "UUID"
-	FlowsStepCreateInputTriggerStartItemConstraintsItemValueTypeSegment FlowsStepCreateInputTriggerStartItemConstraintsItemValueType = "SEGMENT"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemValueTypeString  FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType = "STRING"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemValueTypeDate    FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType = "DATE"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType = "UUID"
+	FlowsStepsCreateInputTriggerExitItemConstraintsItemValueTypeSegment FlowsStepsCreateInputTriggerExitItemConstraintsItemValueType = "SEGMENT"
 )
 
-// FlowsStepCreateInputTriggerStartItemExitPurpose is the type of
-// [FlowsStepCreateInputTriggerStartItem.ExitPurpose].
-type FlowsStepCreateInputTriggerStartItemExitPurpose string
+// FlowsStepsCreateInputTriggerExitItemExitPurpose is the type of
+// [FlowsStepsCreateInputTriggerExitItem.ExitPurpose].
+type FlowsStepsCreateInputTriggerExitItemExitPurpose string
 
-// Values of [FlowsStepCreateInputTriggerStartItemExitPurpose].
+// Values of [FlowsStepsCreateInputTriggerExitItemExitPurpose].
 const (
-	FlowsStepCreateInputTriggerStartItemExitPurposeGoal   FlowsStepCreateInputTriggerStartItemExitPurpose = "goal"
-	FlowsStepCreateInputTriggerStartItemExitPurposeSystem FlowsStepCreateInputTriggerStartItemExitPurpose = "system"
+	FlowsStepsCreateInputTriggerExitItemExitPurposeGoal   FlowsStepsCreateInputTriggerExitItemExitPurpose = "goal"
+	FlowsStepsCreateInputTriggerExitItemExitPurposeSystem FlowsStepsCreateInputTriggerExitItemExitPurpose = "system"
 )
 
-// FlowsStepCreateInputTriggerStartItemType is the type of [FlowsStepCreateInputTriggerStartItem.Type].
-type FlowsStepCreateInputTriggerStartItemType string
+// FlowsStepsCreateInputTriggerExitItemType is the type of [FlowsStepsCreateInputTriggerExitItem.Type].
+type FlowsStepsCreateInputTriggerExitItemType string
 
-// Values of [FlowsStepCreateInputTriggerStartItemType].
+// Values of [FlowsStepsCreateInputTriggerExitItemType].
 const (
-	FlowsStepCreateInputTriggerStartItemTypeStart FlowsStepCreateInputTriggerStartItemType = "start"
-	FlowsStepCreateInputTriggerStartItemTypeExit  FlowsStepCreateInputTriggerStartItemType = "exit"
+	FlowsStepsCreateInputTriggerExitItemTypeStart FlowsStepsCreateInputTriggerExitItemType = "start"
+	FlowsStepsCreateInputTriggerExitItemTypeExit  FlowsStepsCreateInputTriggerExitItemType = "exit"
 )
 
-// FlowsStepCreateOutput is the response of [FlowsService.SendEmail], [FlowsService.SendInstagram],
+// FlowsStepsCreateInputTriggerStartItem is an element of [FlowsStepsCreateInput.TriggerStart].
+type FlowsStepsCreateInputTriggerStartItem struct {
+	Type        *FlowsStepsCreateInputTriggerStartItemType             `json:"type,omitzero"`
+	EventName   string                                                 `json:"eventName"`
+	ExitPurpose *FlowsStepsCreateInputTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                 `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsCreateInputTriggerStartItemConstraintsItem `json:"constraints"`
+}
+
+// FlowsStepsCreateInputTriggerStartItemConstraintsItem is an element of
+// [FlowsStepsCreateInputTriggerStartItem.Constraints].
+type FlowsStepsCreateInputTriggerStartItemConstraintsItem struct {
+	Field         string                                                        `json:"field"`
+	Op            FlowsStepsCreateInputTriggerStartItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                       `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                      `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                         `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                    `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                       `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                           `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                         `json:"caseSensitive,omitzero"`
+}
+
+// FlowsStepsCreateInputTriggerStartItemConstraintsItemOp is the type of
+// [FlowsStepsCreateInputTriggerStartItemConstraintsItem.Op].
+type FlowsStepsCreateInputTriggerStartItemConstraintsItemOp string
+
+// Values of [FlowsStepsCreateInputTriggerStartItemConstraintsItemOp].
+const (
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpEq          FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "EQ"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpNeq         FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "NEQ"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpGt          FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "GT"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpGte         FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "GTE"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpLt          FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "LT"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpLte         FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "LTE"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpExists      FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "EXISTS"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpIn          FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "IN"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpContains    FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpNotContains FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpStartsWith  FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpRegex       FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "REGEX"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpWordMatch   FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemOpNotIn       FlowsStepsCreateInputTriggerStartItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType is the type of
+// [FlowsStepsCreateInputTriggerStartItemConstraintsItem.ValueType].
+type FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType string
+
+// Values of [FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType].
+const (
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemValueTypeString  FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType = "STRING"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemValueTypeDate    FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType = "DATE"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType = "UUID"
+	FlowsStepsCreateInputTriggerStartItemConstraintsItemValueTypeSegment FlowsStepsCreateInputTriggerStartItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsCreateInputTriggerStartItemExitPurpose is the type of
+// [FlowsStepsCreateInputTriggerStartItem.ExitPurpose].
+type FlowsStepsCreateInputTriggerStartItemExitPurpose string
+
+// Values of [FlowsStepsCreateInputTriggerStartItemExitPurpose].
+const (
+	FlowsStepsCreateInputTriggerStartItemExitPurposeGoal   FlowsStepsCreateInputTriggerStartItemExitPurpose = "goal"
+	FlowsStepsCreateInputTriggerStartItemExitPurposeSystem FlowsStepsCreateInputTriggerStartItemExitPurpose = "system"
+)
+
+// FlowsStepsCreateInputTriggerStartItemType is the type of
+// [FlowsStepsCreateInputTriggerStartItem.Type].
+type FlowsStepsCreateInputTriggerStartItemType string
+
+// Values of [FlowsStepsCreateInputTriggerStartItemType].
+const (
+	FlowsStepsCreateInputTriggerStartItemTypeStart FlowsStepsCreateInputTriggerStartItemType = "start"
+	FlowsStepsCreateInputTriggerStartItemTypeExit  FlowsStepsCreateInputTriggerStartItemType = "exit"
+)
+
+// FlowsStepsCreateOutput is the response of [FlowsService.SendEmail], [FlowsService.SendInstagram],
 // [FlowsService.SendSMS], [FlowsService.SendTelegram], [FlowsService.SendVoice],
-// [FlowsService.SendWhatsapp] and [FlowsService.StepCreate].
-type FlowsStepCreateOutput struct {
-	Step FlowsStepCreateOutputStep `json:"step"`
+// [FlowsService.SendWhatsapp] and [FlowsService.StepsCreate].
+type FlowsStepsCreateOutput struct {
+	Step FlowsStepsCreateOutputStep `json:"step"`
 }
 
-// FlowsStepCreateOutputStep is the type of [FlowsStepCreateOutput.Step].
-type FlowsStepCreateOutputStep struct {
-	ID           string                                      `json:"id"`
-	Type         string                                      `json:"type"`
-	Dependencies []string                                    `json:"dependencies,omitzero"`
-	Input        any                                         `json:"input,omitzero"`
-	Meta         any                                         `json:"meta,omitzero"`
-	Action       *string                                     `json:"action,omitzero"`
-	Target       any                                         `json:"target,omitzero"`
-	FlowID       *string                                     `json:"flowId,omitzero"`
-	TriggerStart []FlowsStepCreateOutputStepTriggerStartItem `json:"triggerStart,omitzero"`
-	TriggerExit  []FlowsStepCreateOutputStepTriggerExitItem  `json:"triggerExit,omitzero"`
+// FlowsStepsCreateOutputStep is the type of [FlowsStepsCreateOutput.Step].
+type FlowsStepsCreateOutputStep struct {
+	ID           string                                       `json:"id"`
+	Type         string                                       `json:"type"`
+	Dependencies []string                                     `json:"dependencies,omitzero"`
+	Input        any                                          `json:"input,omitzero"`
+	Meta         any                                          `json:"meta,omitzero"`
+	Action       *string                                      `json:"action,omitzero"`
+	Target       any                                          `json:"target,omitzero"`
+	FlowID       *string                                      `json:"flowId,omitzero"`
+	TriggerStart []FlowsStepsCreateOutputStepTriggerStartItem `json:"triggerStart,omitzero"`
+	TriggerExit  []FlowsStepsCreateOutputStepTriggerExitItem  `json:"triggerExit,omitzero"`
 }
 
-// FlowsStepCreateOutputStepTriggerExitItem is an element of [FlowsStepCreateOutputStep.TriggerExit].
-type FlowsStepCreateOutputStepTriggerExitItem struct {
-	Type        FlowsStepCreateOutputStepTriggerExitItemType              `json:"type"`
-	EventName   string                                                    `json:"eventName"`
-	ExitPurpose *FlowsStepCreateOutputStepTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                                    `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepCreateOutputStepTriggerExitItemConstraintsItem `json:"constraints"`
-}
-
-// FlowsStepCreateOutputStepTriggerExitItemConstraintsItem is an element of
-// [FlowsStepCreateOutputStepTriggerExitItem.Constraints].
-type FlowsStepCreateOutputStepTriggerExitItemConstraintsItem struct {
-	Field         string                                                           `json:"field"`
-	Op            FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                          `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                         `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                            `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                       `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                          `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                              `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                            `json:"caseSensitive,omitzero"`
-}
-
-// FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp is the type of
-// [FlowsStepCreateOutputStepTriggerExitItemConstraintsItem.Op].
-type FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp string
-
-// Values of [FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp].
-const (
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpEq          FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "EQ"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpNeq         FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "NEQ"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpGt          FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "GT"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpGte         FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "GTE"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpLt          FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "LT"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpLte         FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "LTE"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpExists      FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "EXISTS"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpIn          FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "IN"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpContains    FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "CONTAINS"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpNotContains FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpStartsWith  FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpRegex       FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "REGEX"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpWordMatch   FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOpNotIn       FlowsStepCreateOutputStepTriggerExitItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType is the type of
-// [FlowsStepCreateOutputStepTriggerExitItemConstraintsItem.ValueType].
-type FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType string
-
-// Values of [FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType].
-const (
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueTypeString  FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType = "STRING"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType = "NUMBER"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueTypeDate    FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType = "DATE"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType = "UUID"
-	FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueTypeSegment FlowsStepCreateOutputStepTriggerExitItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepCreateOutputStepTriggerExitItemExitPurpose is the type of
-// [FlowsStepCreateOutputStepTriggerExitItem.ExitPurpose].
-type FlowsStepCreateOutputStepTriggerExitItemExitPurpose string
-
-// Values of [FlowsStepCreateOutputStepTriggerExitItemExitPurpose].
-const (
-	FlowsStepCreateOutputStepTriggerExitItemExitPurposeGoal   FlowsStepCreateOutputStepTriggerExitItemExitPurpose = "goal"
-	FlowsStepCreateOutputStepTriggerExitItemExitPurposeSystem FlowsStepCreateOutputStepTriggerExitItemExitPurpose = "system"
-)
-
-// FlowsStepCreateOutputStepTriggerExitItemType is the type of
-// [FlowsStepCreateOutputStepTriggerExitItem.Type].
-type FlowsStepCreateOutputStepTriggerExitItemType string
-
-// Values of [FlowsStepCreateOutputStepTriggerExitItemType].
-const (
-	FlowsStepCreateOutputStepTriggerExitItemTypeStart FlowsStepCreateOutputStepTriggerExitItemType = "start"
-	FlowsStepCreateOutputStepTriggerExitItemTypeExit  FlowsStepCreateOutputStepTriggerExitItemType = "exit"
-)
-
-// FlowsStepCreateOutputStepTriggerStartItem is an element of [FlowsStepCreateOutputStep.TriggerStart].
-type FlowsStepCreateOutputStepTriggerStartItem struct {
-	Type        FlowsStepCreateOutputStepTriggerStartItemType              `json:"type"`
+// FlowsStepsCreateOutputStepTriggerExitItem is an element of [FlowsStepsCreateOutputStep.TriggerExit].
+type FlowsStepsCreateOutputStepTriggerExitItem struct {
+	Type        FlowsStepsCreateOutputStepTriggerExitItemType              `json:"type"`
 	EventName   string                                                     `json:"eventName"`
-	ExitPurpose *FlowsStepCreateOutputStepTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	ExitPurpose *FlowsStepsCreateOutputStepTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
 	GoalGroup   *int64                                                     `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepCreateOutputStepTriggerStartItemConstraintsItem `json:"constraints"`
+	Constraints []FlowsStepsCreateOutputStepTriggerExitItemConstraintsItem `json:"constraints"`
 }
 
-// FlowsStepCreateOutputStepTriggerStartItemConstraintsItem is an element of
-// [FlowsStepCreateOutputStepTriggerStartItem.Constraints].
-type FlowsStepCreateOutputStepTriggerStartItemConstraintsItem struct {
+// FlowsStepsCreateOutputStepTriggerExitItemConstraintsItem is an element of
+// [FlowsStepsCreateOutputStepTriggerExitItem.Constraints].
+type FlowsStepsCreateOutputStepTriggerExitItemConstraintsItem struct {
 	Field         string                                                            `json:"field"`
-	Op            FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	Op            FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType `json:"valueType"`
 	ValueString   *string                                                           `json:"valueString,omitzero"`
 	ValueNumber   *float64                                                          `json:"valueNumber,omitzero"`
 	ValueBoolean  *bool                                                             `json:"valueBoolean,omitzero"`
@@ -3119,343 +4700,78 @@ type FlowsStepCreateOutputStepTriggerStartItemConstraintsItem struct {
 	CaseSensitive *bool                                                             `json:"caseSensitive,omitzero"`
 }
 
-// FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp is the type of
-// [FlowsStepCreateOutputStepTriggerStartItemConstraintsItem.Op].
-type FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp string
+// FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp is the type of
+// [FlowsStepsCreateOutputStepTriggerExitItemConstraintsItem.Op].
+type FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp string
 
-// Values of [FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp].
+// Values of [FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp].
 const (
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpEq          FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "EQ"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpNeq         FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "NEQ"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpGt          FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "GT"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpGte         FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "GTE"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpLt          FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "LT"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpLte         FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "LTE"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpExists      FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "EXISTS"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpIn          FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "IN"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpContains    FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "CONTAINS"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpNotContains FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpStartsWith  FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpRegex       FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "REGEX"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpWordMatch   FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOpNotIn       FlowsStepCreateOutputStepTriggerStartItemConstraintsItemOp = "NOT_IN"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpEq          FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "EQ"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpNeq         FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "NEQ"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpGt          FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "GT"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpGte         FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "GTE"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpLt          FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "LT"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpLte         FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "LTE"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpExists      FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "EXISTS"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpIn          FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "IN"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpContains    FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpNotContains FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpStartsWith  FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpRegex       FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "REGEX"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpWordMatch   FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOpNotIn       FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemOp = "NOT_IN"
 )
 
-// FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType is the type of
-// [FlowsStepCreateOutputStepTriggerStartItemConstraintsItem.ValueType].
-type FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType string
+// FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType is the type of
+// [FlowsStepsCreateOutputStepTriggerExitItemConstraintsItem.ValueType].
+type FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType string
 
-// Values of [FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType].
+// Values of [FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType].
 const (
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueTypeString  FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType = "STRING"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType = "NUMBER"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueTypeDate    FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType = "DATE"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType = "UUID"
-	FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueTypeSegment FlowsStepCreateOutputStepTriggerStartItemConstraintsItemValueType = "SEGMENT"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueTypeString  FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType = "STRING"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueTypeDate    FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType = "DATE"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType = "UUID"
+	FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueTypeSegment FlowsStepsCreateOutputStepTriggerExitItemConstraintsItemValueType = "SEGMENT"
 )
 
-// FlowsStepCreateOutputStepTriggerStartItemExitPurpose is the type of
-// [FlowsStepCreateOutputStepTriggerStartItem.ExitPurpose].
-type FlowsStepCreateOutputStepTriggerStartItemExitPurpose string
+// FlowsStepsCreateOutputStepTriggerExitItemExitPurpose is the type of
+// [FlowsStepsCreateOutputStepTriggerExitItem.ExitPurpose].
+type FlowsStepsCreateOutputStepTriggerExitItemExitPurpose string
 
-// Values of [FlowsStepCreateOutputStepTriggerStartItemExitPurpose].
+// Values of [FlowsStepsCreateOutputStepTriggerExitItemExitPurpose].
 const (
-	FlowsStepCreateOutputStepTriggerStartItemExitPurposeGoal   FlowsStepCreateOutputStepTriggerStartItemExitPurpose = "goal"
-	FlowsStepCreateOutputStepTriggerStartItemExitPurposeSystem FlowsStepCreateOutputStepTriggerStartItemExitPurpose = "system"
+	FlowsStepsCreateOutputStepTriggerExitItemExitPurposeGoal   FlowsStepsCreateOutputStepTriggerExitItemExitPurpose = "goal"
+	FlowsStepsCreateOutputStepTriggerExitItemExitPurposeSystem FlowsStepsCreateOutputStepTriggerExitItemExitPurpose = "system"
 )
 
-// FlowsStepCreateOutputStepTriggerStartItemType is the type of
-// [FlowsStepCreateOutputStepTriggerStartItem.Type].
-type FlowsStepCreateOutputStepTriggerStartItemType string
+// FlowsStepsCreateOutputStepTriggerExitItemType is the type of
+// [FlowsStepsCreateOutputStepTriggerExitItem.Type].
+type FlowsStepsCreateOutputStepTriggerExitItemType string
 
-// Values of [FlowsStepCreateOutputStepTriggerStartItemType].
+// Values of [FlowsStepsCreateOutputStepTriggerExitItemType].
 const (
-	FlowsStepCreateOutputStepTriggerStartItemTypeStart FlowsStepCreateOutputStepTriggerStartItemType = "start"
-	FlowsStepCreateOutputStepTriggerStartItemTypeExit  FlowsStepCreateOutputStepTriggerStartItemType = "exit"
+	FlowsStepsCreateOutputStepTriggerExitItemTypeStart FlowsStepsCreateOutputStepTriggerExitItemType = "start"
+	FlowsStepsCreateOutputStepTriggerExitItemTypeExit  FlowsStepsCreateOutputStepTriggerExitItemType = "exit"
 )
 
-// FlowsStepDeleteInput is the request body of [FlowsService.StepDelete].
-type FlowsStepDeleteInput struct {
-	FlowID string `json:"flowId"`
-	StepID string `json:"stepId"`
-}
-
-// FlowsStepDeleteOutput is the response of [FlowsService.StepDelete].
-type FlowsStepDeleteOutput struct {
-	Deleted bool `json:"deleted"`
-}
-
-// FlowsStepTriggersSetInput is the request body of [FlowsService.StepTriggersSet].
-type FlowsStepTriggersSetInput struct {
-	FlowID       string                                      `json:"flowId"`
-	StepID       string                                      `json:"stepId"`
-	TriggerStart []FlowsStepTriggersSetInputTriggerStartItem `json:"triggerStart,omitzero"`
-	TriggerExit  []FlowsStepTriggersSetInputTriggerExitItem  `json:"triggerExit,omitzero"`
-}
-
-// FlowsStepTriggersSetInputTriggerExitItem is an element of [FlowsStepTriggersSetInput.TriggerExit].
-type FlowsStepTriggersSetInputTriggerExitItem struct {
-	Type        *FlowsStepTriggersSetInputTriggerExitItemType             `json:"type,omitzero"`
-	EventName   string                                                    `json:"eventName"`
-	ExitPurpose *FlowsStepTriggersSetInputTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                                    `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepTriggersSetInputTriggerExitItemConstraintsItem `json:"constraints"`
-}
-
-// FlowsStepTriggersSetInputTriggerExitItemConstraintsItem is an element of
-// [FlowsStepTriggersSetInputTriggerExitItem.Constraints].
-type FlowsStepTriggersSetInputTriggerExitItemConstraintsItem struct {
-	Field         string                                                           `json:"field"`
-	Op            FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                          `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                         `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                            `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                       `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                          `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                              `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                            `json:"caseSensitive,omitzero"`
-}
-
-// FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp is the type of
-// [FlowsStepTriggersSetInputTriggerExitItemConstraintsItem.Op].
-type FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp string
-
-// Values of [FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp].
-const (
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpEq          FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "EQ"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpNeq         FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "NEQ"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpGt          FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "GT"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpGte         FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "GTE"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpLt          FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "LT"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpLte         FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "LTE"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpExists      FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "EXISTS"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpIn          FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "IN"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpContains    FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "CONTAINS"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpNotContains FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpStartsWith  FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpRegex       FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "REGEX"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpWordMatch   FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOpNotIn       FlowsStepTriggersSetInputTriggerExitItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType is the type of
-// [FlowsStepTriggersSetInputTriggerExitItemConstraintsItem.ValueType].
-type FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType string
-
-// Values of [FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType].
-const (
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueTypeString  FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType = "STRING"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType = "NUMBER"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueTypeDate    FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType = "DATE"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType = "UUID"
-	FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueTypeSegment FlowsStepTriggersSetInputTriggerExitItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepTriggersSetInputTriggerExitItemExitPurpose is the type of
-// [FlowsStepTriggersSetInputTriggerExitItem.ExitPurpose].
-type FlowsStepTriggersSetInputTriggerExitItemExitPurpose string
-
-// Values of [FlowsStepTriggersSetInputTriggerExitItemExitPurpose].
-const (
-	FlowsStepTriggersSetInputTriggerExitItemExitPurposeGoal   FlowsStepTriggersSetInputTriggerExitItemExitPurpose = "goal"
-	FlowsStepTriggersSetInputTriggerExitItemExitPurposeSystem FlowsStepTriggersSetInputTriggerExitItemExitPurpose = "system"
-)
-
-// FlowsStepTriggersSetInputTriggerExitItemType is the type of
-// [FlowsStepTriggersSetInputTriggerExitItem.Type].
-type FlowsStepTriggersSetInputTriggerExitItemType string
-
-// Values of [FlowsStepTriggersSetInputTriggerExitItemType].
-const (
-	FlowsStepTriggersSetInputTriggerExitItemTypeStart FlowsStepTriggersSetInputTriggerExitItemType = "start"
-	FlowsStepTriggersSetInputTriggerExitItemTypeExit  FlowsStepTriggersSetInputTriggerExitItemType = "exit"
-)
-
-// FlowsStepTriggersSetInputTriggerStartItem is an element of [FlowsStepTriggersSetInput.TriggerStart].
-type FlowsStepTriggersSetInputTriggerStartItem struct {
-	Type        *FlowsStepTriggersSetInputTriggerStartItemType             `json:"type,omitzero"`
-	EventName   string                                                     `json:"eventName"`
-	ExitPurpose *FlowsStepTriggersSetInputTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                                     `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepTriggersSetInputTriggerStartItemConstraintsItem `json:"constraints"`
-}
-
-// FlowsStepTriggersSetInputTriggerStartItemConstraintsItem is an element of
-// [FlowsStepTriggersSetInputTriggerStartItem.Constraints].
-type FlowsStepTriggersSetInputTriggerStartItemConstraintsItem struct {
-	Field         string                                                            `json:"field"`
-	Op            FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                           `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                          `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                             `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                        `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                           `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                               `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                             `json:"caseSensitive,omitzero"`
-}
-
-// FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp is the type of
-// [FlowsStepTriggersSetInputTriggerStartItemConstraintsItem.Op].
-type FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp string
-
-// Values of [FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp].
-const (
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpEq          FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "EQ"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpNeq         FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "NEQ"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpGt          FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "GT"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpGte         FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "GTE"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpLt          FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "LT"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpLte         FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "LTE"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpExists      FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "EXISTS"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpIn          FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "IN"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpContains    FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "CONTAINS"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpNotContains FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpStartsWith  FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpRegex       FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "REGEX"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpWordMatch   FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOpNotIn       FlowsStepTriggersSetInputTriggerStartItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType is the type of
-// [FlowsStepTriggersSetInputTriggerStartItemConstraintsItem.ValueType].
-type FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType string
-
-// Values of [FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType].
-const (
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueTypeString  FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType = "STRING"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType = "NUMBER"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueTypeDate    FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType = "DATE"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType = "UUID"
-	FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueTypeSegment FlowsStepTriggersSetInputTriggerStartItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepTriggersSetInputTriggerStartItemExitPurpose is the type of
-// [FlowsStepTriggersSetInputTriggerStartItem.ExitPurpose].
-type FlowsStepTriggersSetInputTriggerStartItemExitPurpose string
-
-// Values of [FlowsStepTriggersSetInputTriggerStartItemExitPurpose].
-const (
-	FlowsStepTriggersSetInputTriggerStartItemExitPurposeGoal   FlowsStepTriggersSetInputTriggerStartItemExitPurpose = "goal"
-	FlowsStepTriggersSetInputTriggerStartItemExitPurposeSystem FlowsStepTriggersSetInputTriggerStartItemExitPurpose = "system"
-)
-
-// FlowsStepTriggersSetInputTriggerStartItemType is the type of
-// [FlowsStepTriggersSetInputTriggerStartItem.Type].
-type FlowsStepTriggersSetInputTriggerStartItemType string
-
-// Values of [FlowsStepTriggersSetInputTriggerStartItemType].
-const (
-	FlowsStepTriggersSetInputTriggerStartItemTypeStart FlowsStepTriggersSetInputTriggerStartItemType = "start"
-	FlowsStepTriggersSetInputTriggerStartItemTypeExit  FlowsStepTriggersSetInputTriggerStartItemType = "exit"
-)
-
-// FlowsStepTriggersSetOutput is the response of [FlowsService.StepTriggersSet].
-type FlowsStepTriggersSetOutput struct {
-	TriggerStart []FlowsStepTriggersSetOutputTriggerStartItem `json:"triggerStart"`
-	TriggerExit  []FlowsStepTriggersSetOutputTriggerExitItem  `json:"triggerExit"`
-}
-
-// FlowsStepTriggersSetOutputTriggerExitItem is an element of [FlowsStepTriggersSetOutput.TriggerExit].
-type FlowsStepTriggersSetOutputTriggerExitItem struct {
-	Type        FlowsStepTriggersSetOutputTriggerExitItemType              `json:"type"`
-	EventName   string                                                     `json:"eventName"`
-	ExitPurpose *FlowsStepTriggersSetOutputTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                                     `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepTriggersSetOutputTriggerExitItemConstraintsItem `json:"constraints"`
-}
-
-// FlowsStepTriggersSetOutputTriggerExitItemConstraintsItem is an element of
-// [FlowsStepTriggersSetOutputTriggerExitItem.Constraints].
-type FlowsStepTriggersSetOutputTriggerExitItemConstraintsItem struct {
-	Field         string                                                            `json:"field"`
-	Op            FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                           `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                          `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                             `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                        `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                           `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                               `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                             `json:"caseSensitive,omitzero"`
-}
-
-// FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp is the type of
-// [FlowsStepTriggersSetOutputTriggerExitItemConstraintsItem.Op].
-type FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp string
-
-// Values of [FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp].
-const (
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpEq          FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "EQ"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpNeq         FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "NEQ"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpGt          FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "GT"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpGte         FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "GTE"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpLt          FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "LT"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpLte         FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "LTE"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpExists      FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "EXISTS"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpIn          FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "IN"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpContains    FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "CONTAINS"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpNotContains FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpStartsWith  FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpRegex       FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "REGEX"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpWordMatch   FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOpNotIn       FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType is the type of
-// [FlowsStepTriggersSetOutputTriggerExitItemConstraintsItem.ValueType].
-type FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType string
-
-// Values of [FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType].
-const (
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueTypeString  FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType = "STRING"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType = "NUMBER"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueTypeDate    FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType = "DATE"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType = "UUID"
-	FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueTypeSegment FlowsStepTriggersSetOutputTriggerExitItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepTriggersSetOutputTriggerExitItemExitPurpose is the type of
-// [FlowsStepTriggersSetOutputTriggerExitItem.ExitPurpose].
-type FlowsStepTriggersSetOutputTriggerExitItemExitPurpose string
-
-// Values of [FlowsStepTriggersSetOutputTriggerExitItemExitPurpose].
-const (
-	FlowsStepTriggersSetOutputTriggerExitItemExitPurposeGoal   FlowsStepTriggersSetOutputTriggerExitItemExitPurpose = "goal"
-	FlowsStepTriggersSetOutputTriggerExitItemExitPurposeSystem FlowsStepTriggersSetOutputTriggerExitItemExitPurpose = "system"
-)
-
-// FlowsStepTriggersSetOutputTriggerExitItemType is the type of
-// [FlowsStepTriggersSetOutputTriggerExitItem.Type].
-type FlowsStepTriggersSetOutputTriggerExitItemType string
-
-// Values of [FlowsStepTriggersSetOutputTriggerExitItemType].
-const (
-	FlowsStepTriggersSetOutputTriggerExitItemTypeStart FlowsStepTriggersSetOutputTriggerExitItemType = "start"
-	FlowsStepTriggersSetOutputTriggerExitItemTypeExit  FlowsStepTriggersSetOutputTriggerExitItemType = "exit"
-)
-
-// FlowsStepTriggersSetOutputTriggerStartItem is an element of
-// [FlowsStepTriggersSetOutput.TriggerStart].
-type FlowsStepTriggersSetOutputTriggerStartItem struct {
-	Type        FlowsStepTriggersSetOutputTriggerStartItemType              `json:"type"`
+// FlowsStepsCreateOutputStepTriggerStartItem is an element of
+// [FlowsStepsCreateOutputStep.TriggerStart].
+type FlowsStepsCreateOutputStepTriggerStartItem struct {
+	Type        FlowsStepsCreateOutputStepTriggerStartItemType              `json:"type"`
 	EventName   string                                                      `json:"eventName"`
-	ExitPurpose *FlowsStepTriggersSetOutputTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	ExitPurpose *FlowsStepsCreateOutputStepTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
 	GoalGroup   *int64                                                      `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepTriggersSetOutputTriggerStartItemConstraintsItem `json:"constraints"`
+	Constraints []FlowsStepsCreateOutputStepTriggerStartItemConstraintsItem `json:"constraints"`
 }
 
-// FlowsStepTriggersSetOutputTriggerStartItemConstraintsItem is an element of
-// [FlowsStepTriggersSetOutputTriggerStartItem.Constraints].
-type FlowsStepTriggersSetOutputTriggerStartItemConstraintsItem struct {
+// FlowsStepsCreateOutputStepTriggerStartItemConstraintsItem is an element of
+// [FlowsStepsCreateOutputStepTriggerStartItem.Constraints].
+type FlowsStepsCreateOutputStepTriggerStartItemConstraintsItem struct {
 	Field         string                                                             `json:"field"`
-	Op            FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	Op            FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType `json:"valueType"`
 	ValueString   *string                                                            `json:"valueString,omitzero"`
 	ValueNumber   *float64                                                           `json:"valueNumber,omitzero"`
 	ValueBoolean  *bool                                                              `json:"valueBoolean,omitzero"`
@@ -3465,186 +4781,96 @@ type FlowsStepTriggersSetOutputTriggerStartItemConstraintsItem struct {
 	CaseSensitive *bool                                                              `json:"caseSensitive,omitzero"`
 }
 
-// FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp is the type of
-// [FlowsStepTriggersSetOutputTriggerStartItemConstraintsItem.Op].
-type FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp string
+// FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp is the type of
+// [FlowsStepsCreateOutputStepTriggerStartItemConstraintsItem.Op].
+type FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp string
 
-// Values of [FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp].
+// Values of [FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp].
 const (
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpEq          FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "EQ"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpNeq         FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "NEQ"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpGt          FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "GT"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpGte         FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "GTE"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpLt          FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "LT"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpLte         FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "LTE"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpExists      FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "EXISTS"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpIn          FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "IN"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpContains    FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "CONTAINS"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpNotContains FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpStartsWith  FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpRegex       FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "REGEX"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpWordMatch   FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOpNotIn       FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemOp = "NOT_IN"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpEq          FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "EQ"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpNeq         FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "NEQ"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpGt          FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "GT"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpGte         FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "GTE"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpLt          FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "LT"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpLte         FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "LTE"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpExists      FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "EXISTS"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpIn          FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "IN"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpContains    FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpNotContains FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpStartsWith  FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpRegex       FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "REGEX"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpWordMatch   FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOpNotIn       FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemOp = "NOT_IN"
 )
 
-// FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType is the type of
-// [FlowsStepTriggersSetOutputTriggerStartItemConstraintsItem.ValueType].
-type FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType string
+// FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType is the type of
+// [FlowsStepsCreateOutputStepTriggerStartItemConstraintsItem.ValueType].
+type FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType string
 
-// Values of [FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType].
+// Values of [FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType].
 const (
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueTypeString  FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType = "STRING"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType = "NUMBER"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueTypeDate    FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType = "DATE"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType = "UUID"
-	FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueTypeSegment FlowsStepTriggersSetOutputTriggerStartItemConstraintsItemValueType = "SEGMENT"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueTypeString  FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType = "STRING"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueTypeDate    FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType = "DATE"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType = "UUID"
+	FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueTypeSegment FlowsStepsCreateOutputStepTriggerStartItemConstraintsItemValueType = "SEGMENT"
 )
 
-// FlowsStepTriggersSetOutputTriggerStartItemExitPurpose is the type of
-// [FlowsStepTriggersSetOutputTriggerStartItem.ExitPurpose].
-type FlowsStepTriggersSetOutputTriggerStartItemExitPurpose string
+// FlowsStepsCreateOutputStepTriggerStartItemExitPurpose is the type of
+// [FlowsStepsCreateOutputStepTriggerStartItem.ExitPurpose].
+type FlowsStepsCreateOutputStepTriggerStartItemExitPurpose string
 
-// Values of [FlowsStepTriggersSetOutputTriggerStartItemExitPurpose].
+// Values of [FlowsStepsCreateOutputStepTriggerStartItemExitPurpose].
 const (
-	FlowsStepTriggersSetOutputTriggerStartItemExitPurposeGoal   FlowsStepTriggersSetOutputTriggerStartItemExitPurpose = "goal"
-	FlowsStepTriggersSetOutputTriggerStartItemExitPurposeSystem FlowsStepTriggersSetOutputTriggerStartItemExitPurpose = "system"
+	FlowsStepsCreateOutputStepTriggerStartItemExitPurposeGoal   FlowsStepsCreateOutputStepTriggerStartItemExitPurpose = "goal"
+	FlowsStepsCreateOutputStepTriggerStartItemExitPurposeSystem FlowsStepsCreateOutputStepTriggerStartItemExitPurpose = "system"
 )
 
-// FlowsStepTriggersSetOutputTriggerStartItemType is the type of
-// [FlowsStepTriggersSetOutputTriggerStartItem.Type].
-type FlowsStepTriggersSetOutputTriggerStartItemType string
+// FlowsStepsCreateOutputStepTriggerStartItemType is the type of
+// [FlowsStepsCreateOutputStepTriggerStartItem.Type].
+type FlowsStepsCreateOutputStepTriggerStartItemType string
 
-// Values of [FlowsStepTriggersSetOutputTriggerStartItemType].
+// Values of [FlowsStepsCreateOutputStepTriggerStartItemType].
 const (
-	FlowsStepTriggersSetOutputTriggerStartItemTypeStart FlowsStepTriggersSetOutputTriggerStartItemType = "start"
-	FlowsStepTriggersSetOutputTriggerStartItemTypeExit  FlowsStepTriggersSetOutputTriggerStartItemType = "exit"
+	FlowsStepsCreateOutputStepTriggerStartItemTypeStart FlowsStepsCreateOutputStepTriggerStartItemType = "start"
+	FlowsStepsCreateOutputStepTriggerStartItemTypeExit  FlowsStepsCreateOutputStepTriggerStartItemType = "exit"
 )
 
-// FlowsStepUpdateInput is the request body of [FlowsService.StepUpdate].
-type FlowsStepUpdateInput struct {
-	FlowID       string   `json:"flowId"`
-	StepID       string   `json:"stepId"`
-	Input        any      `json:"input,omitzero"`
-	Action       *string  `json:"action,omitzero"`
-	Dependencies []string `json:"dependencies,omitzero"`
-	Meta         any      `json:"meta,omitzero"`
+// FlowsStepsDeleteInput is the request body of [FlowsService.StepsDelete].
+type FlowsStepsDeleteInput struct {
+	FlowID string `json:"flowId"`
+	StepID string `json:"stepId"`
 }
 
-// FlowsStepUpdateOutput is the response of [FlowsService.StepUpdate].
-type FlowsStepUpdateOutput struct {
-	Step FlowsStepUpdateOutputStep `json:"step"`
+// FlowsStepsDeleteOutput is the response of [FlowsService.StepsDelete].
+type FlowsStepsDeleteOutput struct {
+	Deleted bool `json:"deleted"`
 }
 
-// FlowsStepUpdateOutputStep is the type of [FlowsStepUpdateOutput.Step].
-type FlowsStepUpdateOutputStep struct {
-	ID           string                                      `json:"id"`
-	Type         string                                      `json:"type"`
-	Dependencies []string                                    `json:"dependencies,omitzero"`
-	Input        any                                         `json:"input,omitzero"`
-	Meta         any                                         `json:"meta,omitzero"`
-	Action       *string                                     `json:"action,omitzero"`
-	Target       any                                         `json:"target,omitzero"`
-	FlowID       *string                                     `json:"flowId,omitzero"`
-	TriggerStart []FlowsStepUpdateOutputStepTriggerStartItem `json:"triggerStart,omitzero"`
-	TriggerExit  []FlowsStepUpdateOutputStepTriggerExitItem  `json:"triggerExit,omitzero"`
+// FlowsStepsTriggersSetInput is the request body of [FlowsService.StepsTriggersSet].
+type FlowsStepsTriggersSetInput struct {
+	FlowID       string                                       `json:"flowId"`
+	StepID       string                                       `json:"stepId"`
+	TriggerStart []FlowsStepsTriggersSetInputTriggerStartItem `json:"triggerStart,omitzero"`
+	TriggerExit  []FlowsStepsTriggersSetInputTriggerExitItem  `json:"triggerExit,omitzero"`
 }
 
-// FlowsStepUpdateOutputStepTriggerExitItem is an element of [FlowsStepUpdateOutputStep.TriggerExit].
-type FlowsStepUpdateOutputStepTriggerExitItem struct {
-	Type        FlowsStepUpdateOutputStepTriggerExitItemType              `json:"type"`
-	EventName   string                                                    `json:"eventName"`
-	ExitPurpose *FlowsStepUpdateOutputStepTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
-	GoalGroup   *int64                                                    `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepUpdateOutputStepTriggerExitItemConstraintsItem `json:"constraints"`
-}
-
-// FlowsStepUpdateOutputStepTriggerExitItemConstraintsItem is an element of
-// [FlowsStepUpdateOutputStepTriggerExitItem.Constraints].
-type FlowsStepUpdateOutputStepTriggerExitItemConstraintsItem struct {
-	Field         string                                                           `json:"field"`
-	Op            FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType `json:"valueType"`
-	ValueString   *string                                                          `json:"valueString,omitzero"`
-	ValueNumber   *float64                                                         `json:"valueNumber,omitzero"`
-	ValueBoolean  *bool                                                            `json:"valueBoolean,omitzero"`
-	ValueDate     *time.Time                                                       `json:"valueDate,omitzero"`
-	ValueUUID     *string                                                          `json:"valueUuid,omitzero"`
-	ValueJSON     any                                                              `json:"valueJson,omitzero"`
-	CaseSensitive *bool                                                            `json:"caseSensitive,omitzero"`
-}
-
-// FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp is the type of
-// [FlowsStepUpdateOutputStepTriggerExitItemConstraintsItem.Op].
-type FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp string
-
-// Values of [FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp].
-const (
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpEq          FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "EQ"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpNeq         FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "NEQ"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpGt          FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "GT"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpGte         FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "GTE"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpLt          FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "LT"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpLte         FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "LTE"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpExists      FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "EXISTS"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpIn          FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "IN"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpContains    FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "CONTAINS"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpNotContains FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpStartsWith  FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpRegex       FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "REGEX"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpWordMatch   FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOpNotIn       FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemOp = "NOT_IN"
-)
-
-// FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType is the type of
-// [FlowsStepUpdateOutputStepTriggerExitItemConstraintsItem.ValueType].
-type FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType string
-
-// Values of [FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType].
-const (
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueTypeString  FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType = "STRING"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType = "NUMBER"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueTypeDate    FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType = "DATE"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType = "UUID"
-	FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueTypeSegment FlowsStepUpdateOutputStepTriggerExitItemConstraintsItemValueType = "SEGMENT"
-)
-
-// FlowsStepUpdateOutputStepTriggerExitItemExitPurpose is the type of
-// [FlowsStepUpdateOutputStepTriggerExitItem.ExitPurpose].
-type FlowsStepUpdateOutputStepTriggerExitItemExitPurpose string
-
-// Values of [FlowsStepUpdateOutputStepTriggerExitItemExitPurpose].
-const (
-	FlowsStepUpdateOutputStepTriggerExitItemExitPurposeGoal   FlowsStepUpdateOutputStepTriggerExitItemExitPurpose = "goal"
-	FlowsStepUpdateOutputStepTriggerExitItemExitPurposeSystem FlowsStepUpdateOutputStepTriggerExitItemExitPurpose = "system"
-)
-
-// FlowsStepUpdateOutputStepTriggerExitItemType is the type of
-// [FlowsStepUpdateOutputStepTriggerExitItem.Type].
-type FlowsStepUpdateOutputStepTriggerExitItemType string
-
-// Values of [FlowsStepUpdateOutputStepTriggerExitItemType].
-const (
-	FlowsStepUpdateOutputStepTriggerExitItemTypeStart FlowsStepUpdateOutputStepTriggerExitItemType = "start"
-	FlowsStepUpdateOutputStepTriggerExitItemTypeExit  FlowsStepUpdateOutputStepTriggerExitItemType = "exit"
-)
-
-// FlowsStepUpdateOutputStepTriggerStartItem is an element of [FlowsStepUpdateOutputStep.TriggerStart].
-type FlowsStepUpdateOutputStepTriggerStartItem struct {
-	Type        FlowsStepUpdateOutputStepTriggerStartItemType              `json:"type"`
+// FlowsStepsTriggersSetInputTriggerExitItem is an element of [FlowsStepsTriggersSetInput.TriggerExit].
+type FlowsStepsTriggersSetInputTriggerExitItem struct {
+	Type        *FlowsStepsTriggersSetInputTriggerExitItemType             `json:"type,omitzero"`
 	EventName   string                                                     `json:"eventName"`
-	ExitPurpose *FlowsStepUpdateOutputStepTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	ExitPurpose *FlowsStepsTriggersSetInputTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
 	GoalGroup   *int64                                                     `json:"goalGroup,omitzero"`
-	Constraints []FlowsStepUpdateOutputStepTriggerStartItemConstraintsItem `json:"constraints"`
+	Constraints []FlowsStepsTriggersSetInputTriggerExitItemConstraintsItem `json:"constraints"`
 }
 
-// FlowsStepUpdateOutputStepTriggerStartItemConstraintsItem is an element of
-// [FlowsStepUpdateOutputStepTriggerStartItem.Constraints].
-type FlowsStepUpdateOutputStepTriggerStartItemConstraintsItem struct {
+// FlowsStepsTriggersSetInputTriggerExitItemConstraintsItem is an element of
+// [FlowsStepsTriggersSetInputTriggerExitItem.Constraints].
+type FlowsStepsTriggersSetInputTriggerExitItemConstraintsItem struct {
 	Field         string                                                            `json:"field"`
-	Op            FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp        `json:"op"`
-	ValueType     FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	Op            FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType `json:"valueType"`
 	ValueString   *string                                                           `json:"valueString,omitzero"`
 	ValueNumber   *float64                                                          `json:"valueNumber,omitzero"`
 	ValueBoolean  *bool                                                             `json:"valueBoolean,omitzero"`
@@ -3654,60 +4880,499 @@ type FlowsStepUpdateOutputStepTriggerStartItemConstraintsItem struct {
 	CaseSensitive *bool                                                             `json:"caseSensitive,omitzero"`
 }
 
-// FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp is the type of
-// [FlowsStepUpdateOutputStepTriggerStartItemConstraintsItem.Op].
-type FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp string
+// FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp is the type of
+// [FlowsStepsTriggersSetInputTriggerExitItemConstraintsItem.Op].
+type FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp string
 
-// Values of [FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp].
+// Values of [FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp].
 const (
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpEq          FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "EQ"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpNeq         FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "NEQ"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpGt          FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "GT"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpGte         FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "GTE"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpLt          FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "LT"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpLte         FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "LTE"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpExists      FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "EXISTS"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpIn          FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "IN"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpContains    FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "CONTAINS"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpNotContains FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpStartsWith  FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "STARTS_WITH"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpRegex       FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "REGEX"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpWordMatch   FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "WORD_MATCH"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOpNotIn       FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemOp = "NOT_IN"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpEq          FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "EQ"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpNeq         FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "NEQ"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpGt          FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "GT"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpGte         FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "GTE"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpLt          FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "LT"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpLte         FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "LTE"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpExists      FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "EXISTS"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpIn          FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "IN"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpContains    FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpNotContains FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpStartsWith  FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpRegex       FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "REGEX"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpWordMatch   FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOpNotIn       FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemOp = "NOT_IN"
 )
 
-// FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType is the type of
-// [FlowsStepUpdateOutputStepTriggerStartItemConstraintsItem.ValueType].
-type FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType string
+// FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType is the type of
+// [FlowsStepsTriggersSetInputTriggerExitItemConstraintsItem.ValueType].
+type FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType string
 
-// Values of [FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType].
+// Values of [FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType].
 const (
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueTypeString  FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType = "STRING"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType = "NUMBER"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType = "BOOLEAN"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueTypeDate    FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType = "DATE"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType = "UUID"
-	FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueTypeSegment FlowsStepUpdateOutputStepTriggerStartItemConstraintsItemValueType = "SEGMENT"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueTypeString  FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType = "STRING"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueTypeDate    FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType = "DATE"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType = "UUID"
+	FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueTypeSegment FlowsStepsTriggersSetInputTriggerExitItemConstraintsItemValueType = "SEGMENT"
 )
 
-// FlowsStepUpdateOutputStepTriggerStartItemExitPurpose is the type of
-// [FlowsStepUpdateOutputStepTriggerStartItem.ExitPurpose].
-type FlowsStepUpdateOutputStepTriggerStartItemExitPurpose string
+// FlowsStepsTriggersSetInputTriggerExitItemExitPurpose is the type of
+// [FlowsStepsTriggersSetInputTriggerExitItem.ExitPurpose].
+type FlowsStepsTriggersSetInputTriggerExitItemExitPurpose string
 
-// Values of [FlowsStepUpdateOutputStepTriggerStartItemExitPurpose].
+// Values of [FlowsStepsTriggersSetInputTriggerExitItemExitPurpose].
 const (
-	FlowsStepUpdateOutputStepTriggerStartItemExitPurposeGoal   FlowsStepUpdateOutputStepTriggerStartItemExitPurpose = "goal"
-	FlowsStepUpdateOutputStepTriggerStartItemExitPurposeSystem FlowsStepUpdateOutputStepTriggerStartItemExitPurpose = "system"
+	FlowsStepsTriggersSetInputTriggerExitItemExitPurposeGoal   FlowsStepsTriggersSetInputTriggerExitItemExitPurpose = "goal"
+	FlowsStepsTriggersSetInputTriggerExitItemExitPurposeSystem FlowsStepsTriggersSetInputTriggerExitItemExitPurpose = "system"
 )
 
-// FlowsStepUpdateOutputStepTriggerStartItemType is the type of
-// [FlowsStepUpdateOutputStepTriggerStartItem.Type].
-type FlowsStepUpdateOutputStepTriggerStartItemType string
+// FlowsStepsTriggersSetInputTriggerExitItemType is the type of
+// [FlowsStepsTriggersSetInputTriggerExitItem.Type].
+type FlowsStepsTriggersSetInputTriggerExitItemType string
 
-// Values of [FlowsStepUpdateOutputStepTriggerStartItemType].
+// Values of [FlowsStepsTriggersSetInputTriggerExitItemType].
 const (
-	FlowsStepUpdateOutputStepTriggerStartItemTypeStart FlowsStepUpdateOutputStepTriggerStartItemType = "start"
-	FlowsStepUpdateOutputStepTriggerStartItemTypeExit  FlowsStepUpdateOutputStepTriggerStartItemType = "exit"
+	FlowsStepsTriggersSetInputTriggerExitItemTypeStart FlowsStepsTriggersSetInputTriggerExitItemType = "start"
+	FlowsStepsTriggersSetInputTriggerExitItemTypeExit  FlowsStepsTriggersSetInputTriggerExitItemType = "exit"
+)
+
+// FlowsStepsTriggersSetInputTriggerStartItem is an element of
+// [FlowsStepsTriggersSetInput.TriggerStart].
+type FlowsStepsTriggersSetInputTriggerStartItem struct {
+	Type        *FlowsStepsTriggersSetInputTriggerStartItemType             `json:"type,omitzero"`
+	EventName   string                                                      `json:"eventName"`
+	ExitPurpose *FlowsStepsTriggersSetInputTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                      `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsTriggersSetInputTriggerStartItemConstraintsItem `json:"constraints"`
+}
+
+// FlowsStepsTriggersSetInputTriggerStartItemConstraintsItem is an element of
+// [FlowsStepsTriggersSetInputTriggerStartItem.Constraints].
+type FlowsStepsTriggersSetInputTriggerStartItemConstraintsItem struct {
+	Field         string                                                             `json:"field"`
+	Op            FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                            `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                           `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                              `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                         `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                            `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                                `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                              `json:"caseSensitive,omitzero"`
+}
+
+// FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp is the type of
+// [FlowsStepsTriggersSetInputTriggerStartItemConstraintsItem.Op].
+type FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp string
+
+// Values of [FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp].
+const (
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpEq          FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "EQ"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpNeq         FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "NEQ"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpGt          FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "GT"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpGte         FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "GTE"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpLt          FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "LT"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpLte         FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "LTE"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpExists      FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "EXISTS"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpIn          FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "IN"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpContains    FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpNotContains FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpStartsWith  FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpRegex       FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "REGEX"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpWordMatch   FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOpNotIn       FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType is the type of
+// [FlowsStepsTriggersSetInputTriggerStartItemConstraintsItem.ValueType].
+type FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType string
+
+// Values of [FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType].
+const (
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueTypeString  FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType = "STRING"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueTypeDate    FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType = "DATE"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType = "UUID"
+	FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueTypeSegment FlowsStepsTriggersSetInputTriggerStartItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsTriggersSetInputTriggerStartItemExitPurpose is the type of
+// [FlowsStepsTriggersSetInputTriggerStartItem.ExitPurpose].
+type FlowsStepsTriggersSetInputTriggerStartItemExitPurpose string
+
+// Values of [FlowsStepsTriggersSetInputTriggerStartItemExitPurpose].
+const (
+	FlowsStepsTriggersSetInputTriggerStartItemExitPurposeGoal   FlowsStepsTriggersSetInputTriggerStartItemExitPurpose = "goal"
+	FlowsStepsTriggersSetInputTriggerStartItemExitPurposeSystem FlowsStepsTriggersSetInputTriggerStartItemExitPurpose = "system"
+)
+
+// FlowsStepsTriggersSetInputTriggerStartItemType is the type of
+// [FlowsStepsTriggersSetInputTriggerStartItem.Type].
+type FlowsStepsTriggersSetInputTriggerStartItemType string
+
+// Values of [FlowsStepsTriggersSetInputTriggerStartItemType].
+const (
+	FlowsStepsTriggersSetInputTriggerStartItemTypeStart FlowsStepsTriggersSetInputTriggerStartItemType = "start"
+	FlowsStepsTriggersSetInputTriggerStartItemTypeExit  FlowsStepsTriggersSetInputTriggerStartItemType = "exit"
+)
+
+// FlowsStepsTriggersSetOutput is the response of [FlowsService.StepsTriggersSet].
+type FlowsStepsTriggersSetOutput struct {
+	TriggerStart []FlowsStepsTriggersSetOutputTriggerStartItem `json:"triggerStart"`
+	TriggerExit  []FlowsStepsTriggersSetOutputTriggerExitItem  `json:"triggerExit"`
+}
+
+// FlowsStepsTriggersSetOutputTriggerExitItem is an element of
+// [FlowsStepsTriggersSetOutput.TriggerExit].
+type FlowsStepsTriggersSetOutputTriggerExitItem struct {
+	Type        FlowsStepsTriggersSetOutputTriggerExitItemType              `json:"type"`
+	EventName   string                                                      `json:"eventName"`
+	ExitPurpose *FlowsStepsTriggersSetOutputTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                      `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItem `json:"constraints"`
+}
+
+// FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItem is an element of
+// [FlowsStepsTriggersSetOutputTriggerExitItem.Constraints].
+type FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItem struct {
+	Field         string                                                             `json:"field"`
+	Op            FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                            `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                           `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                              `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                         `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                            `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                                `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                              `json:"caseSensitive,omitzero"`
+}
+
+// FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp is the type of
+// [FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItem.Op].
+type FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp].
+const (
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpEq          FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "EQ"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpNeq         FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "NEQ"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpGt          FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "GT"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpGte         FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "GTE"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpLt          FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "LT"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpLte         FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "LTE"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpExists      FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "EXISTS"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpIn          FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "IN"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpContains    FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpNotContains FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpStartsWith  FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpRegex       FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "REGEX"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpWordMatch   FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOpNotIn       FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType is the type of
+// [FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItem.ValueType].
+type FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType].
+const (
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueTypeString  FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType = "STRING"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueTypeDate    FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType = "DATE"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType = "UUID"
+	FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueTypeSegment FlowsStepsTriggersSetOutputTriggerExitItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsTriggersSetOutputTriggerExitItemExitPurpose is the type of
+// [FlowsStepsTriggersSetOutputTriggerExitItem.ExitPurpose].
+type FlowsStepsTriggersSetOutputTriggerExitItemExitPurpose string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerExitItemExitPurpose].
+const (
+	FlowsStepsTriggersSetOutputTriggerExitItemExitPurposeGoal   FlowsStepsTriggersSetOutputTriggerExitItemExitPurpose = "goal"
+	FlowsStepsTriggersSetOutputTriggerExitItemExitPurposeSystem FlowsStepsTriggersSetOutputTriggerExitItemExitPurpose = "system"
+)
+
+// FlowsStepsTriggersSetOutputTriggerExitItemType is the type of
+// [FlowsStepsTriggersSetOutputTriggerExitItem.Type].
+type FlowsStepsTriggersSetOutputTriggerExitItemType string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerExitItemType].
+const (
+	FlowsStepsTriggersSetOutputTriggerExitItemTypeStart FlowsStepsTriggersSetOutputTriggerExitItemType = "start"
+	FlowsStepsTriggersSetOutputTriggerExitItemTypeExit  FlowsStepsTriggersSetOutputTriggerExitItemType = "exit"
+)
+
+// FlowsStepsTriggersSetOutputTriggerStartItem is an element of
+// [FlowsStepsTriggersSetOutput.TriggerStart].
+type FlowsStepsTriggersSetOutputTriggerStartItem struct {
+	Type        FlowsStepsTriggersSetOutputTriggerStartItemType              `json:"type"`
+	EventName   string                                                       `json:"eventName"`
+	ExitPurpose *FlowsStepsTriggersSetOutputTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                       `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItem `json:"constraints"`
+}
+
+// FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItem is an element of
+// [FlowsStepsTriggersSetOutputTriggerStartItem.Constraints].
+type FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItem struct {
+	Field         string                                                              `json:"field"`
+	Op            FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                             `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                            `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                               `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                          `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                             `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                                 `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                               `json:"caseSensitive,omitzero"`
+}
+
+// FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp is the type of
+// [FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItem.Op].
+type FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp].
+const (
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpEq          FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "EQ"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpNeq         FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "NEQ"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpGt          FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "GT"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpGte         FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "GTE"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpLt          FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "LT"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpLte         FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "LTE"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpExists      FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "EXISTS"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpIn          FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "IN"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpContains    FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpNotContains FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpStartsWith  FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpRegex       FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "REGEX"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpWordMatch   FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOpNotIn       FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType is the type of
+// [FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItem.ValueType].
+type FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType].
+const (
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueTypeString  FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType = "STRING"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueTypeDate    FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType = "DATE"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType = "UUID"
+	FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueTypeSegment FlowsStepsTriggersSetOutputTriggerStartItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsTriggersSetOutputTriggerStartItemExitPurpose is the type of
+// [FlowsStepsTriggersSetOutputTriggerStartItem.ExitPurpose].
+type FlowsStepsTriggersSetOutputTriggerStartItemExitPurpose string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerStartItemExitPurpose].
+const (
+	FlowsStepsTriggersSetOutputTriggerStartItemExitPurposeGoal   FlowsStepsTriggersSetOutputTriggerStartItemExitPurpose = "goal"
+	FlowsStepsTriggersSetOutputTriggerStartItemExitPurposeSystem FlowsStepsTriggersSetOutputTriggerStartItemExitPurpose = "system"
+)
+
+// FlowsStepsTriggersSetOutputTriggerStartItemType is the type of
+// [FlowsStepsTriggersSetOutputTriggerStartItem.Type].
+type FlowsStepsTriggersSetOutputTriggerStartItemType string
+
+// Values of [FlowsStepsTriggersSetOutputTriggerStartItemType].
+const (
+	FlowsStepsTriggersSetOutputTriggerStartItemTypeStart FlowsStepsTriggersSetOutputTriggerStartItemType = "start"
+	FlowsStepsTriggersSetOutputTriggerStartItemTypeExit  FlowsStepsTriggersSetOutputTriggerStartItemType = "exit"
+)
+
+// FlowsStepsUpdateInput is the request body of [FlowsService.StepsUpdate].
+type FlowsStepsUpdateInput struct {
+	FlowID       string   `json:"flowId"`
+	StepID       string   `json:"stepId"`
+	Input        any      `json:"input,omitzero"`
+	Action       *string  `json:"action,omitzero"`
+	Dependencies []string `json:"dependencies,omitzero"`
+	Meta         any      `json:"meta,omitzero"`
+}
+
+// FlowsStepsUpdateOutput is the response of [FlowsService.StepsUpdate].
+type FlowsStepsUpdateOutput struct {
+	Step FlowsStepsUpdateOutputStep `json:"step"`
+}
+
+// FlowsStepsUpdateOutputStep is the type of [FlowsStepsUpdateOutput.Step].
+type FlowsStepsUpdateOutputStep struct {
+	ID           string                                       `json:"id"`
+	Type         string                                       `json:"type"`
+	Dependencies []string                                     `json:"dependencies,omitzero"`
+	Input        any                                          `json:"input,omitzero"`
+	Meta         any                                          `json:"meta,omitzero"`
+	Action       *string                                      `json:"action,omitzero"`
+	Target       any                                          `json:"target,omitzero"`
+	FlowID       *string                                      `json:"flowId,omitzero"`
+	TriggerStart []FlowsStepsUpdateOutputStepTriggerStartItem `json:"triggerStart,omitzero"`
+	TriggerExit  []FlowsStepsUpdateOutputStepTriggerExitItem  `json:"triggerExit,omitzero"`
+}
+
+// FlowsStepsUpdateOutputStepTriggerExitItem is an element of [FlowsStepsUpdateOutputStep.TriggerExit].
+type FlowsStepsUpdateOutputStepTriggerExitItem struct {
+	Type        FlowsStepsUpdateOutputStepTriggerExitItemType              `json:"type"`
+	EventName   string                                                     `json:"eventName"`
+	ExitPurpose *FlowsStepsUpdateOutputStepTriggerExitItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                     `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItem `json:"constraints"`
+}
+
+// FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItem is an element of
+// [FlowsStepsUpdateOutputStepTriggerExitItem.Constraints].
+type FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItem struct {
+	Field         string                                                            `json:"field"`
+	Op            FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                           `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                          `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                             `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                        `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                           `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                               `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                             `json:"caseSensitive,omitzero"`
+}
+
+// FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp is the type of
+// [FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItem.Op].
+type FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp].
+const (
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpEq          FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "EQ"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpNeq         FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "NEQ"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpGt          FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "GT"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpGte         FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "GTE"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpLt          FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "LT"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpLte         FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "LTE"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpExists      FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "EXISTS"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpIn          FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "IN"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpContains    FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpNotContains FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpStartsWith  FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpRegex       FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "REGEX"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpWordMatch   FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOpNotIn       FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType is the type of
+// [FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItem.ValueType].
+type FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType].
+const (
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueTypeString  FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType = "STRING"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueTypeNumber  FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueTypeBoolean FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueTypeDate    FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType = "DATE"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueTypeUUID    FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType = "UUID"
+	FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueTypeSegment FlowsStepsUpdateOutputStepTriggerExitItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsUpdateOutputStepTriggerExitItemExitPurpose is the type of
+// [FlowsStepsUpdateOutputStepTriggerExitItem.ExitPurpose].
+type FlowsStepsUpdateOutputStepTriggerExitItemExitPurpose string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerExitItemExitPurpose].
+const (
+	FlowsStepsUpdateOutputStepTriggerExitItemExitPurposeGoal   FlowsStepsUpdateOutputStepTriggerExitItemExitPurpose = "goal"
+	FlowsStepsUpdateOutputStepTriggerExitItemExitPurposeSystem FlowsStepsUpdateOutputStepTriggerExitItemExitPurpose = "system"
+)
+
+// FlowsStepsUpdateOutputStepTriggerExitItemType is the type of
+// [FlowsStepsUpdateOutputStepTriggerExitItem.Type].
+type FlowsStepsUpdateOutputStepTriggerExitItemType string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerExitItemType].
+const (
+	FlowsStepsUpdateOutputStepTriggerExitItemTypeStart FlowsStepsUpdateOutputStepTriggerExitItemType = "start"
+	FlowsStepsUpdateOutputStepTriggerExitItemTypeExit  FlowsStepsUpdateOutputStepTriggerExitItemType = "exit"
+)
+
+// FlowsStepsUpdateOutputStepTriggerStartItem is an element of
+// [FlowsStepsUpdateOutputStep.TriggerStart].
+type FlowsStepsUpdateOutputStepTriggerStartItem struct {
+	Type        FlowsStepsUpdateOutputStepTriggerStartItemType              `json:"type"`
+	EventName   string                                                      `json:"eventName"`
+	ExitPurpose *FlowsStepsUpdateOutputStepTriggerStartItemExitPurpose      `json:"exitPurpose,omitzero"`
+	GoalGroup   *int64                                                      `json:"goalGroup,omitzero"`
+	Constraints []FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItem `json:"constraints"`
+}
+
+// FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItem is an element of
+// [FlowsStepsUpdateOutputStepTriggerStartItem.Constraints].
+type FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItem struct {
+	Field         string                                                             `json:"field"`
+	Op            FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp        `json:"op"`
+	ValueType     FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType `json:"valueType"`
+	ValueString   *string                                                            `json:"valueString,omitzero"`
+	ValueNumber   *float64                                                           `json:"valueNumber,omitzero"`
+	ValueBoolean  *bool                                                              `json:"valueBoolean,omitzero"`
+	ValueDate     *time.Time                                                         `json:"valueDate,omitzero"`
+	ValueUUID     *string                                                            `json:"valueUuid,omitzero"`
+	ValueJSON     any                                                                `json:"valueJson,omitzero"`
+	CaseSensitive *bool                                                              `json:"caseSensitive,omitzero"`
+}
+
+// FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp is the type of
+// [FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItem.Op].
+type FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp].
+const (
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpEq          FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "EQ"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpNeq         FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "NEQ"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpGt          FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "GT"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpGte         FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "GTE"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpLt          FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "LT"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpLte         FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "LTE"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpExists      FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "EXISTS"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpIn          FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "IN"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpContains    FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "CONTAINS"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpNotContains FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "NOT_CONTAINS"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpStartsWith  FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "STARTS_WITH"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpRegex       FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "REGEX"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpWordMatch   FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "WORD_MATCH"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOpNotIn       FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemOp = "NOT_IN"
+)
+
+// FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType is the type of
+// [FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItem.ValueType].
+type FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType].
+const (
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueTypeString  FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType = "STRING"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueTypeNumber  FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType = "NUMBER"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueTypeBoolean FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType = "BOOLEAN"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueTypeDate    FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType = "DATE"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueTypeUUID    FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType = "UUID"
+	FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueTypeSegment FlowsStepsUpdateOutputStepTriggerStartItemConstraintsItemValueType = "SEGMENT"
+)
+
+// FlowsStepsUpdateOutputStepTriggerStartItemExitPurpose is the type of
+// [FlowsStepsUpdateOutputStepTriggerStartItem.ExitPurpose].
+type FlowsStepsUpdateOutputStepTriggerStartItemExitPurpose string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerStartItemExitPurpose].
+const (
+	FlowsStepsUpdateOutputStepTriggerStartItemExitPurposeGoal   FlowsStepsUpdateOutputStepTriggerStartItemExitPurpose = "goal"
+	FlowsStepsUpdateOutputStepTriggerStartItemExitPurposeSystem FlowsStepsUpdateOutputStepTriggerStartItemExitPurpose = "system"
+)
+
+// FlowsStepsUpdateOutputStepTriggerStartItemType is the type of
+// [FlowsStepsUpdateOutputStepTriggerStartItem.Type].
+type FlowsStepsUpdateOutputStepTriggerStartItemType string
+
+// Values of [FlowsStepsUpdateOutputStepTriggerStartItemType].
+const (
+	FlowsStepsUpdateOutputStepTriggerStartItemTypeStart FlowsStepsUpdateOutputStepTriggerStartItemType = "start"
+	FlowsStepsUpdateOutputStepTriggerStartItemTypeExit  FlowsStepsUpdateOutputStepTriggerStartItemType = "exit"
 )
 
 // FlowsStructureGetOutput is the response of [FlowsService.StructureGet].
@@ -3917,6 +5582,61 @@ func (p FlowsStructureGetParams) values() url.Values {
 	return v
 }
 
+// FlowsTestRunsStartInput is the request body of [FlowsService.TestRunsStart].
+type FlowsTestRunsStartInput struct {
+	FlowID  string         `json:"flowId"`
+	LeadID  string         `json:"leadId"`
+	Payload map[string]any `json:"payload,omitzero"`
+}
+
+// FlowsTestRunsStartOutput is the response of [FlowsService.TestRunsStart].
+type FlowsTestRunsStartOutput struct {
+	InstanceID string                       `json:"instanceId"`
+	Kind       FlowsTestRunsStartOutputKind `json:"kind"`
+}
+
+// FlowsTestRunsStartOutputKind is the type of [FlowsTestRunsStartOutput.Kind].
+type FlowsTestRunsStartOutputKind string
+
+// Values of [FlowsTestRunsStartOutputKind].
+const (
+	FlowsTestRunsStartOutputKindProduction FlowsTestRunsStartOutputKind = "production"
+	FlowsTestRunsStartOutputKindTestDry    FlowsTestRunsStartOutputKind = "testDry"
+	FlowsTestRunsStartOutputKindTestLive   FlowsTestRunsStartOutputKind = "testLive"
+)
+
+// FlowsTriggerSamplesListOutput is the response of [FlowsService.TriggerSamplesList].
+type FlowsTriggerSamplesListOutput struct {
+	Data []FlowsTriggerSamplesListOutputDataItem `json:"data"`
+}
+
+// FlowsTriggerSamplesListOutputDataItem is an element of [FlowsTriggerSamplesListOutput.Data].
+type FlowsTriggerSamplesListOutputDataItem struct {
+	InstanceID string                                     `json:"instanceId"`
+	CreatedAt  time.Time                                  `json:"createdAt"`
+	Lead       *FlowsTriggerSamplesListOutputDataItemLead `json:"lead,omitzero"`
+	Payload    map[string]any                             `json:"payload"`
+}
+
+// FlowsTriggerSamplesListOutputDataItemLead is the type of
+// [FlowsTriggerSamplesListOutputDataItem.Lead].
+type FlowsTriggerSamplesListOutputDataItemLead struct {
+	ID    string  `json:"id"`
+	Name  *string `json:"name,omitzero"`
+	Email *string `json:"email,omitzero"`
+}
+
+// FlowsTriggerSamplesListParams holds the query parameters of [FlowsService.TriggerSamplesList].
+type FlowsTriggerSamplesListParams struct {
+	FlowID string
+}
+
+func (p FlowsTriggerSamplesListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "flowId", &p.FlowID)
+	return v
+}
+
 // FlowsTriggersCatalogOutput is the response of [FlowsService.TriggersCatalog].
 type FlowsTriggersCatalogOutput struct {
 	Data []FlowsTriggersCatalogOutputDataItem `json:"data"`
@@ -4113,45 +5833,5 @@ type FlowsValidateParams struct {
 func (p FlowsValidateParams) values() url.Values {
 	v := url.Values{}
 	addString(v, "flowId", &p.FlowID)
-	return v
-}
-
-// InstagramPostsListOutput is the response of [FlowsService.InstagramPostsList].
-type InstagramPostsListOutput struct {
-	Data []InstagramPostsListOutputDataItem `json:"data"`
-	Meta InstagramPostsListOutputMeta       `json:"meta"`
-}
-
-// InstagramPostsListOutputDataItem is an element of [InstagramPostsListOutput.Data].
-type InstagramPostsListOutputDataItem struct {
-	ID               string   `json:"id"`
-	Caption          *string  `json:"caption,omitzero"`
-	MediaType        string   `json:"mediaType"`
-	MediaProductType *string  `json:"mediaProductType,omitzero"`
-	MediaURL         *string  `json:"mediaUrl,omitzero"`
-	Permalink        string   `json:"permalink"`
-	Timestamp        string   `json:"timestamp"`
-	CommentsCount    *float64 `json:"commentsCount,omitzero"`
-	LikeCount        *float64 `json:"likeCount,omitzero"`
-	ThumbnailURL     *string  `json:"thumbnailUrl,omitzero"`
-}
-
-// InstagramPostsListOutputMeta is the type of [InstagramPostsListOutput.Meta].
-type InstagramPostsListOutputMeta struct {
-	Next *string `json:"next,omitzero"`
-}
-
-// InstagramPostsListParams holds the query parameters of [FlowsService.InstagramPostsList].
-type InstagramPostsListParams struct {
-	// Page size. Omit for the server default.
-	Limit *float64
-	// Pagination cursor from a previous call's `meta.next`.
-	After *string
-}
-
-func (p InstagramPostsListParams) values() url.Values {
-	v := url.Values{}
-	addFloat(v, "limit", p.Limit)
-	addString(v, "after", p.After)
 	return v
 }

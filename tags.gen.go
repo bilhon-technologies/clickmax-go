@@ -17,10 +17,10 @@ type TagsService struct {
 //
 // Assigns a single tag to many leads. Use when one label must be applied across a selected lead set.
 //
-// Calls POST /tags/crm-tags-apply-to-leads.
-func (s *TagsService) CRMTagsApplyToLeads(ctx context.Context, body CRMTagsApplyToLeadsInput, opts ...Option) (*CRMTagsApplyToLeadsOutput, error) {
-	var out CRMTagsApplyToLeadsOutput
-	if err := s.client.do(ctx, "POST", "/tags/crm-tags-apply-to-leads", nil, body, &out, opts); err != nil {
+// Calls POST /tags/apply-to-leads.
+func (s *TagsService) ApplyToLeads(ctx context.Context, body TagsApplyToLeadsInput, opts ...Option) (*TagsApplyToLeadsOutput, error) {
+	var out TagsApplyToLeadsOutput
+	if err := s.client.do(ctx, "POST", "/tags/apply-to-leads", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -31,24 +31,10 @@ func (s *TagsService) CRMTagsApplyToLeads(ctx context.Context, body CRMTagsApply
 // Assigns multiple tags to multiple leads in one batch operation. Use for bulk classification
 // workflows.
 //
-// Calls POST /tags/crm-tags-batch-apply-to-leads.
-func (s *TagsService) CRMTagsBatchApplyToLeads(ctx context.Context, body CRMTagsBatchApplyToLeadsInput, opts ...Option) (*CRMTagsBatchApplyToLeadsOutput, error) {
-	var out CRMTagsBatchApplyToLeadsOutput
-	if err := s.client.do(ctx, "POST", "/tags/crm-tags-batch-apply-to-leads", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// Remove one tag from many leads.
-//
-// Removes a single tag from many leads. Use to undo a prior tag assignment without deleting the tag
-// definition itself.
-//
-// Calls DELETE /tags/crm-tags-remove-from-leads.
-func (s *TagsService) CRMTagsRemoveFromLeads(ctx context.Context, body CRMTagsRemoveFromLeadsInput, opts ...Option) (*CRMTagsRemoveFromLeadsOutput, error) {
-	var out CRMTagsRemoveFromLeadsOutput
-	if err := s.client.do(ctx, "DELETE", "/tags/crm-tags-remove-from-leads", nil, body, &out, opts); err != nil {
+// Calls POST /tags/batch-apply-to-leads.
+func (s *TagsService) BatchApplyToLeads(ctx context.Context, body TagsBatchApplyToLeadsInput, opts ...Option) (*TagsBatchApplyToLeadsOutput, error) {
+	var out TagsBatchApplyToLeadsOutput
+	if err := s.client.do(ctx, "POST", "/tags/batch-apply-to-leads", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -184,6 +170,20 @@ func (s *TagsService) ManualList(ctx context.Context, params TagsManualListParam
 	return &out, nil
 }
 
+// Remove one tag from many leads.
+//
+// Removes a single tag from many leads. Use to undo a prior tag assignment without deleting the tag
+// definition itself.
+//
+// Calls DELETE /tags/remove-from-leads.
+func (s *TagsService) RemoveFromLeads(ctx context.Context, body TagsRemoveFromLeadsInput, opts ...Option) (*TagsRemoveFromLeadsOutput, error) {
+	var out TagsRemoveFromLeadsOutput
+	if err := s.client.do(ctx, "DELETE", "/tags/remove-from-leads", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // List system tag activities.
 //
 // Returns paginated lead activity entries for one system tag event name, including lead identity
@@ -256,37 +256,26 @@ func (s *TagsService) Update(ctx context.Context, body TagsUpdateInput, opts ...
 	return &out, nil
 }
 
-// CRMTagsApplyToLeadsInput is the request body of [TagsService.CRMTagsApplyToLeads].
-type CRMTagsApplyToLeadsInput struct {
+// TagsApplyToLeadsInput is the request body of [TagsService.ApplyToLeads].
+type TagsApplyToLeadsInput struct {
 	LeadIDs []string `json:"leadIds"`
 	TagID   string   `json:"tagId"`
 }
 
-// CRMTagsApplyToLeadsOutput is the response of [TagsService.CRMTagsApplyToLeads].
-type CRMTagsApplyToLeadsOutput struct {
+// TagsApplyToLeadsOutput is the response of [TagsService.ApplyToLeads].
+type TagsApplyToLeadsOutput struct {
 	Applied float64 `json:"applied"`
 }
 
-// CRMTagsBatchApplyToLeadsInput is the request body of [TagsService.CRMTagsBatchApplyToLeads].
-type CRMTagsBatchApplyToLeadsInput struct {
+// TagsBatchApplyToLeadsInput is the request body of [TagsService.BatchApplyToLeads].
+type TagsBatchApplyToLeadsInput struct {
 	LeadIDs []string `json:"leadIds"`
 	TagIDs  []string `json:"tagIds"`
 }
 
-// CRMTagsBatchApplyToLeadsOutput is the response of [TagsService.CRMTagsBatchApplyToLeads].
-type CRMTagsBatchApplyToLeadsOutput struct {
+// TagsBatchApplyToLeadsOutput is the response of [TagsService.BatchApplyToLeads].
+type TagsBatchApplyToLeadsOutput struct {
 	Applied float64 `json:"applied"`
-}
-
-// CRMTagsRemoveFromLeadsInput is the request body of [TagsService.CRMTagsRemoveFromLeads].
-type CRMTagsRemoveFromLeadsInput struct {
-	LeadIDs []string `json:"leadIds"`
-	TagID   string   `json:"tagId"`
-}
-
-// CRMTagsRemoveFromLeadsOutput is the response of [TagsService.CRMTagsRemoveFromLeads].
-type CRMTagsRemoveFromLeadsOutput struct {
-	Deleted float64 `json:"deleted"`
 }
 
 // TagsCloneInput is the request body of [TagsService.Clone].
@@ -679,6 +668,17 @@ const (
 	TagsManualListParamsOrderByFormsCount         TagsManualListParamsOrderBy = "formsCount"
 	TagsManualListParamsOrderByBoardsCount        TagsManualListParamsOrderBy = "boardsCount"
 )
+
+// TagsRemoveFromLeadsInput is the request body of [TagsService.RemoveFromLeads].
+type TagsRemoveFromLeadsInput struct {
+	LeadIDs []string `json:"leadIds"`
+	TagID   string   `json:"tagId"`
+}
+
+// TagsRemoveFromLeadsOutput is the response of [TagsService.RemoveFromLeads].
+type TagsRemoveFromLeadsOutput struct {
+	Deleted float64 `json:"deleted"`
+}
 
 // TagsSystemActivitiesOutput is the response of [TagsService.SystemActivities].
 type TagsSystemActivitiesOutput struct {

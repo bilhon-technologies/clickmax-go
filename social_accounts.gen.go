@@ -118,48 +118,6 @@ func (s *SocialAccountsService) Reconnect(ctx context.Context, body SocialAccoun
 	return &out, nil
 }
 
-// Next free queue slot of an account.
-//
-// Returns the next queue slot with no post on it (`scheduledAt`). An account with no slots answers
-// 400: create slots with `social_queue_slots_replace` first.
-//
-// Calls GET /social-accounts/social-queue-next-free-slot.
-func (s *SocialAccountsService) SocialQueueNextFreeSlot(ctx context.Context, params SocialQueueNextFreeSlotParams, opts ...Option) (*SocialQueueNextFreeSlotOutput, error) {
-	var out SocialQueueNextFreeSlotOutput
-	if err := s.client.do(ctx, "GET", "/social-accounts/social-queue-next-free-slot", params.values(), nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// List the posting queue of an account.
-//
-// Lists the weekly time slots of an account's posting queue. Posts "added to the queue" take the next
-// free slot.
-//
-// Calls GET /social-accounts/social-queue-slots-list.
-func (s *SocialAccountsService) SocialQueueSlotsList(ctx context.Context, params SocialQueueSlotsListParams, opts ...Option) (*SocialQueueSlotsListOutput, error) {
-	var out SocialQueueSlotsListOutput
-	if err := s.client.do(ctx, "GET", "/social-accounts/social-queue-slots-list", params.values(), nil, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// Replace the posting queue of an account.
-//
-// FULL REPLACE of the account's weekly slots: send the complete list every call (`[]` empties the
-// queue). Read `social_queue_slots_list` first and keep the slots the person did not ask to change.
-//
-// Calls POST /social-accounts/social-queue-slots-replace.
-func (s *SocialAccountsService) SocialQueueSlotsReplace(ctx context.Context, body SocialQueueSlotsReplaceInput, opts ...Option) (*SocialQueueSlotsListOutput, error) {
-	var out SocialQueueSlotsListOutput
-	if err := s.client.do(ctx, "POST", "/social-accounts/social-queue-slots-replace", nil, body, &out, opts); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // SocialAccountsConnectInput is the request body of [SocialAccountsService.Connect].
 type SocialAccountsConnectInput struct {
 	Network SocialAccountsConnectInputNetwork `json:"network"`
@@ -541,65 +499,4 @@ const (
 // SocialAccountsReconnectInput is the request body of [SocialAccountsService.Reconnect].
 type SocialAccountsReconnectInput struct {
 	ID string `json:"id"`
-}
-
-// SocialQueueNextFreeSlotOutput is the response of [SocialAccountsService.SocialQueueNextFreeSlot].
-type SocialQueueNextFreeSlotOutput struct {
-	SlotID      string    `json:"slotId"`
-	ScheduledAt time.Time `json:"scheduledAt"`
-}
-
-// SocialQueueNextFreeSlotParams holds the query parameters of
-// [SocialAccountsService.SocialQueueNextFreeSlot].
-type SocialQueueNextFreeSlotParams struct {
-	ID string
-}
-
-func (p SocialQueueNextFreeSlotParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "id", &p.ID)
-	return v
-}
-
-// SocialQueueSlotsListOutput is the response of [SocialAccountsService.SocialQueueSlotsList] and
-// [SocialAccountsService.SocialQueueSlotsReplace].
-type SocialQueueSlotsListOutput struct {
-	Slots []SocialQueueSlotsListOutputSlotsItem `json:"slots"`
-}
-
-// SocialQueueSlotsListOutputSlotsItem is an element of [SocialQueueSlotsListOutput.Slots].
-type SocialQueueSlotsListOutputSlotsItem struct {
-	ID        string    `json:"id"`
-	OwnerID   string    `json:"ownerId"`
-	AccountID string    `json:"accountId"`
-	Weekday   int64     `json:"weekday"`
-	Time      string    `json:"time"`
-	Timezone  string    `json:"timezone"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-// SocialQueueSlotsListParams holds the query parameters of
-// [SocialAccountsService.SocialQueueSlotsList].
-type SocialQueueSlotsListParams struct {
-	ID string
-}
-
-func (p SocialQueueSlotsListParams) values() url.Values {
-	v := url.Values{}
-	addString(v, "id", &p.ID)
-	return v
-}
-
-// SocialQueueSlotsReplaceInput is the request body of [SocialAccountsService.SocialQueueSlotsReplace].
-type SocialQueueSlotsReplaceInput struct {
-	ID       string                                  `json:"id"`
-	Timezone string                                  `json:"timezone"`
-	Slots    []SocialQueueSlotsReplaceInputSlotsItem `json:"slots"`
-}
-
-// SocialQueueSlotsReplaceInputSlotsItem is an element of [SocialQueueSlotsReplaceInput.Slots].
-type SocialQueueSlotsReplaceInputSlotsItem struct {
-	Weekday int64  `json:"weekday"`
-	Time    string `json:"time"`
 }
