@@ -479,11 +479,11 @@ type SocialMediaUploadURLInputMIMEType string
 const (
 	SocialMediaUploadURLInputMIMETypeImageJPEG      SocialMediaUploadURLInputMIMEType = "image/jpeg"
 	SocialMediaUploadURLInputMIMETypeImagePNG       SocialMediaUploadURLInputMIMEType = "image/png"
-	SocialMediaUploadURLInputMIMETypeImageWEBP      SocialMediaUploadURLInputMIMEType = "image/webp"
+	SocialMediaUploadURLInputMIMETypeImageWebp      SocialMediaUploadURLInputMIMEType = "image/webp"
 	SocialMediaUploadURLInputMIMETypeImageGIF       SocialMediaUploadURLInputMIMEType = "image/gif"
 	SocialMediaUploadURLInputMIMETypeVideoMP4       SocialMediaUploadURLInputMIMEType = "video/mp4"
 	SocialMediaUploadURLInputMIMETypeVideoQuicktime SocialMediaUploadURLInputMIMEType = "video/quicktime"
-	SocialMediaUploadURLInputMIMETypeVideoWEBM      SocialMediaUploadURLInputMIMEType = "video/webm"
+	SocialMediaUploadURLInputMIMETypeVideoWebm      SocialMediaUploadURLInputMIMEType = "video/webm"
 )
 
 // SocialMediaUploadURLOutput is the response of [SocialService.MediaUploadURL].

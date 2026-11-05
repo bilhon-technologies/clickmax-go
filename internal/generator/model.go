@@ -297,11 +297,11 @@ func (b *builder) constants() error {
 		if d.kind != declEnum {
 			continue
 		}
-		codes := codeList(d.values)
+		currency := currencyEnum(d.name)
 		for _, v := range d.values {
 			c := d.name + pascal(v)
-			if codes {
-				c = d.name + code(v)
+			if currency {
+				c = d.name + currencyCode(v)
 			}
 			if v == "" {
 				c = d.name + "Empty"
