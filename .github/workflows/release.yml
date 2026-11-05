@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   release:
-    # A manual run started from another branch would otherwise push that branch to main.
+    # Only main's copy of this workflow may release.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
