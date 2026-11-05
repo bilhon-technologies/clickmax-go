@@ -31792,11 +31792,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -32201,11 +32207,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -33204,11 +33216,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -34273,11 +34291,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -45435,11 +45459,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -48135,11 +48165,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -52346,11 +52382,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -60774,11 +60816,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -61295,11 +61343,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -62683,11 +62737,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -62734,11 +62794,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -63931,11 +63997,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -64419,11 +64491,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -67418,11 +67496,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -68316,11 +68400,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -75650,11 +75740,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -76441,11 +76537,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -76633,11 +76735,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -78839,11 +78947,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -84453,11 +84567,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -89451,11 +89571,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -93978,11 +94104,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -95150,11 +95282,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -95767,11 +95905,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -99229,11 +99373,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -99279,11 +99429,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -99332,11 +99488,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -99393,11 +99555,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -101875,11 +102043,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -104156,11 +104330,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -107455,11 +107635,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -108206,11 +108392,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -111165,11 +111357,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -111364,11 +111562,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -114092,11 +114296,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -114280,11 +114490,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -114963,11 +115179,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -117572,11 +117794,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -123463,11 +123691,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -128890,11 +129124,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -130050,10 +130290,14 @@ components:
       type: object
       properties:
         page:
-          type: number
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
           description: 1-based page number. Defaults to 1.
         perPage:
-          type: number
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
           description: Items per page, max 2000. Defaults to 10.
         confirmed:
           type: boolean
@@ -130102,11 +130346,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -130426,10 +130676,14 @@ components:
       type: object
       properties:
         page:
-          type: number
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
           description: 1-based page number. Defaults to 1.
         perPage:
-          type: number
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
           description: Items per page, max 2000. Defaults to 10.
         name:
           type: string
@@ -130605,11 +130859,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -131372,11 +131632,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -137368,11 +137634,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -140604,11 +140876,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -143609,11 +143887,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -144068,11 +144352,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -145593,11 +145883,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -147541,11 +147837,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -150896,11 +151198,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -154648,11 +154956,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -156592,11 +156906,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -162969,11 +163289,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -163870,11 +164196,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -164933,11 +165265,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -165878,11 +166216,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -166059,11 +166403,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -166383,11 +166733,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -166443,11 +166799,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
@@ -168182,11 +168544,17 @@ components:
           type: object
           properties:
             countItens:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             countPages:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             perPage:
-              type: number
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
           required:
             - countItens
             - countPages
