@@ -72,7 +72,9 @@ jobs:
           echo "::error::$SPEC_URL never matched $EXPECTED_SHA256"
           exit 1
 
-      - run: go generate ./...
+      # Not `go generate`: it lists the package files before running, so it fails when the
+      # generator deletes the file of a resource the new spec removed.
+      - run: go run -C internal/generator . -spec ../../openapi.yaml -out ../..
       - name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - run: go vet ./...

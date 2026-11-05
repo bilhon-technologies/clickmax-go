@@ -38,9 +38,9 @@ jobs:
         working-directory: internal/generator
       - name: Generated code matches openapi.yaml
         run: |
-          go generate ./...
+          go run -C internal/generator . -spec ../../openapi.yaml -out ../..
           git add -A
           git diff --cached --exit-code --stat || {
-            echo "::error::Run 'go generate ./...' and commit the result."
+            echo "::error::Regenerate (see AGENTS.md) and commit the result."
             exit 1
           }
