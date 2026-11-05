@@ -37,7 +37,7 @@ func main() {
 }
 ```
 
-The package name is `clickmax`. Operations are grouped by resource: `c.<Resource>.<Operation>(ctx, input, options...)`. Operations without a resource, such as `c.Whoami(ctx)`, are methods on the client itself. The [package documentation](https://pkg.go.dev/clickmax.io/go) lists them all with their descriptions, and the [API reference](https://docs.clickmax.io/en/api-reference) documents each one.
+The package name is `clickmax`. Operations are grouped by resource: `c.<Resource>.<Operation>(ctx, [input,] options...)`. Operations without a resource, such as `c.Whoami(ctx)`, are methods on the client itself. The [package documentation](https://pkg.go.dev/clickmax.io/go) lists them all with their descriptions, and the [API reference](https://docs.clickmax.io/en/api-reference) documents each one.
 
 Read operations take a params struct with the query parameters and write operations take the request body:
 
@@ -51,7 +51,7 @@ c.Tags.Create(ctx, clickmax.TagsCreateInput{Name: "VIP", Color: clickmax.Ptr("ff
 
 ## Optional and null fields
 
-Optional fields are pointers, and `clickmax.Ptr` builds one from a value. A nil pointer leaves the field out of the request.
+Optional fields are pointers, and `clickmax.Ptr` builds one from a value. A nil pointer leaves an optional field out of the request. Required fields that accept `null` are pointers too, and nil sends `null`.
 
 Fields that accept `null` as well as a value, usually to clear something, have the type `clickmax.Nullable[T]`. Its zero value leaves the field out, `clickmax.Null[T]()` sends `null` and `clickmax.NewNullable(v)` sends `v`. In responses, optional and null fields are nil pointers.
 
@@ -76,6 +76,9 @@ if errors.As(err, &cerr) {
 |`RequestID`|Identifier of the request. Include it when you contact support.|
 |`RetryAfter`|How long to wait before retrying, when the API sent `Retry-After`.|
 |`Issues`|Field-level problems of an `invalid_input` error.|
+|`Capability`|Permission the key lacks, for `missing_permission`.|
+|`Metric`|Limit that was reached, for `plan_limit_reached`.|
+|`UpstreamStatus`|Status returned by the service behind the API, for `upstream_error`.|
 |`Raw`|Response body as returned by the API.|
 |`Err`|Underlying cause, also reachable through `errors.Is` and `errors.As`.|
 
@@ -142,8 +145,14 @@ Canceling `ctx` stops the request. `Authorization` always comes from the client'
 A `Client` is safe for concurrent use, and clients share no state. Create one per workspace:
 
 ```go
-storeA, err := clickmax.New(os.Getenv("STORE_A_KEY"))
-storeB, err := clickmax.New(os.Getenv("STORE_B_KEY"))
+clients := map[string]*clickmax.Client{}
+for workspace, key := range keys {
+	c, err := clickmax.New(key)
+	if err != nil {
+		return fmt.Errorf("workspace %s: %w", workspace, err)
+	}
+	clients[workspace] = c
+}
 ```
 
 ## Stability

@@ -13,8 +13,8 @@ import (
 // The zero value is unset and is omitted from the JSON body (fields carry the
 // omitzero option). Use [Null] to send null and [NewNullable] to send a value:
 //
-//	var phone clickmax.Nullable[string]    // omitted
-//	phone = clickmax.Null[string]()         // sends null
+//	var phone clickmax.Nullable[string]      // omitted
+//	phone = clickmax.Null[string]()          // sends null
 //	phone = clickmax.NewNullable("+5511...") // sends "+5511..."
 type Nullable[T any] struct {
 	value T

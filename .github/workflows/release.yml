@@ -26,6 +26,8 @@ concurrency:
 
 jobs:
   release:
+    # A manual run started from another branch would otherwise push that branch to main.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       SPEC_URL: https://docs.clickmax.io/openapi.yaml
@@ -35,6 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          # The tip of main, not the event's SHA: a re-run of an old dispatch must build on the
+          # current main or its push is rejected.
+          ref: main
           # Tags are needed to compute the next version.
           fetch-depth: 0
       - uses: actions/setup-go@v6
@@ -62,7 +67,7 @@ jobs:
             fi
             actual=$(sha256sum openapi.yaml.next | cut -d' ' -f1)
             if [ -z "$EXPECTED_SHA256" ] || [ "$actual" = "$EXPECTED_SHA256" ]; then
-              mv openapi.yaml.next openapi.yaml
+              mv openapi.yaml.next internal/generator/openapi.yaml
               echo "SPEC_SHA256=$actual" >> "$GITHUB_ENV"
               exit 0
             fi
@@ -74,7 +79,7 @@ jobs:
 
       # Not `go generate`: it lists the package files before running, so it fails when the
       # generator deletes the file of a resource the new spec removed.
-      - run: go run -C internal/generator . -spec ../../openapi.yaml -out ../..
+      - run: go run -C internal/generator . -spec openapi.yaml -out ../..
       - name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - run: go vet ./...
@@ -85,8 +90,11 @@ jobs:
         run: |
           git add -A
           last=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
-          if git diff --cached --quiet && [ -n "$last" ] && [ "$(git rev-list --count "$last..HEAD")" = 0 ]; then
-            echo "Nothing changed since $last."
+          # Only files users compile count: docs, tests, CI or the spec alone do not make a release.
+          shipped=('*.go' ':!*_test.go' ':!internal' go.mod)
+          if [ -n "$last" ] && git diff --cached --quiet -- "${shipped[@]}" \
+            && git diff --quiet "$last" HEAD -- "${shipped[@]}"; then
+            echo "No shipped change since $last."
             echo "release=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -120,15 +128,15 @@ jobs:
           if [ -n "$API_VERSION" ]; then body="$body"$'\n'"Clickmax release: $API_VERSION"; fi
           git commit -m "Release $NEXT" -m "$body"
           git tag "$NEXT"
-          git push origin HEAD:main
-          git push origin "$NEXT"
+          # Atomic so main never gets a release commit without its tag.
+          git push --atomic origin HEAD:main "refs/tags/$NEXT"
 
       - name: GitHub release
         if: steps.plan.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           NEXT: ${{ steps.plan.outputs.next }}
-        run: gh release create "$NEXT" --title "$NEXT" --notes "Generated from the Clickmax API spec (sha256 $SPEC_SHA256)."
+        run: gh release create "$NEXT" --title "$NEXT" --generate-notes --notes "Built from the Clickmax API spec with sha256 $SPEC_SHA256."
 
       # Fetching the version through the proxy makes it installable and listed on pkg.go.dev right
       # away. It fails while clickmax.io/go does not serve the go-import tag, which is not fatal.

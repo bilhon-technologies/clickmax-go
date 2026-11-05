@@ -1,6 +1,6 @@
 # clickmax-go
 
-Public Go module `clickmax.io/go` (package `clickmax`, Apache-2.0) = code generated from the Clickmax OpenAPI document (`openapi.yaml`, copy of `https://docs.clickmax.io/openapi.yaml`) + a small hand-written runtime. This repo is public: no internal hostnames, environments, endpoints or private repo references in code, comments, docs, commits or workflows.
+Public Go module `clickmax.io/go` (package `clickmax`, Apache-2.0) = code generated from the Clickmax OpenAPI document (`internal/generator/openapi.yaml`, copy of `https://docs.clickmax.io/openapi.yaml`; kept in the nested module so the 6 MB file stays out of the module zip) + a small hand-written runtime. This repo is public: no internal hostnames, environments, endpoints or private repo references in code, comments, docs, commits or workflows.
 
 ## Rules
 
@@ -24,7 +24,7 @@ Public Go module `clickmax.io/go` (package `clickmax`, Apache-2.0) = code genera
 ## Commands
 
 ```sh
-go run -C internal/generator . -spec ../../openapi.yaml -out ../..   # regenerate
+go run -C internal/generator . -spec openapi.yaml -out ../..         # regenerate
 go vet ./... && go test ./...                                        # root module
 (cd internal/generator && go vet ./... && go test ./...)             # generator
 ```
@@ -33,6 +33,6 @@ Not `go generate`: it lists package files before running the generator and fails
 
 ## Releases
 
-`.github/workflows/release.yml`, triggered by `repository_dispatch` `openapi-updated` (payload `{sha256, version}`) when a new spec is published, or manually (`workflow_dispatch`, `bump: minor|patch`) for runtime changes. It waits until the published spec matches `sha256`, regenerates, runs gofmt/vet/test, and releases only when the output or `main` changed since the last tag: next `v0.<minor+1>.0` (or patch), `version.go` rewritten, commit `Release vX.Y.Z`, tag, GitHub release, proxy warm-up. Version is independent from the API's version: a Go major >= 2 changes the import path (`clickmax.io/go/v2`).
+`.github/workflows/release.yml`, triggered by `repository_dispatch` `openapi-updated` (payload `{sha256, version}`) when a new spec is published, or manually from `main` (`workflow_dispatch`, `bump: minor|patch`, optional `sha256`) for runtime changes. Always builds the tip of `main`. It waits until the published spec matches `sha256`, regenerates, runs gofmt/vet/test, and releases only when shipped files (non-test `*.go` outside `internal/`, `go.mod`) differ from the last tag: next `v0.<minor+1>.0` (or patch), `version.go` rewritten, commit `Release vX.Y.Z`, atomic push of commit + tag, GitHub release, proxy warm-up. Version is independent from the API's version: a Go major >= 2 changes the import path (`clickmax.io/go/v2`).
 
 `clickmax.io/go` resolves through a `go-import` meta tag served on `https://clickmax.io/go?go-get=1` pointing at `https://github.com/bilhon-technologies/clickmax-go`. The module path in `go.mod` must keep matching it.

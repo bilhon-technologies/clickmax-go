@@ -1,6 +1,8 @@
 // Command generator writes the generated files of the clickmax package from the OpenAPI spec.
 //
-//	go run -C internal/generator . -spec ../../openapi.yaml -out ../..
+//	go run -C internal/generator . -spec openapi.yaml -out ../..
+//
+// The spec lives in this nested module so it stays out of the zip users download.
 //
 // It fails instead of guessing when the spec uses a construct it cannot map or when two spec names
 // map to the same Go identifier, so a spec change never drops or renames an operation silently.

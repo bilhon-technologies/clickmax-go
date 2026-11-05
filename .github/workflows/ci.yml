@@ -33,12 +33,12 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: stable
-      - name: Generator tests
-        run: go test ./...
+      - name: Generator vet and tests
+        run: go vet ./... && go test ./...
         working-directory: internal/generator
-      - name: Generated code matches openapi.yaml
+      - name: Generated code matches the spec
         run: |
-          go run -C internal/generator . -spec ../../openapi.yaml -out ../..
+          go run -C internal/generator . -spec openapi.yaml -out ../..
           git add -A
           git diff --cached --exit-code --stat || {
             echo "::error::Regenerate (see AGENTS.md) and commit the result."
