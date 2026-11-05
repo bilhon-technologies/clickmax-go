@@ -29,9 +29,9 @@ func (s *AIAgentsService) Activate(ctx context.Context, body AIAgentsPublishInpu
 
 // Create an AI agent.
 //
-// Creates an agent as a `draft`: it answers nobody until published (`ai_agents_publish`) and placed on
-// a connection (`ai_agents_deployments_create`). Write the persona from what the user said about the
-// business; do not invent prices, policies or promises.
+// Creates an agent as a `draft`: it answers nobody until published ([AIAgentsService.Publish]) and
+// placed on a connection ([AIAgentsService.DeploymentsCreate]). Write the persona from what the user
+// said about the business; do not invent prices, policies or promises.
 //
 // Calls POST /ai-agents/create.
 func (s *AIAgentsService) Create(ctx context.Context, body AIAgentsCreateInput, opts ...Option) (*AIAgentsGetOutput, error) {
@@ -74,9 +74,9 @@ func (s *AIAgentsService) DeploymentsActivate(ctx context.Context, body AIAgents
 
 // Place an AI agent on connections.
 //
-// Creates a deployment as `draft`: nothing reaches contacts until `ai_agents_deployments_activate`,
-// which makes the agent answer by itself. Omitted `allow*` = on, except `allowCreateProposals` (off).
-// The AI attendant identity is created automatically.
+// Creates a deployment as `draft`: nothing reaches contacts until
+// [AIAgentsService.DeploymentsActivate], which makes the agent answer by itself. Omitted `allow*` =
+// on, except `allowCreateProposals` (off). The AI attendant identity is created automatically.
 //
 // Calls POST /ai-agents/deployments-create.
 func (s *AIAgentsService) DeploymentsCreate(ctx context.Context, body AIAgentsDeploymentsCreateInput, opts ...Option) (*AIAgentsDeploymentsGetOutput, error) {
@@ -147,7 +147,7 @@ func (s *AIAgentsService) DeploymentsUpdate(ctx context.Context, body AIAgentsDe
 // Get an AI agent.
 //
 // Full configuration of one agent: persona (instructions), model, temperature and hand-off
-// (escalation) rules. Read it before `ai_agents_update` so edits start from the current text.
+// (escalation) rules. Read it before [AIAgentsService.Update] so edits start from the current text.
 //
 // Calls GET /ai-agents/get.
 func (s *AIAgentsService) Get(ctx context.Context, params AIAgentsGetParams, opts ...Option) (*AIAgentsGetOutput, error) {
@@ -218,7 +218,7 @@ func (s *AIAgentsService) KnowledgeList(ctx context.Context, params AIAgentsKnow
 //
 // AI agents of the workspace ("Meus agentes") with status (`draft` never published, `active`,
 // `paused`), model and conversation counts. `primaryRole` = role of its deployment (null = not placed
-// anywhere yet). Where each agent works → `ai_agents_deployments_list`.
+// anywhere yet). Where each agent works → [AIAgentsService.DeploymentsList].
 //
 // Calls GET /ai-agents/list.
 func (s *AIAgentsService) List(ctx context.Context, params AIAgentsListParams, opts ...Option) (*AIAgentsListOutput, error) {
@@ -246,7 +246,7 @@ func (s *AIAgentsService) ModelsList(ctx context.Context, params AIAgentsModelsL
 // Pause an AI agent.
 //
 // Stops the agent everywhere it works, keeping configuration and history. To stop it on one connection
-// only, pause that deployment (`ai_agents_deployments_pause`).
+// only, pause that deployment ([AIAgentsService.DeploymentsPause]).
 //
 // Calls POST /ai-agents/pause.
 func (s *AIAgentsService) Pause(ctx context.Context, body AIAgentsPublishInput, opts ...Option) (*AIAgentsGetOutput, error) {
@@ -292,9 +292,9 @@ type AIAgentsCreateInput struct {
 	Name string `json:"name"`
 	// Card label ("what this agent is for"). No prompt reads it — put behavior in `persona`.
 	Purpose *string `json:"purpose,omitzero"`
-	// Provider key id from `ai_agents_credentials_list`.
+	// Provider key id from [AIAgentsService.CredentialsList].
 	CredentialID string `json:"credentialId"`
-	// Model id from `ai_agents_models_list` for that credential.
+	// Model id from [AIAgentsService.ModelsList] for that credential.
 	ModelID     string   `json:"modelId"`
 	Temperature *float64 `json:"temperature,omitzero"`
 	// The agent instructions: who it is, tone, goal, what to ask, what never to say.
@@ -330,12 +330,12 @@ type AIAgentsCredentialsListOutputDataItem struct {
 
 // AIAgentsDeploymentsCreateInput is the request body of [AIAgentsService.DeploymentsCreate].
 type AIAgentsDeploymentsCreateInput struct {
-	// From `ai_agents_list`.
+	// From [AIAgentsService.List].
 	AgentID string                             `json:"agentId"`
 	Role    AIAgentsDeploymentsCreateInputRole `json:"role"`
 	Name    string                             `json:"name"`
 	// Connections the agent answers on (WhatsApp, Instagram, Telegram, Webchat), from
-	// `channel_instances_list`. Replaces the list when sent.
+	// [ChannelInstancesService.List]. Replaces the list when sent.
 	ChannelInstanceIDs []string `json:"channelInstanceIds"`
 	// Pipeline where the agent creates/moves opportunities.
 	PipelineID *string `json:"pipelineId,omitzero"`
@@ -343,13 +343,13 @@ type AIAgentsDeploymentsCreateInput struct {
 	StageID *string `json:"stageId,omitzero"`
 	// Business-hours calendar; outside it the agent stays silent.
 	BusinessHoursCalendarID *string `json:"businessHoursCalendarId,omitzero"`
-	// Team that receives the hand-off, from `teams_list`.
+	// Team that receives the hand-off, from [TeamsService.List].
 	HandoffTeamID *string `json:"handoffTeamId,omitzero"`
 	MaxTurns      *int64  `json:"maxTurns,omitzero"`
 	// Minutes of contact silence before a follow-up.
 	SilenceFollowUpMinutes *int64 `json:"silenceFollowUpMinutes,omitzero"`
 	MaxFollowUpAttempts    *int64 `json:"maxFollowUpAttempts,omitzero"`
-	// WhatsApp template used when the 24h window is closed (`gupshup_templates_list`).
+	// WhatsApp template used when the 24h window is closed ([GupshupTemplatesService.List]).
 	FollowUpTemplateName    *string `json:"followUpTemplateName,omitzero"`
 	AllowScheduleMeetings   *bool   `json:"allowScheduleMeetings,omitzero"`
 	AllowCreateTasks        *bool   `json:"allowCreateTasks,omitzero"`
@@ -358,10 +358,10 @@ type AIAgentsDeploymentsCreateInput struct {
 	// Lets the agent generate a proposal from `proposalTemplateId` and send its link. Off by default;
 	// turning it on requires the template.
 	AllowCreateProposals *bool `json:"allowCreateProposals,omitzero"`
-	// Proposal template, from `proposal_templates_list`.
+	// Proposal template, from [ProposalTemplatesService.List].
 	ProposalTemplateID *string `json:"proposalTemplateId,omitzero"`
 	// Contact fields that must be filled before generating: a lead custom field id
-	// (`custom_fields_list`) or `lead.<column>` (name, email, telephone, document, instagram,
+	// ([CustomFieldsService.List]) or `lead.<column>` (name, email, telephone, document, instagram,
 	// profession, city, state, birthday). The agent collects and saves them first.
 	ProposalRequiredFields []string `json:"proposalRequiredFields,omitzero"`
 	// Talk to contacts who already had a meeting.
@@ -528,7 +528,7 @@ type AIAgentsDeploymentsUpdateInput struct {
 	ID   string  `json:"id"`
 	Name *string `json:"name,omitzero"`
 	// Connections the agent answers on (WhatsApp, Instagram, Telegram, Webchat), from
-	// `channel_instances_list`. Replaces the list when sent.
+	// [ChannelInstancesService.List]. Replaces the list when sent.
 	ChannelInstanceIDs []string `json:"channelInstanceIds,omitzero"`
 	// Pipeline where the agent creates/moves opportunities.
 	PipelineID Nullable[string] `json:"pipelineId,omitzero"`
@@ -536,13 +536,13 @@ type AIAgentsDeploymentsUpdateInput struct {
 	StageID Nullable[string] `json:"stageId,omitzero"`
 	// Business-hours calendar; outside it the agent stays silent.
 	BusinessHoursCalendarID Nullable[string] `json:"businessHoursCalendarId,omitzero"`
-	// Team that receives the hand-off, from `teams_list`.
+	// Team that receives the hand-off, from [TeamsService.List].
 	HandoffTeamID Nullable[string] `json:"handoffTeamId,omitzero"`
 	MaxTurns      *int64           `json:"maxTurns,omitzero"`
 	// Minutes of contact silence before a follow-up.
 	SilenceFollowUpMinutes Nullable[int64] `json:"silenceFollowUpMinutes,omitzero"`
 	MaxFollowUpAttempts    *int64          `json:"maxFollowUpAttempts,omitzero"`
-	// WhatsApp template used when the 24h window is closed (`gupshup_templates_list`).
+	// WhatsApp template used when the 24h window is closed ([GupshupTemplatesService.List]).
 	FollowUpTemplateName    Nullable[string] `json:"followUpTemplateName,omitzero"`
 	AllowScheduleMeetings   *bool            `json:"allowScheduleMeetings,omitzero"`
 	AllowCreateTasks        *bool            `json:"allowCreateTasks,omitzero"`
@@ -551,10 +551,10 @@ type AIAgentsDeploymentsUpdateInput struct {
 	// Lets the agent generate a proposal from `proposalTemplateId` and send its link. Off by default;
 	// turning it on requires the template.
 	AllowCreateProposals *bool `json:"allowCreateProposals,omitzero"`
-	// Proposal template, from `proposal_templates_list`.
+	// Proposal template, from [ProposalTemplatesService.List].
 	ProposalTemplateID Nullable[string] `json:"proposalTemplateId,omitzero"`
 	// Contact fields that must be filled before generating: a lead custom field id
-	// (`custom_fields_list`) or `lead.<column>` (name, email, telephone, document, instagram,
+	// ([CustomFieldsService.List]) or `lead.<column>` (name, email, telephone, document, instagram,
 	// profession, city, state, birthday). The agent collects and saves them first.
 	ProposalRequiredFields []string `json:"proposalRequiredFields,omitzero"`
 	// Talk to contacts who already had a meeting.
@@ -802,7 +802,7 @@ type AIAgentsModelsListOutputModelsItem struct {
 
 // AIAgentsModelsListParams holds the query parameters of [AIAgentsService.ModelsList].
 type AIAgentsModelsListParams struct {
-	// From `ai_agents_credentials_list`.
+	// From [AIAgentsService.CredentialsList].
 	CredentialID string
 }
 
@@ -825,9 +825,9 @@ type AIAgentsUpdateInput struct {
 	Name *string `json:"name,omitzero"`
 	// Card label ("what this agent is for"). No prompt reads it — put behavior in `persona`.
 	Purpose *string `json:"purpose,omitzero"`
-	// Provider key id from `ai_agents_credentials_list`.
+	// Provider key id from [AIAgentsService.CredentialsList].
 	CredentialID *string `json:"credentialId,omitzero"`
-	// Model id from `ai_agents_models_list` for that credential.
+	// Model id from [AIAgentsService.ModelsList] for that credential.
 	ModelID     *string  `json:"modelId,omitzero"`
 	Temperature *float64 `json:"temperature,omitzero"`
 	// The agent instructions: who it is, tone, goal, what to ask, what never to say.

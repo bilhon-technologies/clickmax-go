@@ -122,7 +122,7 @@ func (s *MemberUsersService) Create(ctx context.Context, body MemberUsersCreateI
 // Delete a member user.
 //
 // Permanently deletes one member user. Cascades to enrollments, progress, and access-time records.
-// Prefer `member_users_disable` to revoke login without losing history.
+// Prefer [MemberUsersService.Disable] to revoke login without losing history.
 //
 // Calls DELETE /member-users/delete.
 func (s *MemberUsersService) Delete(ctx context.Context, body MemberUsersDeleteInput, opts ...Option) (*MemberUsersDeleteOutput, error) {
@@ -231,7 +231,7 @@ func (s *MemberUsersService) GetCertificateCode(ctx context.Context, params Memb
 // Get one course progress for a member.
 //
 // Returns the modules + per-lesson progress for one `courseId` under one member-user `id`. Use after
-// `member_users_get_progress` for drill-down.
+// [MemberUsersService.GetProgress] for drill-down.
 //
 // Calls GET /member-users/get-course-progress.
 func (s *MemberUsersService) GetCourseProgress(ctx context.Context, params MemberUsersGetCourseProgressParams, opts ...Option) (*MemberUsersGetCourseProgressOutput, error) {
@@ -313,8 +313,8 @@ func (s *MemberUsersService) RemoveFromClassroom(ctx context.Context, body Membe
 // Reset access windows for a member.
 //
 // Resets time-bound access windows for one member user across one or more `(classroom, content)`
-// pairs. Destructive — clears the consumed window. Use `member_users_extend_access` when you only
-// need to add time.
+// pairs. Destructive — clears the consumed window. Use [MemberUsersService.ExtendAccess] when you
+// only need to add time.
 //
 // Calls DELETE /member-users/reset-access.
 func (s *MemberUsersService) ResetAccess(ctx context.Context, body MemberUsersResetAccessInput, opts ...Option) (*MemberUsersResetAccessOutput, error) {

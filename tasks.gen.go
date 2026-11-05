@@ -17,7 +17,8 @@ type TasksService struct {
 //
 // Attaches an existing appointment to a task, turning the follow-up "ligar para o lead" into the
 // booked call that fulfils it. Takes the task `id` plus the `scheduledCallId` of an appointment
-// created with `scheduled_calls_create`. A plain attendant session can only convert its own tasks.
+// created with [ScheduledCallsService.Create]. A plain attendant session can only convert its own
+// tasks.
 //
 // Calls POST /tasks/convert-to-scheduled.
 func (s *TasksService) ConvertToScheduled(ctx context.Context, body TasksConvertToScheduledInput, opts ...Option) (*TasksConvertToScheduledOutput, error) {
@@ -33,13 +34,13 @@ func (s *TasksService) ConvertToScheduled(ctx context.Context, body TasksConvert
 // Creates a follow-up task. Pass `opportunityCardId` (the opportunity card) OR `leadId` (a
 // contact-only task with no opportunity); at least one is required, and `leadId` is ignored when a
 // card is given. `title` is required; `type` is `call` | `whatsapp` | `meeting` | `task`, `status`
-// defaults to `open`, `deadline` is a date-time, and `attendantId` (from `attendants_list`) is who
-// owes the action. Creating a task also writes a `leadTaskCreated` entry into the card activity
+// defaults to `open`, `deadline` is a date-time, and `attendantId` (from [AttendantsService.List]) is
+// who owes the action. Creating a task also writes a `leadTaskCreated` entry into the card activity
 // timeline. To attach a file, `attachmentUrl`/`attachmentName` must already point at an uploaded file
 // — this tool cannot upload one. For a SEQUENCE of follow-ups (e.g. WhatsApp now, call tomorrow,
-// WhatsApp in 3 days) use `tasks_create_cadence` instead of several calls. This tool never arms an
-// AUTOMATIC WhatsApp send: for a task the system should send by itself (even a single one), use
-// `tasks_create_cadence` with one step — it asks the user to approve.
+// WhatsApp in 3 days) use [TasksService.CreateCadence] instead of several calls. This tool never arms
+// an AUTOMATIC WhatsApp send: for a task the system should send by itself (even a single one), use
+// [TasksService.CreateCadence] with one step — it asks the user to approve.
 //
 // Calls POST /tasks/create.
 func (s *TasksService) Create(ctx context.Context, body TasksCreateInput, opts ...Option) (*TasksCreateOutput, error) {
@@ -52,11 +53,12 @@ func (s *TasksService) Create(ctx context.Context, body TasksCreateInput, opts .
 
 // Create several opportunity tasks.
 //
-// Creates many tasks in one call — each entry takes the same fields as `tasks_create`, so they may
-// target different cards and attendants. Returns the created `ids`. Unlike `tasks_create`, this path
-// does NOT write per-card `leadTaskCreated` activities. Like `tasks_create`, it never arms an
-// automatic WhatsApp — that is only `tasks_create_cadence`, which asks the user to approve. To
-// create ONE task across a whole card selection instead, use `opportunities_bulk_create_next_action`.
+// Creates many tasks in one call — each entry takes the same fields as [TasksService.Create], so
+// they may target different cards and attendants. Returns the created `ids`. Unlike
+// [TasksService.Create], this path does NOT write per-card `leadTaskCreated` activities. Like
+// [TasksService.Create], it never arms an automatic WhatsApp — that is only
+// [TasksService.CreateCadence], which asks the user to approve. To create ONE task across a whole card
+// selection instead, use [OpportunitiesService.BulkCreateNextAction].
 //
 // Calls POST /tasks/create-batch.
 func (s *TasksService) CreateBatch(ctx context.Context, body TasksCreateBatchInput, opts ...Option) (*TasksCreateBatchOutput, error) {
@@ -72,32 +74,33 @@ func (s *TasksService) CreateBatch(ctx context.Context, body TasksCreateBatchInp
 // Creates a whole follow-up CADENCE on one opportunity card in one call: 1 to 20 `steps`, each
 // becoming a task linked by the returned `cadenceId` and numbered by `cadenceStep`. ALL OR NOTHING: if
 // any step is invalid nothing is saved. Input: `opportunityCardId` (required), `attendantId` (who owes
-// every step, from `attendants_list`; omitted = unassigned), `startAt` (date-time anchor, default now)
-// and `steps[]` = `{ waitMinutes, title, description?, type?, priority?, durationMinutes?, automation?
-// }`. `waitMinutes` (0-129600 per step) is CUMULATIVE from `startAt`: steps `[30, 1440, 4320]` land at +30min, +1
-// day 30min and +4 days 30min — describe waits between steps, not absolute dates; the server turns
-// them into deadlines. `type` defaults to `task` (`call` | `whatsapp` | `meeting` | `task`),
-// `priority` to `none`, `durationMinutes` 5-480. Returns `{ cadenceId, tasks }` with the created tasks
-// in step order; each step also writes a `leadTaskCreated` entry on the card timeline. Manage one step
-// afterwards with `tasks_update` (cancel its automatic send with `automation: null`, close it with
-// `status: "resolved"`). Steps can be automatic (below) or manual reminders; a cadence with automatic
-// WhatsApp sends real messages to the contact later without anyone clicking, so confirm the steps,
-// wording and timing with the user first. AUTOMATIC WHATSAPP (`automation`): `{ channel: "whatsapp",
-// channelInstanceId?, templateId?, templateParams?, message?, stopOnReply? }` makes the system SEND
-// that WhatsApp to the card primary contact (or the oldest linked one) at the task `deadline`. Only on
-// a task with `type: "whatsapp"` and a `deadline` (400 otherwise). `channelInstanceId` = a live
-// WhatsApp number from `channel_instances_list` that the current user may use for automations (omitted
-// = the number is resolved at send time; with a template, the template number). `templateId` = an
-// APPROVED template from `gupshup_templates_list` (it must belong to that number, else 400),
-// `templateParams` = one non-empty value per `positionParams` label of the template. Free text
-// (`message`, max 4096) only reaches a contact who wrote in the last 24h — the 24h window is checked
-// AT SEND TIME, not now — so for a step days ahead prefer an approved template. `stopOnReply`
-// (default true) = when the contact sends a message, every still-pending automatic step with it on, on
-// any card that contact is linked to, is cancelled and stays open as a manual task (a step already
-// sending is not stopped). Outcome: sent → the task is resolved by itself; failed (no phone, number
-// disconnected, template no longer approved, missing variable, outside the 24h window) →
-// `automation.status = "failed"` with the reason and the task STAYS OPEN for a person to take over.
-// The ACL check runs now, so an unreachable number/template fails the call before saving.
+// every step, from [AttendantsService.List]; omitted = unassigned), `startAt` (date-time anchor,
+// default now) and `steps[]` = `{ waitMinutes, title, description?, type?, priority?,
+// durationMinutes?, automation? }`. `waitMinutes` (0-129600 per step) is CUMULATIVE from `startAt`:
+// steps `[30, 1440, 4320]` land at +30min, +1 day 30min and +4 days 30min — describe waits between
+// steps, not absolute dates; the server turns them into deadlines. `type` defaults to `task` (`call` |
+// `whatsapp` | `meeting` | `task`), `priority` to `none`, `durationMinutes` 5-480. Returns `{
+// cadenceId, tasks }` with the created tasks in step order; each step also writes a `leadTaskCreated`
+// entry on the card timeline. Manage one step afterwards with [TasksService.Update] (cancel its
+// automatic send with `automation: null`, close it with `status: "resolved"`). Steps can be automatic
+// (below) or manual reminders; a cadence with automatic WhatsApp sends real messages to the contact
+// later without anyone clicking, so confirm the steps, wording and timing with the user first.
+// AUTOMATIC WHATSAPP (`automation`): `{ channel: "whatsapp", channelInstanceId?, templateId?,
+// templateParams?, message?, stopOnReply? }` makes the system SEND that WhatsApp to the card primary
+// contact (or the oldest linked one) at the task `deadline`. Only on a task with `type: "whatsapp"`
+// and a `deadline` (400 otherwise). `channelInstanceId` = a live WhatsApp number from
+// [ChannelInstancesService.List] that the current user may use for automations (omitted = the number
+// is resolved at send time; with a template, the template number). `templateId` = an APPROVED template
+// from [GupshupTemplatesService.List] (it must belong to that number, else 400), `templateParams` =
+// one non-empty value per `positionParams` label of the template. Free text (`message`, max 4096) only
+// reaches a contact who wrote in the last 24h — the 24h window is checked AT SEND TIME, not now —
+// so for a step days ahead prefer an approved template. `stopOnReply` (default true) = when the
+// contact sends a message, every still-pending automatic step with it on, on any card that contact is
+// linked to, is cancelled and stays open as a manual task (a step already sending is not stopped).
+// Outcome: sent → the task is resolved by itself; failed (no phone, number disconnected, template no
+// longer approved, missing variable, outside the 24h window) → `automation.status = "failed"` with
+// the reason and the task STAYS OPEN for a person to take over. The ACL check runs now, so an
+// unreachable number/template fails the call before saving.
 //
 // Calls POST /tasks/create-cadence.
 func (s *TasksService) CreateCadence(ctx context.Context, body TasksCreateCadenceInput, opts ...Option) (*TasksCreateCadenceOutput, error) {
@@ -112,7 +115,7 @@ func (s *TasksService) CreateCadence(ctx context.Context, body TasksCreateCadenc
 //
 // Deletes a task outright and records a `leadTaskDeleted` activity on the card. Destructive and
 // restricted to owner/admin — every other role gets 403, by design. To close a task while keeping
-// the history, use `tasks_update` with `status: "resolved"` instead.
+// the history, use [TasksService.Update] with `status: "resolved"` instead.
 //
 // Calls DELETE /tasks/delete.
 func (s *TasksService) Delete(ctx context.Context, body TasksDeleteInput, opts ...Option) (*TasksDeleteOutput, error) {
@@ -151,10 +154,11 @@ func (s *TasksService) Get(ctx context.Context, params TasksGetParams, opts ...O
 // no deadline, ORed with the date range; alone it returns only those) and `cardStatuses` (status of
 // the OPPORTUNITY: by default tasks of LOST cards are hidden and deleted cards are always out; pass
 // `["lost"]` to list only the tasks of lost opportunities). Leave `viewAsAttendantId` unset — it is
-// the UI "viewing as" mode. For tasks AND booked appointments in one list use `activities_list`. Each
-// row carries `opportunityCardId`, `opportunityCardTitle`, `pipelineName`, `attendantName`,
-// `contactName`, `contactEmail` and `contactPhone`, so the list alone is enough to report on
-// follow-ups without fetching each card. A plain attendant session only sees its own tasks.
+// the UI "viewing as" mode. For tasks AND booked appointments in one list use
+// [ActivitiesService.List]. Each row carries `opportunityCardId`, `opportunityCardTitle`,
+// `pipelineName`, `attendantName`, `contactName`, `contactEmail` and `contactPhone`, so the list alone
+// is enough to report on follow-ups without fetching each card. A plain attendant session only sees
+// its own tasks.
 //
 // Calls POST /tasks/list.
 func (s *TasksService) List(ctx context.Context, body TasksListInput, opts ...Option) (*TasksListOutput, error) {
@@ -167,12 +171,12 @@ func (s *TasksService) List(ctx context.Context, body TasksListInput, opts ...Op
 
 // Get opportunity task counters.
 //
-// Returns `{ total, open, resolved, overdue }` for the SAME filter set as `tasks_list` (minus
+// Returns `{ total, open, resolved, overdue }` for the SAME filter set as [TasksService.List] (minus
 // `statuses` and `cardStatuses`, which are omitted on purpose — the four numbers already are the
 // status breakdown of one selection). Optional `overdueBefore` is the instant after which a deadline
 // counts as late (defaults to server `now()`), and `allDayStart` is the caller local midnight, so
 // all-day tasks due today are not reported as overdue. Use for headline numbers instead of paging
-// through `tasks_list`.
+// through [TasksService.List].
 //
 // Calls POST /tasks/summary.
 func (s *TasksService) Summary(ctx context.Context, body TasksSummaryInput, opts ...Option) (*TasksSummaryOutput, error) {
@@ -190,13 +194,13 @@ func (s *TasksService) Summary(ctx context.Context, body TasksSummaryInput, opts
 // not happen, null = not registered), relabelled per `type` in the UI ("Atendeu" for a call,
 // "Respondeu" for WhatsApp). Reopening is `{ status: "open" }`. Each transition writes the matching
 // `leadTaskResolved`/`leadTaskReopened`/`leadTaskUpdated` activity on the card. Send `attachmentUrl:
-// null` to drop the attachment. Returns only `{ success }` — read the row back with `tasks_get`. A
-// plain attendant session can only update its own tasks. Automation: `automation: null` switches off
-// the automatic WhatsApp of this task and keeps it as a manual one — that is how to cancel ONE step
-// of a cadence (an automation already `sent` or `running` cannot be changed, 409). Arming or
-// re-programming an automatic send is NOT possible here: create it with `tasks_create_cadence`, which
-// asks the user to approve. Changing `type` away from `whatsapp` on an automatic task is 400 unless
-// the same call sends `automation: null`.
+// null` to drop the attachment. Returns only `{ success }` — read the row back with
+// [TasksService.Get]. A plain attendant session can only update its own tasks. Automation:
+// `automation: null` switches off the automatic WhatsApp of this task and keeps it as a manual one —
+// that is how to cancel ONE step of a cadence (an automation already `sent` or `running` cannot be
+// changed, 409). Arming or re-programming an automatic send is NOT possible here: create it with
+// [TasksService.CreateCadence], which asks the user to approve. Changing `type` away from `whatsapp`
+// on an automatic task is 400 unless the same call sends `automation: null`.
 //
 // Calls POST /tasks/update.
 func (s *TasksService) Update(ctx context.Context, body TasksUpdateInput, opts ...Option) (*TasksUpdateOutput, error) {

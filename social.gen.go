@@ -75,7 +75,7 @@ func (s *SocialService) MediaUploadURL(ctx context.Context, body SocialMediaUplo
 // Next free queue slot of an account.
 //
 // Returns the next queue slot with no post on it (`scheduledAt`). An account with no slots answers
-// 400: create slots with `social_queue_slots_replace` first.
+// 400: create slots with [SocialService.QueueSlotsReplace] first.
 //
 // Calls GET /social/queue-next-free-slot.
 func (s *SocialService) QueueNextFreeSlot(ctx context.Context, params SocialQueueNextFreeSlotParams, opts ...Option) (*SocialQueueNextFreeSlotOutput, error) {
@@ -103,7 +103,8 @@ func (s *SocialService) QueueSlotsList(ctx context.Context, params SocialQueueSl
 // Replace the posting queue of an account.
 //
 // FULL REPLACE of the account's weekly slots: send the complete list every call (`[]` empties the
-// queue). Read `social_queue_slots_list` first and keep the slots the person did not ask to change.
+// queue). Read [SocialService.QueueSlotsList] first and keep the slots the person did not ask to
+// change.
 //
 // Calls POST /social/queue-slots-replace.
 func (s *SocialService) QueueSlotsReplace(ctx context.Context, body SocialQueueSlotsReplaceInput, opts ...Option) (*SocialQueueSlotsListOutput, error) {
@@ -117,8 +118,8 @@ func (s *SocialService) QueueSlotsReplace(ctx context.Context, body SocialQueueS
 // Retry a failed target.
 //
 // Publishes a `failed` target again, now. Read its `errorCode` first: `auth_expired` needs
-// `social_accounts_reconnect`, and `media_invalid`/`policy_rejected` fail again until the media or
-// caption change.
+// [SocialAccountsService.Reconnect], and `media_invalid`/`policy_rejected` fail again until the media
+// or caption change.
 //
 // Calls POST /social/targets-retry.
 func (s *SocialService) TargetsRetry(ctx context.Context, body SocialTargetsRetryInput, opts ...Option) (*SocialTargetsUpdateOutput, error) {

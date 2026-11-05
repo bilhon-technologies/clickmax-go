@@ -15,10 +15,10 @@ type TeamsService struct {
 // List CRM teams.
 //
 // Lists the CRM TEAMS (times de atendimento) with their `id` and name. Exposed as a read-only
-// resolver: `teamId` is required by `pipelines_settings_update` (to delegate auto-assign to the
-// distribution engine) and by the `atribuicao` recipe of `managed_flows_upsert`, and there was no
-// other way to obtain one. Team membership and temperature-routing rules are configured in the web UI,
-// not through MCP.
+// resolver: `teamId` is required by [PipelinesService.SettingsUpdate] (to delegate auto-assign to the
+// distribution engine) and by the `atribuicao` recipe of [ManagedFlowsService.Upsert], and there was
+// no other way to obtain one. Team membership and temperature-routing rules are configured in the web
+// UI, not through MCP.
 //
 // Calls GET /teams/list.
 func (s *TeamsService) List(ctx context.Context, opts ...Option) (*TeamsListOutput, error) {

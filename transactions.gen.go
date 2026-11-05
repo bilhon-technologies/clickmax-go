@@ -48,8 +48,8 @@ func (s *TransactionsService) Debt(ctx context.Context, opts ...Option) (*Transa
 // fraud_suspected, integration_error, unknown) with count and recoverable value, sorted by value.
 // `isPlatformFault` flags a code that is our bug (not a legitimate bank decline). Defaults to the LAST
 // 30 DAYS; pass `from`/`to` (ISO date-time) for another window, plus optional product/offer/project
-// filters. This is NOT about platform-fee debt — use `transactions_debt` for that. Translate each
-// `code` into user-facing text and a next action via the failure-diagnosis skill.
+// filters. This is NOT about platform-fee debt — use [TransactionsService.Debt] for that. Translate
+// each `code` into user-facing text and a next action via the failure-diagnosis skill.
 //
 // Calls POST /transactions/failure-breakdown.
 func (s *TransactionsService) FailureBreakdown(ctx context.Context, body TransactionsFailureBreakdownInput, opts ...Option) (*TransactionsFailureBreakdownOutput, error) {
@@ -78,8 +78,8 @@ func (s *TransactionsService) Get(ctx context.Context, params TransactionsGetPar
 //
 // Returns EVERY transaction of the workspace in one response — the endpoint has no pagination and no
 // date window, so large accounts get a long list. For totals, trends or failure analysis use
-// `transactions_chart`, `transactions_failure_breakdown` or the dashboard tools instead of summing
-// this list.
+// [TransactionsService.Chart], [TransactionsService.FailureBreakdown] or the dashboard tools instead
+// of summing this list.
 //
 // Calls GET /transactions/list.
 func (s *TransactionsService) List(ctx context.Context, opts ...Option) (*TransactionsListOutput, error) {

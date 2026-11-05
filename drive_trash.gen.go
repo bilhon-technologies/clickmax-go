@@ -15,12 +15,13 @@ type DriveTrashService struct {
 // Empty the Drive trash.
 //
 // PERMANENTLY deletes EVERY trash root the caller is allowed to delete (editor or owner on it) — the
-// same irreversible effect as `drive_trash_purge` applied to each row of `drive_trash_list`, including
-// a Google-backed space's files being removed from the customer's Google Drive. Roots the caller can
-// see but cannot delete stay in the trash. The scope is what THIS user sees in `drive_trash_list`, not
-// the whole workspace's trash. No undo. Call `drive_trash_list` first, show the user what will go and
-// get an explicit confirmation; prefer `drive_trash_purge` when only one item is meant. Returns `{
-// purged, files }` (roots and file rows removed).
+// same irreversible effect as [DriveTrashService.Purge] applied to each row of
+// [DriveTrashService.List], including a Google-backed space's files being removed from the customer's
+// Google Drive. Roots the caller can see but cannot delete stay in the trash. The scope is what THIS
+// user sees in [DriveTrashService.List], not the whole workspace's trash. No undo. Call
+// [DriveTrashService.List] first, show the user what will go and get an explicit confirmation; prefer
+// [DriveTrashService.Purge] when only one item is meant. Returns `{ purged, files }` (roots and file
+// rows removed).
 //
 // Calls DELETE /drive-trash/empty.
 func (s *DriveTrashService) Empty(ctx context.Context, opts ...Option) (*DriveTrashPurgeOutput, error) {
@@ -52,17 +53,18 @@ func (s *DriveTrashService) List(ctx context.Context, opts ...Option) (*DriveTra
 
 // Move a Drive folder or file to the trash.
 //
-// Sends ONE folder or file to the trash (soft delete) — recoverable with `drive_trash_restore` for
-// 30 days, after which a daily job deletes it permanently. Until it is purged the item keeps counting
-// toward the storage quota, so trashing alone does not free space. A folder takes its whole subtree
-// (subfolders and files) as ONE trash item, and restoring the folder brings all of it back; things
-// trashed earlier on their own stay separate. Shares, favorites and comments are kept and come back on
-// restore, and the item disappears from search, browsing and 'shared with me' meanwhile. Requires
-// editor or owner on the item (404 if not visible). Refused for files and folders the platform filed
-// from other areas (422 `DRIVE_FILE_MANAGED_BY_ORIGIN` / `DRIVE_FOLDER_MANAGED_BY_ORIGIN`) and for a
-// folder that contains any of them (422 `DRIVE_FOLDER_CONTAINS_MANAGED_FILES`) — those are removed
-// in the area that owns them. To delete a whole space use `drive_spaces_delete`. Returns `{ kind, item
-// }` with the trashed row (`deletedAt` set).
+// Sends ONE folder or file to the trash (soft delete) — recoverable with [DriveTrashService.Restore]
+// for 30 days, after which a daily job deletes it permanently. Until it is purged the item keeps
+// counting toward the storage quota, so trashing alone does not free space. A folder takes its whole
+// subtree (subfolders and files) as ONE trash item, and restoring the folder brings all of it back;
+// things trashed earlier on their own stay separate. Shares, favorites and comments are kept and come
+// back on restore, and the item disappears from search, browsing and 'shared with me' meanwhile.
+// Requires editor or owner on the item (404 if not visible). Refused for files and folders the
+// platform filed from other areas (422 `DRIVE_FILE_MANAGED_BY_ORIGIN` /
+// `DRIVE_FOLDER_MANAGED_BY_ORIGIN`) and for a folder that contains any of them (422
+// `DRIVE_FOLDER_CONTAINS_MANAGED_FILES`) — those are removed in the area that owns them. To delete a
+// whole space use [DriveSpacesService.Delete]. Returns `{ kind, item }` with the trashed row
+// (`deletedAt` set).
 //
 // Calls POST /drive-trash/move.
 func (s *DriveTrashService) Move(ctx context.Context, body DriveTrashMoveInput, opts ...Option) (*DriveTrashMoveOutput, error) {
@@ -75,15 +77,15 @@ func (s *DriveTrashService) Move(ctx context.Context, body DriveTrashMoveInput, 
 
 // Permanently delete one trashed item.
 //
-// PERMANENTLY deletes ONE trash root (`kind` + `id` from `drive_trash_list`) and, for a folder, its
-// whole subtree: the stored bytes are removed from storage and the rows erased. There is no second
+// PERMANENTLY deletes ONE trash root (`kind` + `id` from [DriveTrashService.List]) and, for a folder,
+// its whole subtree: the stored bytes are removed from storage and the rows erased. There is no second
 // trash and no undo. For files in a Google-backed space this deletes the file from the customer's own
 // Google Drive. It frees quota immediately (this is how to make room when storage is `exceeded`).
 // Requires editor or owner on the item and only works on items already in the trash (404
 // `DRIVE_TRASH_ITEM_NOT_FOUND` otherwise). Returns `{ purged: 1, files }` (file rows removed,
 // including folder contents). Show the user the item name (and, for a folder, that everything inside
 // goes too) and get an explicit confirmation first. To remove everything at once use
-// `drive_trash_empty`; to just get an item out of the way use `drive_trash_move`, which is
+// [DriveTrashService.Empty]; to just get an item out of the way use [DriveTrashService.Move], which is
 // recoverable.
 //
 // Calls DELETE /drive-trash/purge.
@@ -97,12 +99,13 @@ func (s *DriveTrashService) Purge(ctx context.Context, body DriveTrashMoveInput,
 
 // Restore an item from the Drive trash.
 //
-// Restores a trash ROOT (`kind` + `id` from `drive_trash_list`) together with everything deleted along
-// with it. It goes back to its original folder; when that folder is itself in the trash or already
-// purged, the item lands at the ROOT of its space and the result has `restoredToRoot: true` — tell
-// the user where it ended up. Requires editor or owner on the item and restores the quota accounting.
-// 404 `DRIVE_TRASH_ITEM_NOT_FOUND` when it is not a trash root (already restored or purged, or it was
-// deleted as part of a folder — restore that folder instead). Deleted SPACES cannot be restored.
+// Restores a trash ROOT (`kind` + `id` from [DriveTrashService.List]) together with everything deleted
+// along with it. It goes back to its original folder; when that folder is itself in the trash or
+// already purged, the item lands at the ROOT of its space and the result has `restoredToRoot: true`
+// — tell the user where it ended up. Requires editor or owner on the item and restores the quota
+// accounting. 404 `DRIVE_TRASH_ITEM_NOT_FOUND` when it is not a trash root (already restored or
+// purged, or it was deleted as part of a folder — restore that folder instead). Deleted SPACES
+// cannot be restored.
 //
 // Calls POST /drive-trash/restore.
 func (s *DriveTrashService) Restore(ctx context.Context, body DriveTrashMoveInput, opts ...Option) (*DriveTrashRestoreOutput, error) {
@@ -401,7 +404,7 @@ const (
 type DriveTrashMoveInput struct {
 	// Item type: `folder` or `file`. Matches `kind` in list rows.
 	Kind DriveTrashMoveInputKind `json:"kind"`
-	// Folder or file id (for restore/purge: a root row from `drive_trash_list`).
+	// Folder or file id (for restore/purge: a root row from [DriveTrashService.List]).
 	ID string `json:"id"`
 }
 

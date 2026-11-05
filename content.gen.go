@@ -15,8 +15,8 @@ type ContentService struct {
 
 // Create a content (course).
 //
-// Creates a new content (course). Use `classrooms_add_content` afterward to attach it to one or more
-// classrooms.
+// Creates a new content (course). Use [ClassroomsService.AddContent] afterward to attach it to one or
+// more classrooms.
 //
 // Calls POST /content/create.
 func (s *ContentService) Create(ctx context.Context, body ContentCreateInput, opts ...Option) (*ContentCreateOutput, error) {
@@ -30,7 +30,7 @@ func (s *ContentService) Create(ctx context.Context, body ContentCreateInput, op
 // Delete a content (course).
 //
 // Permanently deletes one content. Cascades to modules and lessons inside. Prefer
-// `content_toggle_enabled` for temporary takedowns.
+// [ContentService.ToggleEnabled] for temporary takedowns.
 //
 // Calls DELETE /content/delete.
 func (s *ContentService) Delete(ctx context.Context, body ContentDeleteInput, opts ...Option) (*ContentDeleteOutput, error) {
@@ -45,7 +45,7 @@ func (s *ContentService) Delete(ctx context.Context, body ContentDeleteInput, op
 //
 // Fetches one content by `id`, including its modules: root lessons in `modules[].lessons`, submodule
 // lessons in `modules[].submodules[].lessons` (root lessons come first in product order). Pair with
-// `member_users_get_course_progress` to inspect progress.
+// [MemberUsersService.GetCourseProgress] to inspect progress.
 //
 // Calls GET /content/get.
 func (s *ContentService) Get(ctx context.Context, params ContentGetParams, opts ...Option) (*ContentGetOutput, error) {

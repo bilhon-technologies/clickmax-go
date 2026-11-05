@@ -16,7 +16,7 @@ type CommunitiesService struct {
 // Create a community category.
 //
 // Adds a category (sidebar group) to the community `id`. A category holds channels; create at least
-// one with `communities_channels_create` so members have where to post.
+// one with [CommunitiesService.ChannelsCreate] so members have where to post.
 //
 // Calls POST /communities/categories-create.
 func (s *CommunitiesService) CategoriesCreate(ctx context.Context, body CommunitiesCategoriesCreateInput, opts ...Option) (*CommunitiesCategoriesCreateOutput, error) {
@@ -138,9 +138,10 @@ func (s *CommunitiesService) ChannelsUpdate(ctx context.Context, body Communitie
 
 // Create a community.
 //
-// Creates an empty community (no categories or members). Follow with `communities_categories_create`
-// and `communities_channels_create` to build its structure. `portalId` links it to a members-area
-// portal (`portals_list`); without it the community is standalone.
+// Creates an empty community (no categories or members). Follow with
+// [CommunitiesService.CategoriesCreate] and [CommunitiesService.ChannelsCreate] to build its
+// structure. `portalId` links it to a members-area portal ([PortalsService.List]); without it the
+// community is standalone.
 //
 // Calls POST /communities/create.
 func (s *CommunitiesService) Create(ctx context.Context, body CommunitiesCreateInput, opts ...Option) (*CommunitiesCreateOutput, error) {
@@ -195,7 +196,7 @@ func (s *CommunitiesService) EventsUpdate(ctx context.Context, body CommunitiesE
 //
 // One community with its look (theme, accent color, cover, logos), ranking weights, enabled features
 // (ranking, messages), public slug, sales URL and linked portals. Its categories and channels →
-// `communities_categories_list`.
+// [CommunitiesService.CategoriesList].
 //
 // Calls GET /communities/get.
 func (s *CommunitiesService) Get(ctx context.Context, params CommunitiesGetParams, opts ...Option) (*CommunitiesGetOutput, error) {
@@ -210,7 +211,7 @@ func (s *CommunitiesService) Get(ctx context.Context, params CommunitiesGetParam
 //
 // Returns the paginated communities of the workspace (`search` by name) with their id, status, linked
 // areas and member/category counts. Resolves a community name into the `communityId` that
-// `leads_bulk_member_access` and the `communities_*` tools need.
+// [LeadsService.BulkMemberAccess] and the `communities_*` tools need.
 //
 // Calls GET /communities/list.
 func (s *CommunitiesService) List(ctx context.Context, params CommunitiesListParams, opts ...Option) (*CommunitiesListOutput, error) {
@@ -225,7 +226,7 @@ func (s *CommunitiesService) List(ctx context.Context, params CommunitiesListPar
 //
 // Adds one person by e-mail (creating the student if needed) with a role, and e-mails the invite
 // unless `sendAccessEmail: false`. Call once per person. `owner` = Administrador: confirm before
-// giving it. For a CRM list/segment use `leads_bulk_member_access` instead.
+// giving it. For a CRM list/segment use [LeadsService.BulkMemberAccess] instead.
 //
 // Calls POST /communities/members-invite.
 func (s *CommunitiesService) MembersInvite(ctx context.Context, body CommunitiesMembersInviteInput, opts ...Option) (*CommunitiesMembersInviteOutput, error) {
@@ -253,7 +254,7 @@ func (s *CommunitiesService) MembersList(ctx context.Context, body CommunitiesMe
 // Remove a community member.
 //
 // Removes the person from the community (their student account and other accesses stay). To only stop
-// them temporarily use `communities_members_set_status`.
+// them temporarily use [CommunitiesService.MembersSetStatus].
 //
 // Calls DELETE /communities/members-remove.
 func (s *CommunitiesService) MembersRemove(ctx context.Context, body CommunitiesMembersRemoveInput, opts ...Option) (*CommunitiesCategoriesDeleteOutput, error) {
@@ -266,7 +267,8 @@ func (s *CommunitiesService) MembersRemove(ctx context.Context, body Communities
 
 // Change a community member role.
 //
-// `memberId` = row id from `communities_members_list`. `owner` gives admin power over the community.
+// `memberId` = row id from [CommunitiesService.MembersList]. `owner` gives admin power over the
+// community.
 //
 // Calls POST /communities/members-set-role.
 func (s *CommunitiesService) MembersSetRole(ctx context.Context, body CommunitiesMembersSetRoleInput, opts ...Option) (*CommunitiesMembersSetRoleOutput, error) {
@@ -322,8 +324,8 @@ func (s *CommunitiesService) StylingUpdate(ctx context.Context, body Communities
 // Update a community.
 //
 // Edits name, description, sales URL, ranking points per post/comment/like and turns ranking or direct
-// messages on/off. Look (theme, colors, cover, logos) → `communities_styling_update`; moderation
-// limits → `communities_settings_update`.
+// messages on/off. Look (theme, colors, cover, logos) → [CommunitiesService.StylingUpdate];
+// moderation limits → [CommunitiesService.SettingsUpdate].
 //
 // Calls POST /communities/update.
 func (s *CommunitiesService) Update(ctx context.Context, body CommunitiesUpdateInput, opts ...Option) (*CommunitiesUpdateOutput, error) {

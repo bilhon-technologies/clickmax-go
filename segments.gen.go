@@ -20,26 +20,27 @@ type SegmentsService struct {
 // channels, UTM sources, referrers, landing pages and devices, counted only for contacts linked to a
 // tracked visitor (sessions and distinct contacts; UTM sources, referrers and landing pages are capped
 // at the top 8). For the Temperature × Score health of the same audience use
-// `lead_indicators_metrics`. `filters` is a FLAT array; top-level items are ANDed together, so "tag A
-// AND tag B" is just two top-level items: `[{ id: "a", order: 0, field: "tagId", operator: "equals",
-// negation: false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator: "equals",
-// negation: false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1, field:
-// "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the account hot
-// cutoff `thresholdQuente` from `temperature_settings_get`> }` (Temperature 0-100; `leadScore` is the
-// criteria Score; use operator `isNotEmpty` with `negation: true` for "not calculated yet"). Possible
-// card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals", negation:
-// false, valueBool: true }` (`false` = contacts NOT flagged) — a contact is flagged when its e-mail
-// has nothing to do with its name AND its document looks suspicious; it is derived from the contact
-// data at read time, so it works in saved segments and combines with any other item. E-mail
-// engagement: `{ id: "e", order: 1, field: "emailEngagement", operator: "childrenAnd", negation:
-// false, valueString: "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened`
-// (opened OR clicked; a click counts as an open), `clicked` (clicked a link) or `notOpened` (received
-// and neither opened nor clicked); optional `withinDays` (1-365, counted back from now: on the
-// open/click time, or on the send time for `notOpened`); optional `broadcastId` (a campaign id from
-// `broadcasts_list`) to measure one campaign. All conditions of the item apply to the SAME e-mail
-// sent. Bot/scanner opens and clicks never count, so the count for a campaign can be lower than the
-// opens `broadcasts_insights` reports. Recipes: no engagement in 30 days = `opened` + `withinDays: 30`
-// with `negation: true` (also matches contacts who got no e-mail); received in 30 days but did not
+// [LeadIndicatorsService.Metrics]. `filters` is a FLAT array; top-level items are ANDed together, so
+// "tag A AND tag B" is just two top-level items: `[{ id: "a", order: 0, field: "tagId", operator:
+// "equals", negation: false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator:
+// "equals", negation: false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1,
+// field: "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the
+// account hot cutoff `thresholdQuente` from `[TemperatureService.SettingsGet]`> }` (Temperature 0-100;
+// `leadScore` is the criteria Score; use operator `isNotEmpty` with `negation: true` for "not
+// calculated yet"). Possible card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud",
+// operator: "equals", negation: false, valueBool: true }` (`false` = contacts NOT flagged) — a
+// contact is flagged when its e-mail has nothing to do with its name AND its document looks
+// suspicious; it is derived from the contact data at read time, so it works in saved segments and
+// combines with any other item. E-mail engagement: `{ id: "e", order: 1, field: "emailEngagement",
+// operator: "childrenAnd", negation: false, valueString:
+// "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened` (opened OR clicked;
+// a click counts as an open), `clicked` (clicked a link) or `notOpened` (received and neither opened
+// nor clicked); optional `withinDays` (1-365, counted back from now: on the open/click time, or on the
+// send time for `notOpened`); optional `broadcastId` (a campaign id from [BroadcastsService.List]) to
+// measure one campaign. All conditions of the item apply to the SAME e-mail sent. Bot/scanner opens
+// and clicks never count, so the count for a campaign can be lower than the opens
+// [BroadcastsService.Insights] reports. Recipes: no engagement in 30 days = `opened` + `withinDays:
+// 30` with `negation: true` (also matches contacts who got no e-mail); received in 30 days but did not
 // open = `notOpened` + `withinDays: 30` AND that negated item; opened campaign A but not campaign B =
 // two items (`opened` + A, `notOpened` + B). Engaged across campaigns:
 // `{\"engagement\":\"openedCount\",\"min\":2,\"lastCampaigns\":5}` = opened (open or click, people
@@ -53,10 +54,10 @@ type SegmentsService struct {
 // `messageEvent` (`included` = was in the campaign audience, `sent`, `delivered`, `read` = e-mail
 // opened OR WhatsApp read, `clicked` = clicked a tracked link, `failed`; any channel) or `eventNames`
 // (1-20 raw system tag event names, e.g. `["payments.transaction.paid.v1"]`); optional origin
-// `broadcastId` (from `broadcasts_list`) OR `flowId` (from `flows_list`); optional `channel` (`email` |
-// `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`); optional
-// `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME activity;
-// `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
+// `broadcastId` (from [BroadcastsService.List]) OR `flowId` (from [FlowsService.List]); optional
+// `channel` (`email` | `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`);
+// optional `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME
+// activity; `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
 // `included` + X AND `read` + X with `negation: true`. Unlike `emailEngagement`, opens here include
 // bot opens. Broadcast audience (FLOWS-2314): `{ id: "b", order: 1, field: "broadcastAudience",
 // operator: "childrenAnd", negation: false, valueString: "{\"broadcastId\":\"<campaign
@@ -71,12 +72,12 @@ type SegmentsService struct {
 // all keys apply to the SAME registration. Linked custom-object records (Imóveis, Contratos…): `{
 // id: "o", order: 1, field: "customObject", operator: "childrenAnd", negation: false, valueUuid:
 // "<relation id>", valueString: "{\"quantifier\":\"any\",\"objectId\":\"<object id>\",\"filters\":[]}"
-// }` — the relation must link that object to contacts (`custom_object_relations_by_target` with
+// }` — the relation must link that object to contacts ([CustomObjectRelationsService.ByTarget] with
 // `targetType: "leads"`); `quantifier` `any` (has at least one linked record matching), `all` (has at
 // least one linked record AND every linked record matches) or `none` (no linked record matches); with
 // empty inner `filters`, `any`/`all` = has a linked record and `none` = has none; `negation` is
 // ignored here (the quantifier is the negation); inner `filters` = the object filter tree (see
-// `custom_object_records_query`), labels allowed there too. `id`/`parentId` are short labels you
+// [CustomObjectRecordsService.Query]), labels allowed there too. `id`/`parentId` are short labels you
 // choose (e.g. "a", "grp1"), not UUIDs — they only link items inside this array. OR/nesting: add a
 // group item `{ id: "grp1", field: "children", operator: "childrenOr", ... }` and point its children
 // at it with `parentId: "grp1"`. `negation: true` inverts an item ("does NOT have tag"). Fill exactly
@@ -182,7 +183,7 @@ func (s *SegmentsService) List(ctx context.Context, params SegmentsListParams, o
 // "equals", negation: false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator:
 // "equals", negation: false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1,
 // field: "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the
-// account hot cutoff `thresholdQuente` from `temperature_settings_get`> }` (Temperature 0-100;
+// account hot cutoff `thresholdQuente` from `[TemperatureService.SettingsGet]`> }` (Temperature 0-100;
 // `leadScore` is the criteria Score; use operator `isNotEmpty` with `negation: true` for "not
 // calculated yet"). Possible card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud",
 // operator: "equals", negation: false, valueBool: true }` (`false` = contacts NOT flagged) — a
@@ -193,16 +194,17 @@ func (s *SegmentsService) List(ctx context.Context, params SegmentsListParams, o
 // "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened` (opened OR clicked;
 // a click counts as an open), `clicked` (clicked a link) or `notOpened` (received and neither opened
 // nor clicked); optional `withinDays` (1-365, counted back from now: on the open/click time, or on the
-// send time for `notOpened`); optional `broadcastId` (a campaign id from `broadcasts_list`) to measure
-// one campaign. All conditions of the item apply to the SAME e-mail sent. Bot/scanner opens and clicks
-// never count, so the count for a campaign can be lower than the opens `broadcasts_insights` reports.
-// Recipes: no engagement in 30 days = `opened` + `withinDays: 30` with `negation: true` (also matches
-// contacts who got no e-mail); received in 30 days but did not open = `notOpened` + `withinDays: 30`
-// AND that negated item; opened campaign A but not campaign B = two items (`opened` + A, `notOpened` +
-// B). Engaged across campaigns: `{\"engagement\":\"openedCount\",\"min\":2,\"lastCampaigns\":5}` =
-// opened (open or click, people only) at least `min` of the last `lastCampaigns` campaigns the contact
-// RECEIVED (newest first; `lastCampaigns` 1-20, `min` 1..lastCampaigns; automation e-mails and test
-// sends are not campaigns; a contact with fewer campaigns is counted on what it received); it takes no
+// send time for `notOpened`); optional `broadcastId` (a campaign id from [BroadcastsService.List]) to
+// measure one campaign. All conditions of the item apply to the SAME e-mail sent. Bot/scanner opens
+// and clicks never count, so the count for a campaign can be lower than the opens
+// [BroadcastsService.Insights] reports. Recipes: no engagement in 30 days = `opened` + `withinDays:
+// 30` with `negation: true` (also matches contacts who got no e-mail); received in 30 days but did not
+// open = `notOpened` + `withinDays: 30` AND that negated item; opened campaign A but not campaign B =
+// two items (`opened` + A, `notOpened` + B). Engaged across campaigns:
+// `{\"engagement\":\"openedCount\",\"min\":2,\"lastCampaigns\":5}` = opened (open or click, people
+// only) at least `min` of the last `lastCampaigns` campaigns the contact RECEIVED (newest first;
+// `lastCampaigns` 1-20, `min` 1..lastCampaigns; automation e-mails and test sends are not campaigns; a
+// contact with fewer campaigns is counted on what it received); it takes no
 // `withinDays`/`broadcastId`; `negation: true` = did not reach that count, including contacts who
 // never got a campaign. System tags (activity history; FLOWS-2314): `{ id: "s", order: 1, field:
 // "systemTag", operator: "childrenAnd", negation: false, valueString:
@@ -210,10 +212,10 @@ func (s *SegmentsService) List(ctx context.Context, params SegmentsListParams, o
 // `messageEvent` (`included` = was in the campaign audience, `sent`, `delivered`, `read` = e-mail
 // opened OR WhatsApp read, `clicked` = clicked a tracked link, `failed`; any channel) or `eventNames`
 // (1-20 raw system tag event names, e.g. `["payments.transaction.paid.v1"]`); optional origin
-// `broadcastId` (from `broadcasts_list`) OR `flowId` (from `flows_list`); optional `channel` (`email` |
-// `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`); optional
-// `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME activity;
-// `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
+// `broadcastId` (from [BroadcastsService.List]) OR `flowId` (from [FlowsService.List]); optional
+// `channel` (`email` | `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`);
+// optional `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME
+// activity; `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
 // `included` + X AND `read` + X with `negation: true`. Unlike `emailEngagement`, opens here include
 // bot opens. Broadcast audience (FLOWS-2314): `{ id: "b", order: 1, field: "broadcastAudience",
 // operator: "childrenAnd", negation: false, valueString: "{\"broadcastId\":\"<campaign
@@ -228,12 +230,12 @@ func (s *SegmentsService) List(ctx context.Context, params SegmentsListParams, o
 // all keys apply to the SAME registration. Linked custom-object records (Imóveis, Contratos…): `{
 // id: "o", order: 1, field: "customObject", operator: "childrenAnd", negation: false, valueUuid:
 // "<relation id>", valueString: "{\"quantifier\":\"any\",\"objectId\":\"<object id>\",\"filters\":[]}"
-// }` — the relation must link that object to contacts (`custom_object_relations_by_target` with
+// }` — the relation must link that object to contacts ([CustomObjectRelationsService.ByTarget] with
 // `targetType: "leads"`); `quantifier` `any` (has at least one linked record matching), `all` (has at
 // least one linked record AND every linked record matches) or `none` (no linked record matches); with
 // empty inner `filters`, `any`/`all` = has a linked record and `none` = has none; `negation` is
 // ignored here (the quantifier is the negation); inner `filters` = the object filter tree (see
-// `custom_object_records_query`), labels allowed there too. `id`/`parentId` are short labels you
+// [CustomObjectRecordsService.Query]), labels allowed there too. `id`/`parentId` are short labels you
 // choose (e.g. "a", "grp1"), not UUIDs — they only link items inside this array. OR/nesting: add a
 // group item `{ id: "grp1", field: "children", operator: "childrenOr", ... }` and point its children
 // at it with `parentId: "grp1"`. `negation: true` inverts an item ("does NOT have tag"). Fill exactly
@@ -270,26 +272,27 @@ func (s *SegmentsService) Reload(ctx context.Context, body SegmentsReloadInput, 
 // id>" }, { id: "b", order: 1, field: "tagId", operator: "equals", negation: false, valueUuid: "<tagB
 // id>" }]`. Tag + hot contacts: `{ id: "t", order: 1, field: "temperatureScore", operator:
 // "greaterThanOrEqual", negation: false, valueNumber: <the account hot cutoff `thresholdQuente` from
-// `temperature_settings_get`> }` (Temperature 0-100; `leadScore` is the criteria Score; use operator
-// `isNotEmpty` with `negation: true` for "not calculated yet"). Possible card-testing fraud: `{ id:
-// "f", order: 1, field: "suspectedFraud", operator: "equals", negation: false, valueBool: true }`
-// (`false` = contacts NOT flagged) — a contact is flagged when its e-mail has nothing to do with its
-// name AND its document looks suspicious; it is derived from the contact data at read time, so it
+// `[TemperatureService.SettingsGet]`> }` (Temperature 0-100; `leadScore` is the criteria Score; use
+// operator `isNotEmpty` with `negation: true` for "not calculated yet"). Possible card-testing fraud:
+// `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals", negation: false, valueBool: true
+// }` (`false` = contacts NOT flagged) — a contact is flagged when its e-mail has nothing to do with
+// its name AND its document looks suspicious; it is derived from the contact data at read time, so it
 // works in saved segments and combines with any other item. E-mail engagement: `{ id: "e", order: 1,
 // field: "emailEngagement", operator: "childrenAnd", negation: false, valueString:
 // "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened` (opened OR clicked;
 // a click counts as an open), `clicked` (clicked a link) or `notOpened` (received and neither opened
 // nor clicked); optional `withinDays` (1-365, counted back from now: on the open/click time, or on the
-// send time for `notOpened`); optional `broadcastId` (a campaign id from `broadcasts_list`) to measure
-// one campaign. All conditions of the item apply to the SAME e-mail sent. Bot/scanner opens and clicks
-// never count, so the count for a campaign can be lower than the opens `broadcasts_insights` reports.
-// Recipes: no engagement in 30 days = `opened` + `withinDays: 30` with `negation: true` (also matches
-// contacts who got no e-mail); received in 30 days but did not open = `notOpened` + `withinDays: 30`
-// AND that negated item; opened campaign A but not campaign B = two items (`opened` + A, `notOpened` +
-// B). Engaged across campaigns: `{\"engagement\":\"openedCount\",\"min\":2,\"lastCampaigns\":5}` =
-// opened (open or click, people only) at least `min` of the last `lastCampaigns` campaigns the contact
-// RECEIVED (newest first; `lastCampaigns` 1-20, `min` 1..lastCampaigns; automation e-mails and test
-// sends are not campaigns; a contact with fewer campaigns is counted on what it received); it takes no
+// send time for `notOpened`); optional `broadcastId` (a campaign id from [BroadcastsService.List]) to
+// measure one campaign. All conditions of the item apply to the SAME e-mail sent. Bot/scanner opens
+// and clicks never count, so the count for a campaign can be lower than the opens
+// [BroadcastsService.Insights] reports. Recipes: no engagement in 30 days = `opened` + `withinDays:
+// 30` with `negation: true` (also matches contacts who got no e-mail); received in 30 days but did not
+// open = `notOpened` + `withinDays: 30` AND that negated item; opened campaign A but not campaign B =
+// two items (`opened` + A, `notOpened` + B). Engaged across campaigns:
+// `{\"engagement\":\"openedCount\",\"min\":2,\"lastCampaigns\":5}` = opened (open or click, people
+// only) at least `min` of the last `lastCampaigns` campaigns the contact RECEIVED (newest first;
+// `lastCampaigns` 1-20, `min` 1..lastCampaigns; automation e-mails and test sends are not campaigns; a
+// contact with fewer campaigns is counted on what it received); it takes no
 // `withinDays`/`broadcastId`; `negation: true` = did not reach that count, including contacts who
 // never got a campaign. System tags (activity history; FLOWS-2314): `{ id: "s", order: 1, field:
 // "systemTag", operator: "childrenAnd", negation: false, valueString:
@@ -297,10 +300,10 @@ func (s *SegmentsService) Reload(ctx context.Context, body SegmentsReloadInput, 
 // `messageEvent` (`included` = was in the campaign audience, `sent`, `delivered`, `read` = e-mail
 // opened OR WhatsApp read, `clicked` = clicked a tracked link, `failed`; any channel) or `eventNames`
 // (1-20 raw system tag event names, e.g. `["payments.transaction.paid.v1"]`); optional origin
-// `broadcastId` (from `broadcasts_list`) OR `flowId` (from `flows_list`); optional `channel` (`email` |
-// `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`); optional
-// `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME activity;
-// `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
+// `broadcastId` (from [BroadcastsService.List]) OR `flowId` (from [FlowsService.List]); optional
+// `channel` (`email` | `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`);
+// optional `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME
+// activity; `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
 // `included` + X AND `read` + X with `negation: true`. Unlike `emailEngagement`, opens here include
 // bot opens. Broadcast audience (FLOWS-2314): `{ id: "b", order: 1, field: "broadcastAudience",
 // operator: "childrenAnd", negation: false, valueString: "{\"broadcastId\":\"<campaign
@@ -315,12 +318,12 @@ func (s *SegmentsService) Reload(ctx context.Context, body SegmentsReloadInput, 
 // all keys apply to the SAME registration. Linked custom-object records (Imóveis, Contratos…): `{
 // id: "o", order: 1, field: "customObject", operator: "childrenAnd", negation: false, valueUuid:
 // "<relation id>", valueString: "{\"quantifier\":\"any\",\"objectId\":\"<object id>\",\"filters\":[]}"
-// }` — the relation must link that object to contacts (`custom_object_relations_by_target` with
+// }` — the relation must link that object to contacts ([CustomObjectRelationsService.ByTarget] with
 // `targetType: "leads"`); `quantifier` `any` (has at least one linked record matching), `all` (has at
 // least one linked record AND every linked record matches) or `none` (no linked record matches); with
 // empty inner `filters`, `any`/`all` = has a linked record and `none` = has none; `negation` is
 // ignored here (the quantifier is the negation); inner `filters` = the object filter tree (see
-// `custom_object_records_query`), labels allowed there too. `id`/`parentId` are short labels you
+// [CustomObjectRecordsService.Query]), labels allowed there too. `id`/`parentId` are short labels you
 // choose (e.g. "a", "grp1"), not UUIDs — they only link items inside this array. OR/nesting: add a
 // group item `{ id: "grp1", field: "children", operator: "childrenOr", ... }` and point its children
 // at it with `parentId: "grp1"`. `negation: true` inverts an item ("does NOT have tag"). Fill exactly
@@ -352,29 +355,29 @@ func (s *SegmentsService) Update(ctx context.Context, body SegmentsUpdateInput, 
 // Replace segment filters.
 //
 // Replaces the full filter tree of a segment with a new set of filters — send the whole tree, not
-// only the changed branch. When editing, keep the ids returned by `segments_get_filters` for unchanged
-// items. `filters` is a FLAT array; top-level items are ANDed together, so "tag A AND tag B" is just
-// two top-level items: `[{ id: "a", order: 0, field: "tagId", operator: "equals", negation: false,
-// valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator: "equals", negation: false,
-// valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1, field: "temperatureScore",
-// operator: "greaterThanOrEqual", negation: false, valueNumber: <the account hot cutoff
-// `thresholdQuente` from `temperature_settings_get`> }` (Temperature 0-100; `leadScore` is the
-// criteria Score; use operator `isNotEmpty` with `negation: true` for "not calculated yet"). Possible
-// card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals", negation:
-// false, valueBool: true }` (`false` = contacts NOT flagged) — a contact is flagged when its e-mail
-// has nothing to do with its name AND its document looks suspicious; it is derived from the contact
-// data at read time, so it works in saved segments and combines with any other item. E-mail
+// only the changed branch. When editing, keep the ids returned by [SegmentsService.GetFilters] for
+// unchanged items. `filters` is a FLAT array; top-level items are ANDed together, so "tag A AND tag B"
+// is just two top-level items: `[{ id: "a", order: 0, field: "tagId", operator: "equals", negation:
+// false, valueUuid: "<tagA id>" }, { id: "b", order: 1, field: "tagId", operator: "equals", negation:
+// false, valueUuid: "<tagB id>" }]`. Tag + hot contacts: `{ id: "t", order: 1, field:
+// "temperatureScore", operator: "greaterThanOrEqual", negation: false, valueNumber: <the account hot
+// cutoff `thresholdQuente` from `[TemperatureService.SettingsGet]`> }` (Temperature 0-100; `leadScore`
+// is the criteria Score; use operator `isNotEmpty` with `negation: true` for "not calculated yet").
+// Possible card-testing fraud: `{ id: "f", order: 1, field: "suspectedFraud", operator: "equals",
+// negation: false, valueBool: true }` (`false` = contacts NOT flagged) — a contact is flagged when
+// its e-mail has nothing to do with its name AND its document looks suspicious; it is derived from the
+// contact data at read time, so it works in saved segments and combines with any other item. E-mail
 // engagement: `{ id: "e", order: 1, field: "emailEngagement", operator: "childrenAnd", negation:
 // false, valueString: "{\"engagement\":\"opened\",\"withinDays\":30}" }` — `engagement` is `opened`
 // (opened OR clicked; a click counts as an open), `clicked` (clicked a link) or `notOpened` (received
 // and neither opened nor clicked); optional `withinDays` (1-365, counted back from now: on the
 // open/click time, or on the send time for `notOpened`); optional `broadcastId` (a campaign id from
-// `broadcasts_list`) to measure one campaign. All conditions of the item apply to the SAME e-mail
-// sent. Bot/scanner opens and clicks never count, so the count for a campaign can be lower than the
-// opens `broadcasts_insights` reports. Recipes: no engagement in 30 days = `opened` + `withinDays: 30`
-// with `negation: true` (also matches contacts who got no e-mail); received in 30 days but did not
-// open = `notOpened` + `withinDays: 30` AND that negated item; opened campaign A but not campaign B =
-// two items (`opened` + A, `notOpened` + B). Engaged across campaigns:
+// [BroadcastsService.List]) to measure one campaign. All conditions of the item apply to the SAME
+// e-mail sent. Bot/scanner opens and clicks never count, so the count for a campaign can be lower than
+// the opens [BroadcastsService.Insights] reports. Recipes: no engagement in 30 days = `opened` +
+// `withinDays: 30` with `negation: true` (also matches contacts who got no e-mail); received in 30
+// days but did not open = `notOpened` + `withinDays: 30` AND that negated item; opened campaign A but
+// not campaign B = two items (`opened` + A, `notOpened` + B). Engaged across campaigns:
 // `{\"engagement\":\"openedCount\",\"min\":2,\"lastCampaigns\":5}` = opened (open or click, people
 // only) at least `min` of the last `lastCampaigns` campaigns the contact RECEIVED (newest first;
 // `lastCampaigns` 1-20, `min` 1..lastCampaigns; automation e-mails and test sends are not campaigns; a
@@ -386,10 +389,10 @@ func (s *SegmentsService) Update(ctx context.Context, body SegmentsUpdateInput, 
 // `messageEvent` (`included` = was in the campaign audience, `sent`, `delivered`, `read` = e-mail
 // opened OR WhatsApp read, `clicked` = clicked a tracked link, `failed`; any channel) or `eventNames`
 // (1-20 raw system tag event names, e.g. `["payments.transaction.paid.v1"]`); optional origin
-// `broadcastId` (from `broadcasts_list`) OR `flowId` (from `flows_list`); optional `channel` (`email` |
-// `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`); optional
-// `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME activity;
-// `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
+// `broadcastId` (from [BroadcastsService.List]) OR `flowId` (from [FlowsService.List]); optional
+// `channel` (`email` | `gupshup` (WhatsApp) | `sms` | `voice` | `telegram` | `instagram` | `webchat`);
+// optional `withinDays` (1-365) OR `from`/`to` (`YYYY-MM-DD`, inclusive). All keys apply to the SAME
+// activity; `negation: true` = never had it. Recipe: received campaign X but did not open = two items,
 // `included` + X AND `read` + X with `negation: true`. Unlike `emailEngagement`, opens here include
 // bot opens. Broadcast audience (FLOWS-2314): `{ id: "b", order: 1, field: "broadcastAudience",
 // operator: "childrenAnd", negation: false, valueString: "{\"broadcastId\":\"<campaign
@@ -404,12 +407,12 @@ func (s *SegmentsService) Update(ctx context.Context, body SegmentsUpdateInput, 
 // all keys apply to the SAME registration. Linked custom-object records (Imóveis, Contratos…): `{
 // id: "o", order: 1, field: "customObject", operator: "childrenAnd", negation: false, valueUuid:
 // "<relation id>", valueString: "{\"quantifier\":\"any\",\"objectId\":\"<object id>\",\"filters\":[]}"
-// }` — the relation must link that object to contacts (`custom_object_relations_by_target` with
+// }` — the relation must link that object to contacts ([CustomObjectRelationsService.ByTarget] with
 // `targetType: "leads"`); `quantifier` `any` (has at least one linked record matching), `all` (has at
 // least one linked record AND every linked record matches) or `none` (no linked record matches); with
 // empty inner `filters`, `any`/`all` = has a linked record and `none` = has none; `negation` is
 // ignored here (the quantifier is the negation); inner `filters` = the object filter tree (see
-// `custom_object_records_query`), labels allowed there too. `id`/`parentId` are short labels you
+// [CustomObjectRecordsService.Query]), labels allowed there too. `id`/`parentId` are short labels you
 // choose (e.g. "a", "grp1"), not UUIDs — they only link items inside this array. OR/nesting: add a
 // group item `{ id: "grp1", field: "children", operator: "childrenOr", ... }` and point its children
 // at it with `parentId: "grp1"`. `negation: true` inverts an item ("does NOT have tag"). Fill exactly

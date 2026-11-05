@@ -16,7 +16,7 @@ type WhopService struct {
 //
 // Lists the plans (`plan_…`) of a Whop product — what the Whop checkout block charges. `price` is
 // the FIRST charge in currency units (setup fee + first period for `planType: 'renewal'`). Use
-// `data[].id` as `externalCheckout.planId` in `pages_import_html`.
+// `data[].id` as `externalCheckout.planId` in [PagesService.ImportHTML].
 //
 // Calls GET /whop/plans-list.
 func (s *WhopService) PlansList(ctx context.Context, params WhopPlansListParams, opts ...Option) (*WhopPlansListOutput, error) {
@@ -29,8 +29,9 @@ func (s *WhopService) PlansList(ctx context.Context, params WhopPlansListParams,
 
 // List Whop products.
 //
-// Lists products (`prod_…`) of a Whop integration, live from Whop. Next step: `whop_plans_list` with
-// the chosen `productId`. Cursor-paginated, no name search — page until you find it or ask the user.
+// Lists products (`prod_…`) of a Whop integration, live from Whop. Next step:
+// [WhopService.PlansList] with the chosen `productId`. Cursor-paginated, no name search — page until
+// you find it or ask the user.
 //
 // Calls GET /whop/products-list.
 func (s *WhopService) ProductsList(ctx context.Context, params WhopProductsListParams, opts ...Option) (*WhopProductsListOutput, error) {
@@ -74,9 +75,9 @@ type WhopPlansListOutputMeta struct {
 
 // WhopPlansListParams holds the query parameters of [WhopService.PlansList].
 type WhopPlansListParams struct {
-	// Integration id from `external_checkout_accounts_list` (`data[].id`).
+	// Integration id from [ExternalCheckoutAccountsService.List] (`data[].id`).
 	IncomingID string
-	// `prod_…` from `whop_products_list`.
+	// `prod_…` from [WhopService.ProductsList].
 	ProductID string
 	// Opaque `meta.nextCursor` from the previous page; omit for the first page.
 	Cursor  *string
@@ -112,7 +113,7 @@ type WhopProductsListOutputMeta struct {
 
 // WhopProductsListParams holds the query parameters of [WhopService.ProductsList].
 type WhopProductsListParams struct {
-	// Integration id from `external_checkout_accounts_list` (`data[].id`).
+	// Integration id from [ExternalCheckoutAccountsService.List] (`data[].id`).
 	IncomingID string
 	// Opaque `meta.nextCursor` from the previous page; omit for the first page.
 	Cursor  *string

@@ -33,7 +33,7 @@ func (s *PageDesignsService) Get(ctx context.Context, params PageDesignsGetParam
 // Lists the published page design languages visible to the workspace as a summary (`slug`, `title`,
 // `description`, `tags`, `coverImageUrl`, `palette` hex list, `fonts` the page will render,
 // `resolvedFonts` pairing each brand font the design declares with the available font used in its
-// place) — enough to pick one. The full DESIGN.md is NOT here: call `page_designs_get` for the
+// place) — enough to pick one. The full DESIGN.md is NOT here: call [PageDesignsService.Get] for the
 // chosen slug.
 //
 // Calls GET /page-designs/list.

@@ -15,8 +15,8 @@ type GupshupTemplatesService struct {
 // Get WhatsApp template performance.
 //
 // Sent / delivered / read / clicked counts for ONE approved WhatsApp template, read from Meta.
-// `externalId` comes from `gupshup_templates_list` (only templates already submitted to Meta have
-// one).
+// `externalId` comes from [GupshupTemplatesService.List] (only templates already submitted to Meta
+// have one).
 //
 // Calls GET /gupshup-templates/analytics.
 func (s *GupshupTemplatesService) Analytics(ctx context.Context, params GupshupTemplatesAnalyticsParams, opts ...Option) (*GupshupTemplatesAnalyticsOutput, error) {
@@ -30,30 +30,30 @@ func (s *GupshupTemplatesService) Analytics(ctx context.Context, params GupshupT
 // Draft a custom WhatsApp template.
 //
 // Saves a WhatsApp template as a local DRAFT — it is NOT sent to Meta yet (call
-// `gupshup_templates_submit` explicitly once the user confirms the exact content). Dedupes by
+// [GupshupTemplatesService.Submit] explicitly once the user confirms the exact content). Dedupes by
 // `elementName` + language: calling again with a name that already exists for the target connection
 // returns the EXISTING template instead of creating a duplicate draft. This holds even for two
 // concurrent calls with the same name — a unique constraint on (connection, name, language) backs
 // it, and the loser is resolved to the existing template rather than erroring. Check the response's
 // `created` field: `false` means nothing was created (a preexisting template was returned — read its
 // `status`, it may already be pending/approved, not the fresh draft you asked for). Use
-// `gupshup_templates_update` to change an existing template instead of re-creating; re-creating with
-// the same name and DIFFERENT content never overwrites the existing one. Content rules Meta enforces,
-// CHECKED HERE before anything is saved — a violation comes back as an error listing everything to
-// fix, so you never ship a draft that Meta would reject days later: placeholders must be sequential
-// starting at `{{1}}` with no gaps; the body may not START or END with a placeholder — always keep
-// fixed text around every `{{n}}`; no 3+ consecutive braces (`{{{1}}}` is a common copy-paste bug, not
-// a variable); the body cannot be only variables; max 10 emojis and 2 consecutive line breaks in the
-// body, and no emoji/line break/formatting character in a text `header`; `header`/`footer` max 60
-// characters, body max 1024; every placeholder used in the body needs a real, non-empty sample value
-// in `example`; a text `header` accepts AT MOST ONE placeholder (`{{1}}`) and, when it has one,
-// `exampleHeader` must repeat the header with that placeholder replaced by a real value. Buttons
-// follow Meta rules too (label max 25 chars, at most 2 URL buttons, URL must be http(s) with at most
-// one variable at its very end, quick replies grouped together, copy-code only on `MARKETING`).
-// `AUTHENTICATION` category has a Meta-managed body (no free content) and needs exactly one `OTP`
-// button. Look at `gupshup_templates_list`/`gupshup_templates_get` on already-approved templates for
-// real shapes before inventing one. Never invent placeholder content, button URLs, or example values
-// the user has not actually given you.
+// [GupshupTemplatesService.Update] to change an existing template instead of re-creating; re-creating
+// with the same name and DIFFERENT content never overwrites the existing one. Content rules Meta
+// enforces, CHECKED HERE before anything is saved — a violation comes back as an error listing
+// everything to fix, so you never ship a draft that Meta would reject days later: placeholders must be
+// sequential starting at `{{1}}` with no gaps; the body may not START or END with a placeholder —
+// always keep fixed text around every `{{n}}`; no 3+ consecutive braces (`{{{1}}}` is a common
+// copy-paste bug, not a variable); the body cannot be only variables; max 10 emojis and 2 consecutive
+// line breaks in the body, and no emoji/line break/formatting character in a text `header`;
+// `header`/`footer` max 60 characters, body max 1024; every placeholder used in the body needs a real,
+// non-empty sample value in `example`; a text `header` accepts AT MOST ONE placeholder (`{{1}}`) and,
+// when it has one, `exampleHeader` must repeat the header with that placeholder replaced by a real
+// value. Buttons follow Meta rules too (label max 25 chars, at most 2 URL buttons, URL must be http(s)
+// with at most one variable at its very end, quick replies grouped together, copy-code only on
+// `MARKETING`). `AUTHENTICATION` category has a Meta-managed body (no free content) and needs exactly
+// one `OTP` button. Look at [GupshupTemplatesService.List]/[GupshupTemplatesService.Get] on
+// already-approved templates for real shapes before inventing one. Never invent placeholder content,
+// button URLs, or example values the user has not actually given you.
 //
 // Calls POST /gupshup-templates/create.
 func (s *GupshupTemplatesService) Create(ctx context.Context, body GupshupTemplatesCreateInput, opts ...Option) (*GupshupTemplatesCreateOutput, error) {
@@ -69,9 +69,9 @@ func (s *GupshupTemplatesService) Create(ctx context.Context, body GupshupTempla
 // Full detail of one WhatsApp template by id: approval `status`, `category` (and `oldCategory` when
 // Meta reclassified it — report both to the user), `positionParams` (variable labels, sized to the
 // highest `{{n}}` in the body — this is how many entries `paramMapping` needs on
-// `flows_send_whatsapp`), `buttons`, and `headerMediaUrl` when the header carries media. Use before
-// wiring `gupshupTemplateId` into `flows_send_whatsapp` to confirm it is actually `approved` and to
-// get the exact param count.
+// [FlowsService.SendWhatsapp]), `buttons`, and `headerMediaUrl` when the header carries media. Use
+// before wiring `gupshupTemplateId` into [FlowsService.SendWhatsapp] to confirm it is actually
+// `approved` and to get the exact param count.
 //
 // Calls GET /gupshup-templates/get.
 func (s *GupshupTemplatesService) Get(ctx context.Context, params GupshupTemplatesGetParams, opts ...Option) (*GupshupTemplatesGetOutput, error) {
@@ -85,11 +85,11 @@ func (s *GupshupTemplatesService) Get(ctx context.Context, params GupshupTemplat
 // Create a WhatsApp template from Meta's library.
 //
 // Creates a workspace WhatsApp template directly from a Meta library entry (`libraryTemplateName`,
-// resolved via `gupshup_templates_library_list`) — this SUBMITS to Meta immediately (unlike
-// `gupshup_templates_create`, which only drafts locally), so only call it with a `libraryTemplateName`
-// that actually came back from `gupshup_templates_library_list`, never invented. `elementName` is your
-// workspace-local name for it (6-24 chars). `category` is restricted to `UTILITY`/`AUTHENTICATION`
-// (library scope).
+// resolved via [GupshupTemplatesService.LibraryList]) — this SUBMITS to Meta immediately (unlike
+// [GupshupTemplatesService.Create], which only drafts locally), so only call it with a
+// `libraryTemplateName` that actually came back from [GupshupTemplatesService.LibraryList], never
+// invented. `elementName` is your workspace-local name for it (6-24 chars). `category` is restricted
+// to `UTILITY`/`AUTHENTICATION` (library scope).
 //
 // Calls DELETE /gupshup-templates/library-create.
 func (s *GupshupTemplatesService) LibraryCreate(ctx context.Context, body GupshupTemplatesLibraryCreateInput, opts ...Option) (*GupshupTemplatesLibraryCreateOutput, error) {
@@ -103,10 +103,11 @@ func (s *GupshupTemplatesService) LibraryCreate(ctx context.Context, body Gupshu
 // List Meta's template library.
 //
 // Meta's own pre-vetted template library (`UTILITY`/`AUTHENTICATION` only — `MARKETING` is never in
-// the library) for the given `languageCode`. Importing one with `gupshup_templates_library_create`
-// skips the usual review wait since Meta already vetted the content. Check this before authoring a
-// template from scratch with `gupshup_templates_create` when the use case is generic (OTP, order
-// update, appointment reminder, etc.) — an exact library match is near-instant-approved.
+// the library) for the given `languageCode`. Importing one with
+// [GupshupTemplatesService.LibraryCreate] skips the usual review wait since Meta already vetted the
+// content. Check this before authoring a template from scratch with [GupshupTemplatesService.Create]
+// when the use case is generic (OTP, order update, appointment reminder, etc.) — an exact library
+// match is near-instant-approved.
 //
 // Calls GET /gupshup-templates/library-list.
 func (s *GupshupTemplatesService) LibraryList(ctx context.Context, params GupshupTemplatesLibraryListParams, opts ...Option) (*GupshupTemplatesLibraryListOutput, error) {
@@ -123,10 +124,10 @@ func (s *GupshupTemplatesService) LibraryList(ctx context.Context, params Gupshu
 // (`draft`/`pending`/`approved`/`rejected`/`failed`/`paused` — `paused` = Meta paused it for low
 // quality), `category` (plus `oldCategory` when Meta reclassified it, e.g. `UTILITY` → `MARKETING`),
 // `reason` (Meta's rejection/pause reason), `positionParams` (variable count/labels — this is what
-// `paramMapping` on `flows_send_whatsapp` must match in length), and `buttons`. Filter by `name`
+// `paramMapping` on [FlowsService.SendWhatsapp] must match in length), and `buttons`. Filter by `name`
 // (substring), `status`, `category`, or `channelInstanceId`. Only `status: 'approved'` templates
 // reliably send outside the 24h customer-care window — check before wiring one into
-// `flows_send_whatsapp`.
+// [FlowsService.SendWhatsapp].
 //
 // Calls POST /gupshup-templates/list.
 func (s *GupshupTemplatesService) List(ctx context.Context, body GupshupTemplatesListInput, opts ...Option) (*GupshupTemplatesListOutput, error) {
@@ -145,8 +146,8 @@ func (s *GupshupTemplatesService) List(ctx context.Context, body GupshupTemplate
 // submit content the agent authored/edited without the user reviewing it first, and never call this
 // speculatively 'to see if it gets approved'. Idempotent only in the narrow sense that re-submitting
 // an already-submitted template returns the existing `pending` status instead of erroring — it does
-// NOT let you change the content by calling this again (use `gupshup_templates_update` first, while
-// still editable).
+// NOT let you change the content by calling this again (use [GupshupTemplatesService.Update] first,
+// while still editable).
 //
 // Calls DELETE /gupshup-templates/submit.
 func (s *GupshupTemplatesService) Submit(ctx context.Context, body GupshupTemplatesSubmitInput, opts ...Option) (*GupshupTemplatesLibraryCreateOutput, error) {
@@ -173,9 +174,9 @@ func (s *GupshupTemplatesService) Submit(ctx context.Context, body GupshupTempla
 // follow Meta rules too (label max 25 chars, at most 2 URL buttons, URL must be http(s) with at most
 // one variable at its very end, quick replies grouped together, copy-code only on `MARKETING`).
 // `AUTHENTICATION` category has a Meta-managed body (no free content) and needs exactly one `OTP`
-// button. Look at `gupshup_templates_list`/`gupshup_templates_get` on already-approved templates for
-// real shapes before inventing one. Never invent placeholder content, button URLs, or example values
-// the user has not actually given you.
+// button. Look at [GupshupTemplatesService.List]/[GupshupTemplatesService.Get] on already-approved
+// templates for real shapes before inventing one. Never invent placeholder content, button URLs, or
+// example values the user has not actually given you.
 //
 // Calls POST /gupshup-templates/update.
 func (s *GupshupTemplatesService) Update(ctx context.Context, body GupshupTemplatesUpdateInput, opts ...Option) (*GupshupTemplatesLibraryCreateOutput, error) {
@@ -209,10 +210,10 @@ func (p GupshupTemplatesAnalyticsParams) values() url.Values {
 
 // GupshupTemplatesCreateInput is the request body of [GupshupTemplatesService.Create].
 type GupshupTemplatesCreateInput struct {
-	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
-	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
-	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
-	// as gupshupAppId/FLOWS-1082).
+	// WhatsApp number (channel instance) to scope this to — resolve with
+	// [ChannelInstancesService.List]. Recommended whenever the workspace may have more than one
+	// number: omitting it falls back to the oldest live number, which is ambiguous the moment a 2nd
+	// number is connected (same class of bug as gupshupAppId/FLOWS-1082).
 	ChannelInstanceID *string `json:"channelInstanceId,omitzero"`
 	// The actual Meta template content — see field descriptions for the placeholder/category/media
 	// rules Meta enforces.
@@ -223,8 +224,8 @@ type GupshupTemplatesCreateInput struct {
 	// label per placeholder, sized to the HIGHEST index used (a body using only `{{2}}` still needs 2
 	// entries — the array LENGTH is what determines how many params the send requires, not its
 	// content). Labels are just display text for the field-mapping picker (e.g. "{1}", "customer
-	// name") — the real value at send time comes from `paramMapping` on `flows_send_whatsapp`. A
-	// length that disagrees with the body is rejected.
+	// name") — the real value at send time comes from `paramMapping` on [FlowsService.SendWhatsapp].
+	// A length that disagrees with the body is rejected.
 	PositionParams []string `json:"positionParams,omitzero"`
 }
 
@@ -488,7 +489,7 @@ const (
 
 // GupshupTemplatesGetParams holds the query parameters of [GupshupTemplatesService.Get].
 type GupshupTemplatesGetParams struct {
-	// Template id, from `gupshup_templates_list`/`gupshup_templates_get`.
+	// Template id, from [GupshupTemplatesService.List]/[GupshupTemplatesService.Get].
 	ID string
 }
 
@@ -503,16 +504,16 @@ type GupshupTemplatesLibraryCreateInput struct {
 	// Workspace-local template name, 6-24 characters.
 	ElementName string `json:"elementName"`
 	// Exact `elementName` of the Meta library entry to import — resolve with
-	// `gupshup_templates_library_list`, never invented.
+	// [GupshupTemplatesService.LibraryList], never invented.
 	LibraryTemplateName string                                     `json:"libraryTemplateName"`
 	Category            GupshupTemplatesLibraryCreateInputCategory `json:"category"`
 	LanguageCode        string                                     `json:"languageCode"`
 	// Raw GupShup buttons override string — leave unset for the library defaults.
 	Buttons *string `json:"buttons,omitzero"`
-	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
-	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
-	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
-	// as gupshupAppId/FLOWS-1082).
+	// WhatsApp number (channel instance) to scope this to — resolve with
+	// [ChannelInstancesService.List]. Recommended whenever the workspace may have more than one
+	// number: omitting it falls back to the oldest live number, which is ambiguous the moment a 2nd
+	// number is connected (same class of bug as gupshupAppId/FLOWS-1082).
 	ChannelInstanceID *string `json:"channelInstanceId,omitzero"`
 }
 
@@ -569,10 +570,10 @@ type GupshupTemplatesLibraryListParams struct {
 	Category GupshupTemplatesLibraryListParamsCategory
 	// Language code Meta uses, e.g. "pt_BR"/"en".
 	LanguageCode string
-	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
-	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
-	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
-	// as gupshupAppId/FLOWS-1082).
+	// WhatsApp number (channel instance) to scope this to — resolve with
+	// [ChannelInstancesService.List]. Recommended whenever the workspace may have more than one
+	// number: omitting it falls back to the oldest live number, which is ambiguous the moment a 2nd
+	// number is connected (same class of bug as gupshupAppId/FLOWS-1082).
 	ChannelInstanceID *string
 }
 
@@ -608,10 +609,10 @@ type GupshupTemplatesListInput struct {
 	Status any `json:"status,omitzero"`
 	// Filter by Meta category.
 	Category *GupshupTemplatesListInputCategory `json:"category,omitzero"`
-	// WhatsApp number (channel instance) to scope this to — resolve with `channel_instances_list`.
-	// Recommended whenever the workspace may have more than one number: omitting it falls back to the
-	// oldest live number, which is ambiguous the moment a 2nd number is connected (same class of bug
-	// as gupshupAppId/FLOWS-1082).
+	// WhatsApp number (channel instance) to scope this to — resolve with
+	// [ChannelInstancesService.List]. Recommended whenever the workspace may have more than one
+	// number: omitting it falls back to the oldest live number, which is ambiguous the moment a 2nd
+	// number is connected (same class of bug as gupshupAppId/FLOWS-1082).
 	ChannelInstanceID *string `json:"channelInstanceId,omitzero"`
 }
 
@@ -733,13 +734,13 @@ type GupshupTemplatesListOutputStatusCounts struct {
 
 // GupshupTemplatesSubmitInput is the request body of [GupshupTemplatesService.Submit].
 type GupshupTemplatesSubmitInput struct {
-	// Template id, from `gupshup_templates_list`/`gupshup_templates_get`.
+	// Template id, from [GupshupTemplatesService.List]/[GupshupTemplatesService.Get].
 	ID string `json:"id"`
 }
 
 // GupshupTemplatesUpdateInput is the request body of [GupshupTemplatesService.Update].
 type GupshupTemplatesUpdateInput struct {
-	// Template id, from `gupshup_templates_list`/`gupshup_templates_get`.
+	// Template id, from [GupshupTemplatesService.List]/[GupshupTemplatesService.Get].
 	ID string `json:"id"`
 	// The actual Meta template content — see field descriptions for the placeholder/category/media
 	// rules Meta enforces.
@@ -750,8 +751,8 @@ type GupshupTemplatesUpdateInput struct {
 	// label per placeholder, sized to the HIGHEST index used (a body using only `{{2}}` still needs 2
 	// entries — the array LENGTH is what determines how many params the send requires, not its
 	// content). Labels are just display text for the field-mapping picker (e.g. "{1}", "customer
-	// name") — the real value at send time comes from `paramMapping` on `flows_send_whatsapp`. A
-	// length that disagrees with the body is rejected.
+	// name") — the real value at send time comes from `paramMapping` on [FlowsService.SendWhatsapp].
+	// A length that disagrees with the body is rejected.
 	PositionParams []string `json:"positionParams,omitzero"`
 }
 

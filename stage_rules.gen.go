@@ -16,9 +16,9 @@ type StageRulesService struct {
 // Get the passage rules of a stage.
 //
 // Returns the passage rules of one stage as `{ rules }`, or `{ rules: null }` when the stage has none
-// configured (which means "nothing blocks a move"). Rules are what makes `cards_move` fail with a 409
-// listing unmet conditions: `requiredOn` + `requiredFields`, `wipOn` + `wipLimit` + `wipMode`, and
-// `directionOn` + `direction`.
+// configured (which means "nothing blocks a move"). Rules are what makes [CardsService.Move] fail with
+// a 409 listing unmet conditions: `requiredOn` + `requiredFields`, `wipOn` + `wipLimit` + `wipMode`,
+// and `directionOn` + `direction`.
 //
 // Calls GET /stage-rules/get.
 func (s *StageRulesService) Get(ctx context.Context, params StageRulesGetParams, opts ...Option) (*StageRulesGetOutput, error) {
@@ -47,9 +47,9 @@ func (s *StageRulesService) ListByPipeline(ctx context.Context, params StageRule
 // Get the open-card count used by the WIP rule.
 //
 // Returns `{ count }` = how many OPEN cards the stage currently holds, which is the exact number the
-// WIP rule compares against `wipLimit`. This is not the same as the card count from `stages_list`,
-// which follows the caller kanban filters. Use it to check headroom before moving or importing cards
-// into a `block`-mode stage.
+// WIP rule compares against `wipLimit`. This is not the same as the card count from
+// [StagesService.List], which follows the caller kanban filters. Use it to check headroom before
+// moving or importing cards into a `block`-mode stage.
 //
 // Calls GET /stage-rules/open-count.
 func (s *StageRulesService) OpenCount(ctx context.Context, params StageRulesOpenCountParams, opts ...Option) (*StageRulesOpenCountOutput, error) {
@@ -63,7 +63,7 @@ func (s *StageRulesService) OpenCount(ctx context.Context, params StageRulesOpen
 // Set the passage rules of a stage.
 //
 // Creates or replaces the passage rules of one stage. ALL fields are required — this is a full
-// replace, not a patch, so read `stage_rules_get` first and resend the values you want to keep.
+// replace, not a patch, so read [StageRulesService.Get] first and resend the values you want to keep.
 // `requiredOn` + `requiredFields` demand fields be filled before a card leaves; `wipOn` + `wipLimit`
 // (1–9999) + `wipMode` cap how many open cards the stage holds (`warn` only flags, `block` actually
 // rejects the move and the list import); `directionOn` + `direction` restrict movement (`any`,

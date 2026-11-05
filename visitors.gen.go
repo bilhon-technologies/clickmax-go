@@ -110,7 +110,7 @@ func (s *VisitorsService) LeadJourney(ctx context.Context, params VisitorsLeadJo
 // attribution), session count, last page/funnel, device and the linked contact when the visitor became
 // one. Filters: `channels`, `projectIds`, `pageIds`, `funnelIds` (and their `exclude*` versions),
 // `hasLead`, `search` (visitor id or IP). Period defaults to the last 30 days and is capped at 180.
-// For totals and breakdowns use `visitors_analytics`, not paging.
+// For totals and breakdowns use [VisitorsService.Analytics], not paging.
 //
 // Calls POST /visitors/list.
 func (s *VisitorsService) List(ctx context.Context, body VisitorsListInput, opts ...Option) (*VisitorsListOutput, error) {

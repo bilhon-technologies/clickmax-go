@@ -32,7 +32,7 @@ func (s *PacksService) AffiliationOfferUpdate(ctx context.Context, body PacksAff
 //
 // Adds funnels, pages, flows, and/or offers to a pack. For funnels4, `funnelModes` chooses per-funnel
 // `full` (pages + automations) or `skeleton` (structure only); `includeProducts` also affiliates the
-// funnel offers. Appending changes the source → run `packs_resnapshot` before re-sharing.
+// funnel offers. Appending changes the source → run [PacksService.Resnapshot] before re-sharing.
 //
 // Calls POST /packs/append.
 func (s *PacksService) Append(ctx context.Context, body PacksAppendInput, opts ...Option) (*PacksAppendOutput, error) {
@@ -61,7 +61,7 @@ func (s *PacksService) CommissionUpdate(ctx context.Context, body PacksCommissio
 //
 // Creates an empty pack in a project. Requires `projectId` and `name`; `description`, `category`,
 // `level`, `thumbnailUrl`, and `funnelsEngine` (funnels3/funnels4) are optional. Add contents
-// afterward with `packs_append`.
+// afterward with [PacksService.Append].
 //
 // Calls POST /packs/create.
 func (s *PacksService) Create(ctx context.Context, body PacksCreateInput, opts ...Option) (*PacksCreateOutput, error) {
@@ -104,9 +104,9 @@ func (s *PacksService) Get(ctx context.Context, params PacksGetParams, opts ...O
 //
 // Imports a published pack into a destination `projectId`, cloning its funnels/pages/flows and
 // affiliating its offers. Heavy operation that creates assets and runs asynchronously: returns an
-// import `id` whose progress is tracked via `packs_imported_get`. Pass
+// import `id` whose progress is tracked via [PacksService.ImportedGet]. Pass
 // `resolutions`/`externalPageUrls`/`overrideFlowsIds` for dependencies the preview flagged; unresolved
-// deps yield a `partial` import. Read `packs_import_preview` first.
+// deps yield a `partial` import. Read [PacksService.ImportPreview] first.
 //
 // Calls POST /packs/import.
 func (s *PacksService) Import(ctx context.Context, body PacksImportInput, opts ...Option) (*PacksImportOutput, error) {
@@ -121,7 +121,7 @@ func (s *PacksService) Import(ctx context.Context, body PacksImportInput, opts .
 //
 // Returns what would be created if the pack were imported: funnels/pages/flows/offers and the
 // dependencies that need resolution (provider channels, lists, external page URLs). Read before
-// `packs_import`.
+// [PacksService.Import].
 //
 // Calls GET /packs/import-preview.
 func (s *PacksService) ImportPreview(ctx context.Context, params PacksImportPreviewParams, opts ...Option) (*PacksImportPreviewOutput, error) {
@@ -150,7 +150,7 @@ func (s *PacksService) ImportedGet(ctx context.Context, params PacksImportedGetP
 //
 // Returns paginated records of packs this workspace imported, with import status (`pending`,
 // `success`, `partial`, `failed`) and the destination project. Use to track an in-flight
-// `packs_import`.
+// [PacksService.Import].
 //
 // Calls GET /packs/imported-list.
 func (s *PacksService) ImportedList(ctx context.Context, params PacksImportedListParams, opts ...Option) (*PacksImportedListOutput, error) {
@@ -178,7 +178,7 @@ func (s *PacksService) List(ctx context.Context, params PacksListParams, opts ..
 // Remove contents from a pack.
 //
 // Removes funnels, pages, flows, and/or offers from a pack. Removing changes the source → run
-// `packs_resnapshot` before re-sharing.
+// [PacksService.Resnapshot] before re-sharing.
 //
 // Calls POST /packs/remove.
 func (s *PacksService) Remove(ctx context.Context, body PacksRemoveInput, opts ...Option) (*PacksRemoveOutput, error) {
@@ -192,8 +192,8 @@ func (s *PacksService) Remove(ctx context.Context, body PacksRemoveInput, opts .
 // Re-snapshot a pack.
 //
 // Generates a new immutable snapshot version from the pack current contents. Run after editing the
-// pack (or when `packs_snapshot_drift` reports `drifted`) and before `packs_snapshot_publish`.
-// funnels4 only.
+// pack (or when [PacksService.SnapshotDrift] reports `drifted`) and before
+// [PacksService.SnapshotPublish]. funnels4 only.
 //
 // Calls POST /packs/resnapshot.
 func (s *PacksService) Resnapshot(ctx context.Context, body PacksResnapshotInput, opts ...Option) (*PacksResnapshotOutput, error) {
@@ -207,8 +207,8 @@ func (s *PacksService) Resnapshot(ctx context.Context, body PacksResnapshotInput
 // Check pack snapshot drift.
 //
 // Reports whether the pack source (funnels/pages/flows) changed since the latest snapshot was taken,
-// plus the latest snapshot version. `drifted=true` means you should `packs_resnapshot` before sharing.
-// funnels4 only.
+// plus the latest snapshot version. `drifted=true` means you should [PacksService.Resnapshot] before
+// sharing. funnels4 only.
 //
 // Calls GET /packs/snapshot-drift.
 func (s *PacksService) SnapshotDrift(ctx context.Context, params PacksSnapshotDriftParams, opts ...Option) (*PacksSnapshotDriftOutput, error) {
@@ -222,8 +222,8 @@ func (s *PacksService) SnapshotDrift(ctx context.Context, params PacksSnapshotDr
 // Get a pack snapshot status.
 //
 // Returns the gate status and validation issues of a snapshot version: `draft`, `validating` (gate
-// running async), `valid`, `warnings`, or `blocked`. Poll this after `packs_snapshot_publish` until it
-// leaves `validating`. funnels4 only.
+// running async), `valid`, `warnings`, or `blocked`. Poll this after [PacksService.SnapshotPublish]
+// until it leaves `validating`. funnels4 only.
 //
 // Calls GET /packs/snapshot-get.
 func (s *PacksService) SnapshotGet(ctx context.Context, params PacksSnapshotGetParams, opts ...Option) (*PacksSnapshotGetOutput, error) {
@@ -238,8 +238,8 @@ func (s *PacksService) SnapshotGet(ctx context.Context, params PacksSnapshotGetP
 //
 // Runs the publication gate on a snapshot version and, if it passes, promotes it as the importable
 // (shared) version. The gate validates referential integrity, media/blobs, and offer affiliation, then
-// runs a dry-run hydration. Returns immediately with `validating`; poll `packs_snapshot_get` until
-// `valid`/`warnings` (publishable) or `blocked`. funnels4 only.
+// runs a dry-run hydration. Returns immediately with `validating`; poll [PacksService.SnapshotGet]
+// until `valid`/`warnings` (publishable) or `blocked`. funnels4 only.
 //
 // Calls POST /packs/snapshot-publish.
 func (s *PacksService) SnapshotPublish(ctx context.Context, body PacksSnapshotPublishInput, opts ...Option) (*PacksSnapshotPublishOutput, error) {
@@ -253,7 +253,7 @@ func (s *PacksService) SnapshotPublish(ctx context.Context, body PacksSnapshotPu
 // Update pack metadata.
 //
 // Updates pack metadata (name, description, category, level, thumbnail, active state, etc.). Does not
-// change pack contents — use `packs_append`/`packs_remove` for that.
+// change pack contents — use [PacksService.Append]/[PacksService.Remove] for that.
 //
 // Calls POST /packs/update.
 func (s *PacksService) Update(ctx context.Context, body PacksUpdateInput, opts ...Option) (*PacksUpdateOutput, error) {

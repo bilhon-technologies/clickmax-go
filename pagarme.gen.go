@@ -66,7 +66,7 @@ type PagarmePlansListOutputMeta struct {
 
 // PagarmePlansListParams holds the query parameters of [PagarmeService.PlansList].
 type PagarmePlansListParams struct {
-	// Integration id from `external_checkout_accounts_list` (`data[].id`).
+	// Integration id from [ExternalCheckoutAccountsService.List] (`data[].id`).
 	IncomingID string
 	Page       *int64
 	PerPage    *int64

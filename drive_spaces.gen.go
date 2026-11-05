@@ -21,8 +21,8 @@ type DriveSpacesService struct {
 // Google account, belong to the customer and use THEIR Google storage (`externalBytes`, outside the
 // Clickmax quota). There is no disconnect or convert-back in this API — treat it as a one-way switch
 // and confirm with the user. Requires space `owner` and a `connectionId` with `canWrite: true`
-// (`drive_spaces_google_connections`). Refusals: not a team space (422 `DRIVE_SPACE_NOT_TEAM`); the
-// space ever held anything, even items now in the trash (409 `DRIVE_SPACE_NOT_EMPTY`); already
+// ([DriveSpacesService.GoogleConnections]). Refusals: not a team space (422 `DRIVE_SPACE_NOT_TEAM`);
+// the space ever held anything, even items now in the trash (409 `DRIVE_SPACE_NOT_EMPTY`); already
 // connected (409 `DRIVE_SPACE_ALREADY_CONNECTED`); read-only consent (409
 // `DRIVE_GOOGLE_RECONSENT_REQUIRED`); connection not found (404 `DRIVE_GOOGLE_CONNECTION_NOT_FOUND`);
 // deployment without Google OAuth (422 `DRIVE_PROVIDER_UNAVAILABLE`). Consequences in a Google-backed
@@ -46,10 +46,10 @@ func (s *DriveSpacesService) ConnectGoogle(ctx context.Context, body DriveSpaces
 // `acid`, `cadmium`, `purplish`, `torch`, `neutral`). Allowed for any user whose workspace seat is not
 // read-only (viewer, guest, finance_only, attendant get 403 `DRIVE_FORBIDDEN`) — it does not require
 // admin. The caller becomes an explicit `owner` member and nobody else gets access until added with
-// `drive_spaces_members_add`. It starts in Clickmax storage; switch an empty space to Google Drive
-// with `drive_spaces_connect_google`. Space names are NOT unique and this call is not idempotent: list
-// spaces first and reuse an existing one instead of creating a duplicate. Personal and system spaces
-// cannot be created here.
+// [DriveSpacesService.MembersAdd]. It starts in Clickmax storage; switch an empty space to Google
+// Drive with [DriveSpacesService.ConnectGoogle]. Space names are NOT unique and this call is not
+// idempotent: list spaces first and reuse an existing one instead of creating a duplicate. Personal
+// and system spaces cannot be created here.
 //
 // Calls POST /drive-spaces/create.
 func (s *DriveSpacesService) Create(ctx context.Context, body DriveSpacesCreateInput, opts ...Option) (*DriveSpacesGetOutput, error) {
@@ -67,9 +67,9 @@ func (s *DriveSpacesService) Create(ctx context.Context, body DriveSpacesCreateI
 // spaces in this version and the contents are not offered as restorable items in the trash — treat
 // it as irreversible. The bytes still count toward the quota until the 30-day retention purge removes
 // them. Only a space `owner` (or the workspace owner) may do it; personal and system spaces cannot be
-// deleted (422 `DRIVE_SPACE_NOT_DELETABLE`). To remove just some content use `drive_trash_move`, which
-// is recoverable. Before calling, show the user the space name and its `fileCount` (from
-// `drive_spaces_get`) and get an explicit confirmation.
+// deleted (422 `DRIVE_SPACE_NOT_DELETABLE`). To remove just some content use [DriveTrashService.Move],
+// which is recoverable. Before calling, show the user the space name and its `fileCount` (from
+// [DriveSpacesService.Get]) and get an explicit confirmation.
 //
 // Calls DELETE /drive-spaces/delete.
 func (s *DriveSpacesService) Delete(ctx context.Context, body DriveSpacesDeleteInput, opts ...Option) (*DriveSpacesDeleteOutput, error) {
@@ -87,9 +87,9 @@ func (s *DriveSpacesService) Delete(ctx context.Context, body DriveSpacesDeleteI
 // edit/delete the space and manage members; editor = create folders, rename, move, share, trash;
 // commenter = comment; reader = read only. This is the way to read the caller's role (there is no
 // separate role tool). Also returns `connectionHealth` (null = Clickmax storage; `connected` |
-// `read_only` | `disconnected` for a Google-backed space — meaning in `drive_spaces_list`): check it
-// before creating folders in a Google-backed space. 404 both when the space does not exist and when
-// the caller cannot see it.
+// `read_only` | `disconnected` for a Google-backed space — meaning in [DriveSpacesService.List]):
+// check it before creating folders in a Google-backed space. 404 both when the space does not exist
+// and when the caller cannot see it.
 //
 // Calls GET /drive-spaces/get.
 func (s *DriveSpacesService) Get(ctx context.Context, params DriveSpacesGetParams, opts ...Option) (*DriveSpacesGetOutput, error) {
@@ -106,8 +106,8 @@ func (s *DriveSpacesService) Get(ctx context.Context, params DriveSpacesGetParam
 // `connectionId` and `canWrite` (false also when not connected). Use it to tell the three cases apart:
 // not connected (the user must connect Google Drive in the web app), connected read-only (must
 // reconnect granting write access), or writable — then `connectionId` can go into
-// `drive_spaces_connect_google`. It resolves the user through their attendant profile: owner/admin get
-// it created on demand (the only write this does), anyone else without one gets 422
+// [DriveSpacesService.ConnectGoogle]. It resolves the user through their attendant profile:
+// owner/admin get it created on demand (the only write this does), anyone else without one gets 422
 // `ATTENDANT_REQUIRED`.
 //
 // Calls POST /drive-spaces/google-capabilities.
@@ -122,12 +122,12 @@ func (s *DriveSpacesService) GoogleCapabilities(ctx context.Context, opts ...Opt
 // List Google Drive connections.
 //
 // Lists the workspace's active Google Drive connections that a space can be pointed at: `id` (the
-// `connectionId` for `drive_spaces_connect_google`), `attendantName` and `email` of whoever connected
-// their Google account, and `canWrite`. `canWrite: false` = the consent is read-only (it comes from
-// the meeting-recording integration): connecting a space to it fails with 409 until that person
-// reconnects with write access in the web app. Connections are created by the Google consent flow in
-// the web app, never by these tools. For the caller's own connection use
-// `drive_spaces_google_capabilities`.
+// `connectionId` for [DriveSpacesService.ConnectGoogle]), `attendantName` and `email` of whoever
+// connected their Google account, and `canWrite`. `canWrite: false` = the consent is read-only (it
+// comes from the meeting-recording integration): connecting a space to it fails with 409 until that
+// person reconnects with write access in the web app. Connections are created by the Google consent
+// flow in the web app, never by these tools. For the caller's own connection use
+// [DriveSpacesService.GoogleCapabilities].
 //
 // Calls GET /drive-spaces/google-connections.
 func (s *DriveSpacesService) GoogleConnections(ctx context.Context, opts ...Option) (*DriveSpacesGoogleConnectionsOutput, error) {
@@ -153,8 +153,8 @@ func (s *DriveSpacesService) GoogleConnections(ctx context.Context, opts ...Opti
 // or a file of the space broke with a revoked authorization after the last reconnection —
 // reconnecting Google in the web app clears it. It is computed from stored state only (listing never
 // calls Google), so a revocation shows up once something in the space touched Google. Spaces reached
-// only through a direct item share are not here — those items are in `drive_shares_with_me`. See
-// `drive_overview` for the space/role model.
+// only through a direct item share are not here — those items are in [DriveService.SharesWithMe].
+// See [DriveService.Overview] for the space/role model.
 //
 // Calls GET /drive-spaces/list.
 func (s *DriveSpacesService) List(ctx context.Context, opts ...Option) (*DriveSpacesListOutput, error) {
@@ -170,13 +170,13 @@ func (s *DriveSpacesService) List(ctx context.Context, opts ...Option) (*DriveSp
 // Gives a workspace person access to a whole TEAM space with `role` (`reader` | `commenter` | `editor` |
 // `owner`): they see everything inside it, including files added later. Requires space `owner`.
 // `userId` must be the workspace owner or an ACTIVE workspace member (422
-// `DRIVE_USER_NOT_IN_WORKSPACE`); find ids with `workspace_members_list` (`id`),
-// `drive_spaces_members_list` or the `personId` of `attendants_list` (the user id behind an
-// attendant). Adding someone already in the space UPDATES their role (upsert). Personal and system
+// `DRIVE_USER_NOT_IN_WORKSPACE`); find ids with [WorkspaceMembersService.List] (`id`),
+// [DriveSpacesService.MembersList] or the `personId` of [AttendantsService.List] (the user id behind
+// an attendant). Adding someone already in the space UPDATES their role (upsert). Personal and system
 // spaces have fixed membership (422 `DRIVE_SPACE_MEMBERS_FIXED`). The workspace seat still caps what
 // the person can do: a viewer, guest, finance_only or attendant seat stays `reader` whatever role is
 // granted here. Granting `owner` hands over control of the space (edit, delete, members) — confirm
-// with the user. To give access to a single folder or file instead, use `drive_shares_create`.
+// with the user. To give access to a single folder or file instead, use [DriveService.SharesCreate].
 //
 // Calls POST /drive-spaces/members-add.
 func (s *DriveSpacesService) MembersAdd(ctx context.Context, body DriveSpacesMembersAddInput, opts ...Option) (*DriveSpacesMembersAddOutput, error) {
@@ -193,8 +193,8 @@ func (s *DriveSpacesService) MembersAdd(ctx context.Context, body DriveSpacesMem
 // (id, name, email, imageUrl) and who invited them (`invitedBy`). NOT listed because they have no
 // member row: the workspace owner (implicit owner of every space), the person a personal space belongs
 // to, and the workspace-wide readers of 'Plataforma'. `user.id` is the `userId` that
-// `drive_spaces_members_update`, `drive_spaces_members_remove` and `drive_shares_create` take. Any
-// user who can view the space can list its members.
+// [DriveSpacesService.MembersUpdate], [DriveSpacesService.MembersRemove] and
+// [DriveService.SharesCreate] take. Any user who can view the space can list its members.
 //
 // Calls GET /drive-spaces/members-list.
 func (s *DriveSpacesService) MembersList(ctx context.Context, params DriveSpacesMembersListParams, opts ...Option) (*DriveSpacesMembersListOutput, error) {
@@ -228,9 +228,9 @@ func (s *DriveSpacesService) MembersRemove(ctx context.Context, body DriveSpaces
 // Sets a new `role` for an EXISTING member of a team space. Only a space `owner`. Promoting to `owner`
 // hands over full control (edit, delete, members); demoting the last explicit owner is refused (422
 // `DRIVE_SPACE_LAST_OWNER`) — promote another owner first. 404 `DRIVE_SPACE_MEMBER_NOT_FOUND` if the
-// person is not a member (use `drive_spaces_members_add` instead). Personal and system spaces have
-// fixed membership (422 `DRIVE_SPACE_MEMBERS_FIXED`). The seat cap still applies (see
-// `drive_spaces_members_add`).
+// person is not a member (use [DriveSpacesService.MembersAdd] instead). Personal and system spaces
+// have fixed membership (422 `DRIVE_SPACE_MEMBERS_FIXED`). The seat cap still applies (see
+// [DriveSpacesService.MembersAdd]).
 //
 // Calls POST /drive-spaces/members-update.
 func (s *DriveSpacesService) MembersUpdate(ctx context.Context, body DriveSpacesMembersUpdateInput, opts ...Option) (*DriveSpacesMembersAddOutput, error) {
@@ -261,7 +261,7 @@ func (s *DriveSpacesService) Update(ctx context.Context, body DriveSpacesUpdateI
 type DriveSpacesConnectGoogleInput struct {
 	// Id of an EMPTY team space.
 	SpaceID string `json:"spaceId"`
-	// Google Drive connection id from `drive_spaces_google_connections`.
+	// Google Drive connection id from [DriveSpacesService.GoogleConnections].
 	ConnectionID string `json:"connectionId"`
 }
 
@@ -336,7 +336,7 @@ const (
 
 // DriveSpacesDeleteInput is the request body of [DriveSpacesService.Delete].
 type DriveSpacesDeleteInput struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string `json:"spaceId"`
 }
 
@@ -434,7 +434,7 @@ const (
 
 // DriveSpacesGetParams holds the query parameters of [DriveSpacesService.Get].
 type DriveSpacesGetParams struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string
 }
 
@@ -561,7 +561,7 @@ const (
 
 // DriveSpacesMembersAddInput is the request body of [DriveSpacesService.MembersAdd].
 type DriveSpacesMembersAddInput struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string                         `json:"spaceId"`
 	UserID  string                         `json:"userId"`
 	Role    DriveSpacesMembersAddInputRole `json:"role"`
@@ -667,7 +667,7 @@ type DriveSpacesMembersListOutputDataItemUser struct {
 
 // DriveSpacesMembersListParams holds the query parameters of [DriveSpacesService.MembersList].
 type DriveSpacesMembersListParams struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string
 }
 
@@ -679,10 +679,10 @@ func (p DriveSpacesMembersListParams) values() url.Values {
 
 // DriveSpacesMembersRemoveInput is the request body of [DriveSpacesService.MembersRemove].
 type DriveSpacesMembersRemoveInput struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string `json:"spaceId"`
-	// User id of the person (`id` in `workspace_members_list`, `user.id` in
-	// `drive_spaces_members_list`, or `personId` in `attendants_list`).
+	// User id of the person (`id` in [WorkspaceMembersService.List], `user.id` in
+	// [DriveSpacesService.MembersList], or `personId` in [AttendantsService.List]).
 	UserID string `json:"userId"`
 }
 
@@ -693,10 +693,10 @@ type DriveSpacesMembersRemoveOutput struct {
 
 // DriveSpacesMembersUpdateInput is the request body of [DriveSpacesService.MembersUpdate].
 type DriveSpacesMembersUpdateInput struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string `json:"spaceId"`
-	// User id of the person (`id` in `workspace_members_list`, `user.id` in
-	// `drive_spaces_members_list`, or `personId` in `attendants_list`).
+	// User id of the person (`id` in [WorkspaceMembersService.List], `user.id` in
+	// [DriveSpacesService.MembersList], or `personId` in [AttendantsService.List]).
 	UserID string                            `json:"userId"`
 	Role   DriveSpacesMembersUpdateInputRole `json:"role"`
 }
@@ -714,7 +714,7 @@ const (
 
 // DriveSpacesUpdateInput is the request body of [DriveSpacesService.Update].
 type DriveSpacesUpdateInput struct {
-	// Space id, from `drive_spaces_list` or `drive_overview`.
+	// Space id, from [DriveSpacesService.List] or [DriveService.Overview].
 	SpaceID string                       `json:"spaceId"`
 	Name    *string                      `json:"name,omitzero"`
 	Color   *DriveSpacesUpdateInputColor `json:"color,omitzero"`

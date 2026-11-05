@@ -42,7 +42,7 @@ func (s *LeadsService) BulkJobsHistory(ctx context.Context, body LeadsBulkJobsHi
 // Get the status of a bulk contact job.
 //
 // Polls the background job returned as `jobId` by a contact bulk action that answered `mode: "async"`
-// (today `leads_bulk_member_access`), reporting `state`, `progress` (0-100), `affected` and
+// (today [LeadsService.BulkMemberAccess]), reporting `state`, `progress` (0-100), `affected` and
 // `failedReason`. A `jobId` from another workspace, or one that already expired from the queue,
 // returns not-found.
 //
@@ -62,21 +62,22 @@ func (s *LeadsService) BulkJobsStatus(ctx context.Context, params LeadsBulkJobsS
 // classroom is unlocked) and/or in a community with a role (`communityId` + `communityRole`: `member`,
 // `moderator`, `mentor`, `instructor`, or `owner` = the "Administrador" role). At least one
 // destination is required and `communityRole` is mandatory with `communityId`, otherwise 400;
-// classroom ids come from `classrooms_list`, community ids from `communities_list`. Contacts:
-// `leadIds` (non-empty) OR `allMatching: true` with a `listId` (a manual list, or the synced list of a
-// segment) or `filters` (the segment filter tree of `segments_preview_count`, ids may be short
-// labels); one of the two is required. Per contact: the e-mail is the member login, so a contact
-// WITHOUT e-mail is skipped and counted in `skippedWithoutEmail`; a new member is created (or a
-// disabled one reactivated); access time per course follows the classroom setting (a course with none
-// is lifetime), and courses locked for sale inside the classroom are NOT unlocked — they still
+// classroom ids come from [ClassroomsService.List], community ids from [CommunitiesService.List].
+// Contacts: `leadIds` (non-empty) OR `allMatching: true` with a `listId` (a manual list, or the synced
+// list of a segment) or `filters` (the segment filter tree of [SegmentsService.PreviewCount], ids may
+// be short labels); one of the two is required. Per contact: the e-mail is the member login, so a
+// contact WITHOUT e-mail is skipped and counted in `skippedWithoutEmail`; a new member is created (or
+// a disabled one reactivated); access time per course follows the classroom setting (a course with
+// none is lifetime), and courses locked for sale inside the classroom are NOT unlocked — they still
 // depend on the purchase. In the community, a new member gets the chosen role, an existing member is
 // moved to it EXCEPT administrators, who are never demoted, and blocked or muted members stay that
-// way. It never sends the access e-mail — use `member_users_bulk_send_access_link` for that — and
-// it never revokes access (removing is `member_users_remove_from_classroom`, per member). Running it
-// again for the same contacts and destinations duplicates nothing and does not restart access windows.
-// Answers `{ mode: "sync", affected, skippedWithoutEmail }` up to 200 contacts (`affected` counts
-// contacts left with the requested access, including those who already had it), or `{ mode: "async",
-// jobId }` above that — nothing has been granted until `leads_bulk_jobs_status` reports it finished.
+// way. It never sends the access e-mail — use [MemberUsersService.BulkSendAccessLink] for that —
+// and it never revokes access (removing is [MemberUsersService.RemoveFromClassroom], per member).
+// Running it again for the same contacts and destinations duplicates nothing and does not restart
+// access windows. Answers `{ mode: "sync", affected, skippedWithoutEmail }` up to 200 contacts
+// (`affected` counts contacts left with the requested access, including those who already had it), or
+// `{ mode: "async", jobId }` above that — nothing has been granted until
+// [LeadsService.BulkJobsStatus] reports it finished.
 //
 // Calls POST /leads/bulk-member-access.
 func (s *LeadsService) BulkMemberAccess(ctx context.Context, body LeadsBulkMemberAccessInput, opts ...Option) (*LeadsBulkMemberAccessOutput, error) {
@@ -136,9 +137,9 @@ func (s *LeadsService) CommonProducts(ctx context.Context, body LeadsCommonProdu
 // Use `sections` to fetch a subset, `since` (ISO date-time) to restrict temporal sections, and
 // `limitPerSection` (default 20, max 100) to control volume; temporal lists report `totalCount` (state
 // sections like tags, custom fields and opportunities return in full) so you can detect truncation and
-// drill into the dedicated tools (e.g. `lead_activities_list_by_lead`, `cards_list_by_lead`,
-// `leads_payments`) for full pagination. If the lead was merged, the response follows to the surviving
-// lead and sets `resolvedFrom`.
+// drill into the dedicated tools (e.g. [LeadActivitiesService.ListByLead], [CardsService.ListByLead],
+// [LeadsService.Payments]) for full pagination. If the lead was merged, the response follows to the
+// surviving lead and sets `resolvedFrom`.
 //
 // Calls POST /leads/context.
 func (s *LeadsService) Context(ctx context.Context, body LeadsContextInput, opts ...Option) (*LeadsContextOutput, error) {
@@ -164,8 +165,8 @@ func (s *LeadsService) ExistsByEmail(ctx context.Context, params LeadsExistsByEm
 
 // Get legacy lead-filter schema.
 //
-// Returns fields and operators for legacy lead-filter APIs. Do not use this schema for `leads_search`;
-// inspect that operation input schema instead.
+// Returns fields and operators for legacy lead-filter APIs. Do not use this schema for
+// [LeadsService.Search]; inspect that operation input schema instead.
 //
 // Calls GET /leads/filter-schema.
 func (s *LeadsService) FilterSchema(ctx context.Context, opts ...Option) (*LeadsFilterSchemaOutput, error) {
@@ -181,12 +182,12 @@ func (s *LeadsService) FilterSchema(ctx context.Context, opts ...Option) (*Leads
 // Fetches the full CRM detail view of one lead by `leadId`, INCLUDING that lead's custom-field values
 // (campos customizados) in the `customValues` array — each entry carries `displayName`, `groupName`,
 // `fieldType`, and the resolved `value`. This is the only leads tool that returns those values:
-// `leads_search` returns lite records WITHOUT them. So whenever a question can only be answered from a
-// specific lead's custom field, resolve the lead first (e.g. with `leads_search`) and then call this
-// tool to read its `customValues`. Use `custom_fields_list` to discover which custom fields exist in
-// the workspace (field definitions/metadata); use this tool to read the actual per-lead values. The
-// record also carries the e-mail verification state (`emailStatus`, `emailValidatedAt`,
-// `emailInvalidReason`) and `suspectedFraud` / `suspectedFraudReasons`.
+// [LeadsService.Search] returns lite records WITHOUT them. So whenever a question can only be answered
+// from a specific lead's custom field, resolve the lead first (e.g. with [LeadsService.Search]) and
+// then call this tool to read its `customValues`. Use [CustomFieldsService.List] to discover which
+// custom fields exist in the workspace (field definitions/metadata); use this tool to read the actual
+// per-lead values. The record also carries the e-mail verification state (`emailStatus`,
+// `emailValidatedAt`, `emailInvalidReason`) and `suspectedFraud` / `suspectedFraudReasons`.
 //
 // Calls GET /leads/get.
 func (s *LeadsService) Get(ctx context.Context, params LeadsGetParams, opts ...Option) (*LeadsGetOutput, error) {
@@ -267,22 +268,22 @@ func (s *LeadsService) PaymentsUtmAutocomplete(ctx context.Context, opts ...Opti
 //
 // Returns paginated leads using the newer unified segment-style filter model, with optional list
 // scoping and explicit AND/OR filter trees. `filters` is required; pass `[]` to search all leads.
-// `perPage` accepts 1-100. Use this operation input schema, not `leads_filter_schema`, for valid
+// `perPage` accepts 1-100. Use this operation input schema, not [LeadsService.FilterSchema], for valid
 // fields and operators. Results are LITE records and do NOT include custom-field values (campos
-// customizados); to read the custom fields of a specific lead, take its id and call `leads_get`, which
-// returns them in `customValues`. Each row also carries the e-mail verification result —
-// `emailStatus` (`pending` = not verified yet | `valid` | `invalid` | `risky` = deliverable but with
-// delivery risk such as disposable/catch-all/role address), `emailValidatedAt`, `emailInvalidReason`
-// — and the fraud signal `suspectedFraud` + `suspectedFraudReasons` (`email`, `document`). Both are
-// also filter fields: `{ field: "emailStatus", operator: "equals", negation: false, valueString:
-// "invalid" }` and `{ field: "suspectedFraud", operator: "equals", negation: false, valueBool: true
-// }`. `suspectedFraud` (card-testing suspicion, recomputed on every read, nothing is stored or
-// blocked) is true only when BOTH hold: the e-mail has no relation to the name (no word of 3+ letters
-// of the name appears before the `@`) AND the document is suspect (empty, `00000000000`, or not 11
-// digits (CPF) / 14 digits (CNPJ)). To verify an e-mail now use `leads_validate_email`. The 0–100
-// Temperature and the Score of a contact come back as `temperatureScore` and `leadScore` (null while
-// not computed); to learn WHY a contact has a given number use `temperature_lead_explain` /
-// `lead_score_lead_explain`.
+// customizados); to read the custom fields of a specific lead, take its id and call
+// [LeadsService.Get], which returns them in `customValues`. Each row also carries the e-mail
+// verification result — `emailStatus` (`pending` = not verified yet | `valid` | `invalid` | `risky`
+// = deliverable but with delivery risk such as disposable/catch-all/role address), `emailValidatedAt`,
+// `emailInvalidReason` — and the fraud signal `suspectedFraud` + `suspectedFraudReasons` (`email`,
+// `document`). Both are also filter fields: `{ field: "emailStatus", operator: "equals", negation:
+// false, valueString: "invalid" }` and `{ field: "suspectedFraud", operator: "equals", negation:
+// false, valueBool: true }`. `suspectedFraud` (card-testing suspicion, recomputed on every read,
+// nothing is stored or blocked) is true only when BOTH hold: the e-mail has no relation to the name
+// (no word of 3+ letters of the name appears before the `@`) AND the document is suspect (empty,
+// `00000000000`, or not 11 digits (CPF) / 14 digits (CNPJ)). To verify an e-mail now use
+// [LeadsService.ValidateEmail]. The 0–100 Temperature and the Score of a contact come back as
+// `temperatureScore` and `leadScore` (null while not computed); to learn WHY a contact has a given
+// number use [TemperatureService.LeadExplain] / [LeadScoreService.LeadExplain].
 //
 // Calls POST /leads/search.
 func (s *LeadsService) Search(ctx context.Context, body LeadsSearchInput, opts ...Option) (*LeadsSearchOutput, error) {
@@ -317,12 +318,13 @@ func (s *LeadsService) SubOrigins(ctx context.Context, opts ...Option) (*LeadsSu
 // base: it is limited to 10 calls per minute and, per lead, repeating within 1 hour returns the stored
 // verdict without querying again. The verdict and any failed attempt are recorded in the contact
 // history. No need to call it after editing a contact e-mail: the edit already resets the status to
-// `pending` and triggers a verification by itself. To only READ the current status use `leads_get` /
-// `leads_search`, which already carry `emailStatus`. Errors: not-found lead; bad request when the lead
-// has no e-mail; too-many-requests `EMAIL_VALIDATION_RECENTLY_ATTEMPTED` when the last attempt was
-// inconclusive and there is no verdict to return; bad-gateway `EMAIL_VALIDATION_PROVIDER_ERROR` /
-// `EMAIL_VALIDATION_INCONCLUSIVE` (the status stays `pending` and the automatic job retries later);
-// service-unavailable `EMAIL_VALIDATION_UNAVAILABLE` when no provider is configured; conflict
+// `pending` and triggers a verification by itself. To only READ the current status use
+// [LeadsService.Get] / [LeadsService.Search], which already carry `emailStatus`. Errors: not-found
+// lead; bad request when the lead has no e-mail; too-many-requests
+// `EMAIL_VALIDATION_RECENTLY_ATTEMPTED` when the last attempt was inconclusive and there is no verdict
+// to return; bad-gateway `EMAIL_VALIDATION_PROVIDER_ERROR` / `EMAIL_VALIDATION_INCONCLUSIVE` (the
+// status stays `pending` and the automatic job retries later); service-unavailable
+// `EMAIL_VALIDATION_UNAVAILABLE` when no provider is configured; conflict
 // `EMAIL_CHANGED_DURING_VALIDATION` when the e-mail was edited mid-check.
 //
 // Calls POST /leads/validate-email.
@@ -337,9 +339,9 @@ func (s *LeadsService) ValidateEmail(ctx context.Context, body LeadsValidateEmai
 // Get the Raio-X (x-ray) of one contact.
 //
 // The contact "Raio-X" card of the contacts list for one `leadId`: a compact, already-ranked briefing
-// — lighter than `leads_context`, use it to answer "is this contact ready to buy / how do I approach
-// them". `intent` = `level` (`high` | `medium` | `low` | `none`) over the last `windowDays` (30) plus
-// up to 3 `signals`, strongest first (`pending_order`, `checkout_started`,
+// — lighter than [LeadsService.Context], use it to answer "is this contact ready to buy / how do I
+// approach them". `intent` = `level` (`high` | `medium` | `low` | `none`) over the last `windowDays`
+// (30) plus up to 3 `signals`, strongest first (`pending_order`, `checkout_started`,
 // `conversation_purchase_intent`, `meeting_booked`, `quiz_completed`, `page_revisits`,
 // `form_submitted`, `email_clicked`; each with `label`, `count`, `amountCents`, `occurredAt`).
 // `purchases` = `ltvCents`, `avgTicketCents`, `totalPurchases`, `pendingCents` (Pix/boleto generated

@@ -16,7 +16,7 @@ type WebinarsService struct {
 // Turn on a webinar automation.
 //
 // Turns an automation back on: it starts messaging real registrants again on its trigger. `id` =
-// automation id from `webinars_automations_list`.
+// automation id from [WebinarsService.AutomationsList].
 //
 // Calls POST /webinars/automations-activate.
 func (s *WebinarsService) AutomationsActivate(ctx context.Context, body WebinarsAutomationsActivateInput, opts ...Option) (*WebinarsSessionsDeleteOutput, error) {
@@ -30,7 +30,7 @@ func (s *WebinarsService) AutomationsActivate(ctx context.Context, body Webinars
 // Delete a webinar automation.
 //
 // Removes the automation and archives its managed flow (execution history stays in Flows). To pause it
-// instead, use `webinars_automations_pause`.
+// instead, use [WebinarsService.AutomationsPause].
 //
 // Calls DELETE /webinars/automations-delete.
 func (s *WebinarsService) AutomationsDelete(ctx context.Context, body WebinarsAutomationsDeleteInput, opts ...Option) (*WebinarsSessionsDeleteOutput, error) {
@@ -58,7 +58,7 @@ func (s *WebinarsService) AutomationsList(ctx context.Context, params WebinarsAu
 // Pause a webinar automation.
 //
 // Stops an automation from sending, keeping its configuration and history. `id` = automation id from
-// `webinars_automations_list`.
+// [WebinarsService.AutomationsList].
 //
 // Calls POST /webinars/automations-pause.
 func (s *WebinarsService) AutomationsPause(ctx context.Context, body WebinarsAutomationsPauseInput, opts ...Option) (*WebinarsSessionsDeleteOutput, error) {
@@ -99,8 +99,8 @@ func (s *WebinarsService) CheckSlug(ctx context.Context, params WebinarsCheckSlu
 
 // Create a webinar.
 //
-// Creates a `draft` webinar. Then set the schedule (`webinars_schedule_upsert`) or sessions, offers
-// and the room. The video is chosen in the app; publishing is `webinars_set_status`.
+// Creates a `draft` webinar. Then set the schedule ([WebinarsService.ScheduleUpsert]) or sessions,
+// offers and the room. The video is chosen in the app; publishing is [WebinarsService.SetStatus].
 //
 // Calls POST /webinars/create.
 func (s *WebinarsService) Create(ctx context.Context, body WebinarsCreateInput, opts ...Option) (*WebinarsCreateOutput, error) {
@@ -127,7 +127,7 @@ func (s *WebinarsService) Get(ctx context.Context, params WebinarsGetParams, opt
 
 // Create a webinar host.
 //
-// Creates a presenter profile shown in the room. Link it to a webinar with `webinars_update`
+// Creates a presenter profile shown in the room. Link it to a webinar with [WebinarsService.Update]
 // (`hostId`).
 //
 // Calls POST /webinars/hosts-create.
@@ -281,7 +281,7 @@ func (s *WebinarsService) RoomUpdate(ctx context.Context, body WebinarsRoomUpdat
 
 // Get a webinar schedule.
 //
-// How sessions are generated: `scheduled` (fixed dates — see `webinars_sessions_list`),
+// How sessions are generated: `scheduled` (fixed dates — see [WebinarsService.SessionsList]),
 // `just_in_time` (one session per registrant after `jitDelayMinutes`) or `checkout_triggered` (a
 // session after a purchase). `null` = not set yet.
 //
@@ -296,9 +296,9 @@ func (s *WebinarsService) ScheduleGet(ctx context.Context, params WebinarsSchedu
 
 // Set a webinar schedule.
 //
-// Sets the schedule mode. For `scheduled`, create the dates with `webinars_sessions_create` or
-// `webinars_sessions_create_series`. `checkoutTriggerProductId` (from `products_list`) is required for
-// `checkout_triggered`.
+// Sets the schedule mode. For `scheduled`, create the dates with [WebinarsService.SessionsCreate] or
+// [WebinarsService.SessionsCreateSeries]. `checkoutTriggerProductId` (from [ProductsService.List]) is
+// required for `checkout_triggered`.
 //
 // Calls POST /webinars/schedule-upsert.
 func (s *WebinarsService) ScheduleUpsert(ctx context.Context, body WebinarsScheduleUpsertInput, opts ...Option) (*WebinarsScheduleUpsertOutput, error) {
@@ -397,7 +397,7 @@ func (s *WebinarsService) SetStatus(ctx context.Context, body WebinarsSetStatusI
 //
 // Edits titles, description, slug, language, presenter, host, timezone, late-join policy (`allow`,
 // `block_after_offer`, `redirect_replay`), easy access (no-login entry) and video sync. Status →
-// `webinars_set_status`.
+// [WebinarsService.SetStatus].
 //
 // Calls POST /webinars/update.
 func (s *WebinarsService) Update(ctx context.Context, body WebinarsUpdateInput, opts ...Option) (*WebinarsCreateOutput, error) {
@@ -457,7 +457,7 @@ type WebinarsAutomationsPauseInput struct {
 // WebinarsAutomationsUpsertInput is the request body of [WebinarsService.AutomationsUpsert].
 type WebinarsAutomationsUpsertInput struct {
 	ID string `json:"id"`
-	// From `webinars_automations_list`.
+	// From [WebinarsService.AutomationsList].
 	RecipeKey *string                              `json:"recipeKey,omitzero"`
 	Config    WebinarsAutomationsUpsertInputConfig `json:"config"`
 }
@@ -475,14 +475,14 @@ type WebinarsAutomationsUpsertInputConfig struct {
 	Title         *string                                            `json:"title,omitzero"`
 	Message       *string                                            `json:"message,omitzero"`
 	EmailSubject  *string                                            `json:"emailSubject,omitzero"`
-	// From `email_sender_signatures_list`.
+	// From [EmailSenderSignaturesService.List].
 	EmailSenderSignatureID *string `json:"emailSenderSignatureId,omitzero"`
 	EmailHTML              *bool   `json:"emailHtml,omitzero"`
-	// From `gupshup_templates_list`.
+	// From [GupshupTemplatesService.List].
 	GupshupTemplateID *string  `json:"gupshupTemplateId,omitzero"`
 	GupshupAppID      *string  `json:"gupshupAppId,omitzero"`
 	TemplateParams    []string `json:"templateParams,omitzero"`
-	// From `tags_list`, for `channel: tag`.
+	// From [TagsService.List], for `channel: tag`.
 	TagIDs []string `json:"tagIds,omitzero"`
 }
 
@@ -559,7 +559,7 @@ type WebinarsCreateInput struct {
 	// Title viewers see.
 	PublicTitle string  `json:"publicTitle"`
 	Description *string `json:"description,omitzero"`
-	// Public URL path; check it with `webinars_check_slug`.
+	// Public URL path; check it with [WebinarsService.CheckSlug].
 	Slug *string `json:"slug,omitzero"`
 	// e.g. pt-BR, en, es.
 	Language           *string                                `json:"language,omitzero"`
@@ -568,7 +568,7 @@ type WebinarsCreateInput struct {
 	PresenterPhotoCrop *WebinarsCreateInputPresenterPhotoCrop `json:"presenterPhotoCrop,omitzero"`
 	// IANA zone, e.g. America/Sao_Paulo.
 	Timezone *string `json:"timezone,omitzero"`
-	// Host from `webinars_hosts_list`.
+	// Host from [WebinarsService.HostsList].
 	HostID *string `json:"hostId,omitzero"`
 }
 
@@ -1513,7 +1513,7 @@ type WebinarsUpdateInput struct {
 	// Title viewers see.
 	PublicTitle *string          `json:"publicTitle,omitzero"`
 	Description Nullable[string] `json:"description,omitzero"`
-	// Public URL path; check it with `webinars_check_slug`.
+	// Public URL path; check it with [WebinarsService.CheckSlug].
 	Slug *string `json:"slug,omitzero"`
 	// e.g. pt-BR, en, es.
 	Language           *string                                `json:"language,omitzero"`
@@ -1522,7 +1522,7 @@ type WebinarsUpdateInput struct {
 	PresenterPhotoCrop *WebinarsUpdateInputPresenterPhotoCrop `json:"presenterPhotoCrop,omitzero"`
 	// IANA zone, e.g. America/Sao_Paulo.
 	Timezone *string `json:"timezone,omitzero"`
-	// Host from `webinars_hosts_list`.
+	// Host from [WebinarsService.HostsList].
 	HostID            Nullable[string]                   `json:"hostId,omitzero"`
 	LateJoinPolicy    *WebinarsUpdateInputLateJoinPolicy `json:"lateJoinPolicy,omitzero"`
 	EasyAccessEnabled *bool                              `json:"easyAccessEnabled,omitzero"`

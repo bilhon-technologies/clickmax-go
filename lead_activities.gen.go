@@ -16,11 +16,12 @@ type LeadActivitiesService struct {
 // Get the activity summary of one actor.
 //
 // Returns the productivity snapshot of ONE actor by `personId` (the user id behind an attendant —
-// read it from the `personId` of `attendants_list`, not the attendant `id`): their attendant record,
-// activity totals (`total`, `last7Days`, `last30Days`), a closed 30-day daily `timeseries`,
+// read it from the `personId` of [AttendantsService.List], not the attendant `id`): their attendant
+// record, activity totals (`total`, `last7Days`, `last30Days`), a closed 30-day daily `timeseries`,
 // `topEventTypes`, `peakHour`, `lastActivityAt`, their opportunity book (`open`, `wonLast30Days`,
-// `wonValueLast30Days` in CENTS) and a `recent` event list. Visibility mirrors `attendants_list`: a
-// plain attendant can only read its OWN summary and gets 403 for anyone else.
+// `wonValueLast30Days` in CENTS) and a `recent` event list. Visibility mirrors
+// [AttendantsService.List]: a plain attendant can only read its OWN summary and gets 403 for anyone
+// else.
 //
 // Calls GET /lead-activities/actor-summary.
 func (s *LeadActivitiesService) ActorSummary(ctx context.Context, params LeadActivitiesActorSummaryParams, opts ...Option) (*LeadActivitiesActorSummaryOutput, error) {
@@ -95,7 +96,8 @@ func (s *LeadActivitiesService) MetricsByLead(ctx context.Context, params LeadAc
 // that shows up in the card timeline. `type` is `call` | `whatsapp` | `meeting` | `task` | `note` and
 // `description` is required (1–5000 chars); optional `scheduledAt` back- or forward-dates the entry.
 // The activity is automatically attributed to the card primary lead and primary company. This only
-// RECORDS what happened; to schedule work someone still owes, create a task with `tasks_create`.
+// RECORDS what happened; to schedule work someone still owes, create a task with
+// [TasksService.Create].
 //
 // Calls POST /lead-activities/opportunity-create.
 func (s *LeadActivitiesService) OpportunityCreate(ctx context.Context, body LeadActivitiesOpportunityCreateInput, opts ...Option) (*LeadActivitiesOpportunityCreateOutput, error) {
@@ -111,8 +113,8 @@ func (s *LeadActivitiesService) OpportunityCreate(ctx context.Context, body Lead
 // Returns the paginated activity timeline of one opportunity-card `cardId` (CRM kanban). By default
 // the feed also folds in the activities of the CONTACTS linked to the card — set
 // `includeContactActivities: false` for card-only events. Narrow with `categories`, `eventName` and a
-// `startDate`/`endDate` range. Discover a `cardId` with `cards_list`, `opportunities_query` or
-// `cards_list_by_lead`.
+// `startDate`/`endDate` range. Discover a `cardId` with [CardsService.List],
+// [OpportunitiesService.Query] or [CardsService.ListByLead].
 //
 // Calls POST /lead-activities/opportunity-list.
 func (s *LeadActivitiesService) OpportunityList(ctx context.Context, body LeadActivitiesOpportunityListInput, opts ...Option) (*LeadActivitiesOpportunityListOutput, error) {
@@ -181,8 +183,8 @@ func (s *LeadActivitiesService) SystemByLead(ctx context.Context, body LeadActiv
 // List system activities (workspace).
 //
 // Returns paginated raw system activity events for the workspace. This is the broader cousin of
-// `tags_system_activities` (which is narrower, only tag-marker events). Best foundation for "leads who
-// did event X" and "did X but not Y" cohort questions.
+// [TagsService.SystemActivities] (which is narrower, only tag-marker events). Best foundation for
+// "leads who did event X" and "did X but not Y" cohort questions.
 //
 // Calls POST /lead-activities/system-list.
 func (s *LeadActivitiesService) SystemList(ctx context.Context, body AnalyticsRecentActivitiesInput, opts ...Option) (*LeadActivitiesSystemListOutput, error) {

@@ -18,7 +18,7 @@ type StageAutomationsService struct {
 // Creates an automation that moves a card from `fromStageId` to `targetStageId` when any of its
 // `triggers` fires, over a CLOSED vocabulary of 7 legacy events. It does NOT cover meetings,
 // scheduling, forms, tags or anything else in the flows catalogue — for any of those, and for every
-// event the user names that is not in the list below, use `managed_flows_upsert` with `type:
+// event the user names that is not in the list below, use [ManagedFlowsService.Upsert] with `type:
 // "gatilho_passagem"` instead. At least one trigger is required; `eventType` is one of
 // `pix_generated`, `boleto_generated`, `cart_abandonment`, `purchase_completed`, `email_opened`,
 // `whatsapp_reply`, `lead_field_updated`, with an optional `config` narrowing it (`offerIds`,
@@ -38,9 +38,9 @@ func (s *StageAutomationsService) Create(ctx context.Context, body StageAutomati
 
 // Delete a stage automation.
 //
-// Deletes a stage automation and its triggers. Destructive; prefer `stage_automations_update` with
-// `isActive: false` to pause it. The endpoint returns no body — this tool answers `{ ok: true }` on
-// success.
+// Deletes a stage automation and its triggers. Destructive; prefer [StageAutomationsService.Update]
+// with `isActive: false` to pause it. The endpoint returns no body — this tool answers `{ ok: true
+// }` on success.
 //
 // Calls DELETE /stage-automations/delete.
 func (s *StageAutomationsService) Delete(ctx context.Context, body StageAutomationsDeleteInput, opts ...Option) (*StageAutomationsDeleteOutput, error) {
@@ -83,8 +83,8 @@ func (s *StageAutomationsService) List(ctx context.Context, params StageAutomati
 //
 // Replaces the FULL trigger list of one automation — send every trigger you want to keep, at least
 // one. Each entry is `{ eventType, config? }` with the same closed 7-event vocabulary as
-// `stage_automations_create`; an event outside it belongs in a `managed_flows_upsert` with `type:
-// "gatilho_passagem"`, not here. Triggers omitted from the list are removed.
+// [StageAutomationsService.Create]; an event outside it belongs in a [ManagedFlowsService.Upsert] with
+// `type: "gatilho_passagem"`, not here. Triggers omitted from the list are removed.
 //
 // Calls POST /stage-automations/triggers-replace.
 func (s *StageAutomationsService) TriggersReplace(ctx context.Context, body StageAutomationsTriggersReplaceInput, opts ...Option) (*StageAutomationsTriggersReplaceOutput, error) {

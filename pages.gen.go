@@ -31,19 +31,19 @@ func (s *PagesService) Clone(ctx context.Context, body PagesCloneInput, opts ...
 //
 // Creates an internal builder page HOSTED ON CLICKMAX (a Clickmax subdomain, or a custom domain the
 // user connected inside Clickmax). By default the page is blank — to ship it with real content
-// (copy, sections, a working capture form) use `pages_import_html` instead of, or right after, this
-// tool. To start from a Clickmax design pass `templateId` (resolve it with `pages_templates_list`) —
-// the template content is copied into the new page. To create a page WITH A CHECKOUT, pass `type:
-// "checkout"` + `templateId` (a checkout template) + `offerId`: the backend copies the template and
-// automatically binds that offer into the page checkout block(s) — no manual content editing needed.
-// Pass `funnelId` to attach the page to a funnel; then link it to a funnel node with
-// `funnels_nodes_connect_page`. CLASSIFICATION RULE: use this ONLY for pages Clickmax will build/host.
-// If the page ALREADY EXISTS at a public URL on a domain that is NOT connected in Clickmax (Framer,
-// Webflow, the user's own site, any third-party domain), you MUST use `pages_create_external` —
-// never this tool: a builder page for a URL you did not build is empty and breaks the capture-script
-// setup. When registering an existing page and you have its live URL, pass it as `sourceUrl`: the
-// server verifies the host is Clickmax-hosted/connected and rejects it otherwise, telling you to
-// switch to `pages_create_external`.
+// (copy, sections, a working capture form) use [PagesService.ImportHTML] instead of, or right after,
+// this tool. To start from a Clickmax design pass `templateId` (resolve it with
+// [PagesService.TemplatesList]) — the template content is copied into the new page. To create a page
+// WITH A CHECKOUT, pass `type: "checkout"` + `templateId` (a checkout template) + `offerId`: the
+// backend copies the template and automatically binds that offer into the page checkout block(s) —
+// no manual content editing needed. Pass `funnelId` to attach the page to a funnel; then link it to a
+// funnel node with [FunnelsService.NodesConnectPage]. CLASSIFICATION RULE: use this ONLY for pages
+// Clickmax will build/host. If the page ALREADY EXISTS at a public URL on a domain that is NOT
+// connected in Clickmax (Framer, Webflow, the user's own site, any third-party domain), you MUST use
+// [PagesService.CreateExternal] — never this tool: a builder page for a URL you did not build is
+// empty and breaks the capture-script setup. When registering an existing page and you have its live
+// URL, pass it as `sourceUrl`: the server verifies the host is Clickmax-hosted/connected and rejects
+// it otherwise, telling you to switch to [PagesService.CreateExternal].
 //
 // Calls POST /pages/create.
 func (s *PagesService) Create(ctx context.Context, body PagesCreateInput, opts ...Option) (*PagesCreateOutput, error) {
@@ -59,9 +59,10 @@ func (s *PagesService) Create(ctx context.Context, body PagesCreateInput, opts .
 // Registers a third-party page URL in editor3 as an external page. This is the REQUIRED flow for any
 // page that already lives at a URL on a domain NOT connected in Clickmax (Framer/Webflow/custom
 // HTML/the user's own site) — such pages use the Clickmax Browser SDK, not the visual builder.
-// Prefer this over `pages_create` whenever the user gives you an existing page URL you did not build
-// in Clickmax. After creating it, link it to a funnel node with `funnels_nodes_connect_page`
-// (auto-wires the redirect) and hand the install snippets from `pages_get_external_script`.
+// Prefer this over [PagesService.Create] whenever the user gives you an existing page URL you did not
+// build in Clickmax. After creating it, link it to a funnel node with
+// [FunnelsService.NodesConnectPage] (auto-wires the redirect) and hand the install snippets from
+// [PagesService.GetExternalScript].
 //
 // Calls POST /pages/create-external.
 func (s *PagesService) CreateExternal(ctx context.Context, body PagesCreateExternalInput, opts ...Option) (*PagesCreateExternalOutput, error) {
@@ -131,7 +132,7 @@ func (s *PagesService) Get(ctx context.Context, params PagesGetParams, opts ...O
 // (`editorVersion: external`), with projectSlug/pagePath injected — the user pastes it before
 // `</head>`. Only the head snippet is tool-generated (it embeds a minified loader). The lead-capture +
 // redirect snippets, install steps, and docs are static — see the `clickmax-external-pages` skill;
-// page metadata is in `pages_get`.
+// page metadata is in [PagesService.Get].
 //
 // Calls GET /pages/get-external-script.
 func (s *PagesService) GetExternalScript(ctx context.Context, params PagesGetExternalScriptParams, opts ...Option) (*PagesGetExternalScriptOutput, error) {
@@ -169,12 +170,12 @@ func (s *PagesService) ImagesSearch(ctx context.Context, params PagesImagesSearc
 // Create or replace a builder page from HTML.
 //
 // Creates or replaces a Clickmax-hosted builder page from a full HTML document. Prefer
-// `pages_import_html_draft` for generated pages. When `manifest` is supplied, this legacy-compatible
-// endpoint enforces the same recipe capabilities and required sections as `pages_validate_html`;
-// omitting it skips artifact-specific checks. `publish` defaults to `true`, and external MCP clients
-// are responsible for their own confirmation policy. Every recipe section must be marked with
-// data-cx-section="<section-id>"; use each id from requiredSections at least once so preview and
-// import can verify the page structure.
+// [PagesService.ImportHTMLDraft] for generated pages. When `manifest` is supplied, this
+// legacy-compatible endpoint enforces the same recipe capabilities and required sections as
+// [PagesService.ValidateHTML]; omitting it skips artifact-specific checks. `publish` defaults to
+// `true`, and external MCP clients are responsible for their own confirmation policy. Every recipe
+// section must be marked with data-cx-section="<section-id>"; use each id from requiredSections at
+// least once so preview and import can verify the page structure.
 //
 // LEAD CAPTURE CONTRACT (rejected as `INVALID_LEAD_FORM` otherwise): Lead-capture forms must be <form
 // data-cx-ingest-form id="..."> containing exactly one <button type="submit">, inputs limited to types
@@ -194,24 +195,25 @@ func (s *PagesService) ImagesSearch(ctx context.Context, params PagesImagesSearc
 // price, currency, interval, optionalItems? }` or `{ provider: 'pagarme', incomingId, pagarmeOffer }`
 // (Pagar.me transparent checkout: `pagarmeOffer.kind` `one_time` with `product { code, name, amount }`
 // in CENTS defined from what the user tells you — there is no Pagar.me product catalog — plus
-// optional `bumps` (max 5), or `subscription` with `plan { id, name }` from `pagarme_plans_list`;
-// optional `paymentMethods` (credit_card|pix|boleto), `maxInstallments` (1–12),
-// `statementDescriptor` (≤13), `buttonLabel`, `accentColor`) or `{ provider: 'pagbank', incomingId,
-// pagbankOffer }` (PagBank transparent checkout, one-time only: `pagbankOffer.product { code, name,
-// amount }` in CENTS defined from what the user tells you — there is no PagBank product catalog and
-// no subscription — plus optional `bumps` (max 5), `paymentMethods` (credit_card|pix|boleto),
-// `maxInstallments` (1–12), `statementDescriptor` (≤17), `buttonLabel`, `accentColor`). Start with
-// `external_checkout_accounts_list` (if it returns `setup`, stop and relay its instructions — no
-// integration means no page), then `whop_products_list`/`whop_plans_list`,
-// `hotmart_products_list`/`hotmart_offers_list` or `stripe_prices_list` / `pagarme_plans_list`; copy
-// price/currency/labels from those rows. Optional: Whop `theme` (light|dark), `locale` (pt|en|es…);
-// Hotmart `country` (BR, US, ES…), `hideBillet`/`hidePix`/`hidePayPal`/`hideCoupon`, `split`
-// (1–12); Stripe `optionalItems` (order bumps `[{ id, label, price, currency, interval }]`, max 10,
-// same currency/recurrence), `promotionCodes`, `collectPhone`. An account inactive, from another
-// workspace, or (Stripe) missing its keys is rejected; a Pagar.me account missing sk_/pk_/webhook
-// password (or a PagBank account missing its API token) is accepted with a warning but does not sell
-// until completed. Whop, Stripe, Pagar.me and PagBank tie each sale to the page when the page is
-// published.
+// optional `bumps` (max 5), or `subscription` with `plan { id, name }` from
+// [PagarmeService.PlansList]; optional `paymentMethods` (credit_card|pix|boleto), `maxInstallments`
+// (1–12), `statementDescriptor` (≤13), `buttonLabel`, `accentColor`) or `{ provider: 'pagbank',
+// incomingId, pagbankOffer }` (PagBank transparent checkout, one-time only: `pagbankOffer.product {
+// code, name, amount }` in CENTS defined from what the user tells you — there is no PagBank product
+// catalog and no subscription — plus optional `bumps` (max 5), `paymentMethods`
+// (credit_card|pix|boleto), `maxInstallments` (1–12), `statementDescriptor` (≤17), `buttonLabel`,
+// `accentColor`). Start with [ExternalCheckoutAccountsService.List] (if it returns `setup`, stop and
+// relay its instructions — no integration means no page), then
+// [WhopService.ProductsList]/[WhopService.PlansList],
+// [HotmartService.ProductsList]/[HotmartService.OffersList] or [StripeService.PricesList] /
+// [PagarmeService.PlansList]; copy price/currency/labels from those rows. Optional: Whop `theme`
+// (light|dark), `locale` (pt|en|es…); Hotmart `country` (BR, US, ES…),
+// `hideBillet`/`hidePix`/`hidePayPal`/`hideCoupon`, `split` (1–12); Stripe `optionalItems` (order
+// bumps `[{ id, label, price, currency, interval }]`, max 10, same currency/recurrence),
+// `promotionCodes`, `collectPhone`. An account inactive, from another workspace, or (Stripe) missing
+// its keys is rejected; a Pagar.me account missing sk_/pk_/webhook password (or a PagBank account
+// missing its API token) is accepted with a warning but does not sell until completed. Whop, Stripe,
+// Pagar.me and PagBank tie each sale to the page when the page is published.
 //
 // MOTION CONTRACT: Optional entrance motion uses
 // data-cx-motion="fade-in|fade-up|slide-left|slide-right|scale-in"; data-cx-motion-duration and
@@ -291,43 +293,44 @@ func (s *PagesService) ImportHTML(ctx context.Context, body PagesImportHTMLInput
 // Create or replace a draft page from HTML.
 //
 // Draft-safe generated-page import. Requires the SAME `manifest` used by
-// `pages_generation_context_get` and `pages_validate_html`, enforces its capabilities and required
-// sections, and always forces `publish: false`. Send EXACTLY ONE of `pageId` or `placement` (both
-// together is rejected); to inherit a funnel style on a re-import use `pageId` + `funnelId`. Every
-// recipe section must be marked with data-cx-section="<section-id>"; use each id from requiredSections
-// at least once so preview and import can verify the page structure. Lead-capture forms must be <form
-// data-cx-ingest-form id="..."> containing exactly one <button type="submit">, inputs limited to types
-// checkbox, email, hidden, tel, text (single-select only), no action/method/formaction attributes, and
-// at least one email or telephone field marked with data-cx-field="email" | "telephone" (or
-// name="email" | "telephone"). Other supported field keys: data-cx-field="name" | "lgpdApproved"; any
-// other key becomes a CRM custom field. Checkout marker: `<div data-cx-checkout></div>` + `offerId`.
-// External checkout: to sell through the workspace's Whop, Hotmart, Stripe, Pagar.me or PagBank
-// account instead of a Clickmax offer, keep the same `<div data-cx-checkout></div>` marker and pass
-// `externalCheckout` INSTEAD of `offerId` (never both): `{ provider: 'whop', incomingId, productId,
-// planId, planLabel, price, currency }`, `{ provider: 'hotmart', incomingId, productId, productLabel,
-// offerCode, offerLabel, price, currency }` or `{ provider: 'stripe', incomingId, priceId, priceLabel,
-// price, currency, interval, optionalItems? }` or `{ provider: 'pagarme', incomingId, pagarmeOffer }`
-// (Pagar.me transparent checkout: `pagarmeOffer.kind` `one_time` with `product { code, name, amount }`
-// in CENTS defined from what the user tells you — there is no Pagar.me product catalog — plus
-// optional `bumps` (max 5), or `subscription` with `plan { id, name }` from `pagarme_plans_list`;
-// optional `paymentMethods` (credit_card|pix|boleto), `maxInstallments` (1–12),
-// `statementDescriptor` (≤13), `buttonLabel`, `accentColor`) or `{ provider: 'pagbank', incomingId,
-// pagbankOffer }` (PagBank transparent checkout, one-time only: `pagbankOffer.product { code, name,
-// amount }` in CENTS defined from what the user tells you — there is no PagBank product catalog and
-// no subscription — plus optional `bumps` (max 5), `paymentMethods` (credit_card|pix|boleto),
-// `maxInstallments` (1–12), `statementDescriptor` (≤17), `buttonLabel`, `accentColor`). Start with
-// `external_checkout_accounts_list` (if it returns `setup`, stop and relay its instructions — no
-// integration means no page), then `whop_products_list`/`whop_plans_list`,
-// `hotmart_products_list`/`hotmart_offers_list` or `stripe_prices_list` / `pagarme_plans_list`; copy
-// price/currency/labels from those rows. Optional: Whop `theme` (light|dark), `locale` (pt|en|es…);
-// Hotmart `country` (BR, US, ES…), `hideBillet`/`hidePix`/`hidePayPal`/`hideCoupon`, `split`
-// (1–12); Stripe `optionalItems` (order bumps `[{ id, label, price, currency, interval }]`, max 10,
-// same currency/recurrence), `promotionCodes`, `collectPhone`. An account inactive, from another
-// workspace, or (Stripe) missing its keys is rejected; a Pagar.me account missing sk_/pk_/webhook
-// password (or a PagBank account missing its API token) is accepted with a warning but does not sell
-// until completed. Whop, Stripe, Pagar.me and PagBank tie each sale to the page when the page is
-// published. Optional entrance motion uses
-// data-cx-motion="fade-in|fade-up|slide-left|slide-right|scale-in"; data-cx-motion-duration and
+// [PagesService.GenerationContextGet] and [PagesService.ValidateHTML], enforces its capabilities and
+// required sections, and always forces `publish: false`. Send EXACTLY ONE of `pageId` or `placement`
+// (both together is rejected); to inherit a funnel style on a re-import use `pageId` + `funnelId`.
+// Every recipe section must be marked with data-cx-section="<section-id>"; use each id from
+// requiredSections at least once so preview and import can verify the page structure. Lead-capture
+// forms must be <form data-cx-ingest-form id="..."> containing exactly one <button type="submit">,
+// inputs limited to types checkbox, email, hidden, tel, text (single-select only), no
+// action/method/formaction attributes, and at least one email or telephone field marked with
+// data-cx-field="email" | "telephone" (or name="email" | "telephone"). Other supported field keys:
+// data-cx-field="name" | "lgpdApproved"; any other key becomes a CRM custom field. Checkout marker:
+// `<div data-cx-checkout></div>` + `offerId`. External checkout: to sell through the workspace's Whop,
+// Hotmart, Stripe, Pagar.me or PagBank account instead of a Clickmax offer, keep the same `<div
+// data-cx-checkout></div>` marker and pass `externalCheckout` INSTEAD of `offerId` (never both): `{
+// provider: 'whop', incomingId, productId, planId, planLabel, price, currency }`, `{ provider:
+// 'hotmart', incomingId, productId, productLabel, offerCode, offerLabel, price, currency }` or `{
+// provider: 'stripe', incomingId, priceId, priceLabel, price, currency, interval, optionalItems? }` or
+// `{ provider: 'pagarme', incomingId, pagarmeOffer }` (Pagar.me transparent checkout:
+// `pagarmeOffer.kind` `one_time` with `product { code, name, amount }` in CENTS defined from what the
+// user tells you — there is no Pagar.me product catalog — plus optional `bumps` (max 5), or
+// `subscription` with `plan { id, name }` from [PagarmeService.PlansList]; optional `paymentMethods`
+// (credit_card|pix|boleto), `maxInstallments` (1–12), `statementDescriptor` (≤13), `buttonLabel`,
+// `accentColor`) or `{ provider: 'pagbank', incomingId, pagbankOffer }` (PagBank transparent checkout,
+// one-time only: `pagbankOffer.product { code, name, amount }` in CENTS defined from what the user
+// tells you — there is no PagBank product catalog and no subscription — plus optional `bumps` (max 5),
+// `paymentMethods` (credit_card|pix|boleto), `maxInstallments` (1–12), `statementDescriptor`
+// (≤17), `buttonLabel`, `accentColor`). Start with [ExternalCheckoutAccountsService.List] (if it
+// returns `setup`, stop and relay its instructions — no integration means no page), then
+// [WhopService.ProductsList]/[WhopService.PlansList],
+// [HotmartService.ProductsList]/[HotmartService.OffersList] or [StripeService.PricesList] /
+// [PagarmeService.PlansList]; copy price/currency/labels from those rows. Optional: Whop `theme`
+// (light|dark), `locale` (pt|en|es…); Hotmart `country` (BR, US, ES…),
+// `hideBillet`/`hidePix`/`hidePayPal`/`hideCoupon`, `split` (1–12); Stripe `optionalItems` (order
+// bumps `[{ id, label, price, currency, interval }]`, max 10, same currency/recurrence),
+// `promotionCodes`, `collectPhone`. An account inactive, from another workspace, or (Stripe) missing
+// its keys is rejected; a Pagar.me account missing sk_/pk_/webhook password (or a PagBank account
+// missing its API token) is accepted with a warning but does not sell until completed. Whop, Stripe,
+// Pagar.me and PagBank tie each sale to the page when the page is published. Optional entrance motion
+// uses data-cx-motion="fade-in|fade-up|slide-left|slide-right|scale-in"; data-cx-motion-duration and
 // data-cx-motion-delay are optional milliseconds. Motion runs once when the element enters the
 // viewport, remains visible when unsupported, and respects reduced-motion preferences.
 // COUNTDOWN/TIMER: <div class="cm-stopwatch" id="unique-id" timer-type="countdown"
@@ -421,7 +424,7 @@ func (s *PagesService) Publish(ctx context.Context, body PagesPublishInput, opts
 //
 // Lists structural recipes for AI-authored Clickmax pages. Choose one recipe compatible with the
 // target page type before generating HTML. Capabilities and every requiredSections entry are
-// machine-verified by pages_validate_html. Every recipe section must be marked with
+// machine-verified by [PagesService.ValidateHTML]. Every recipe section must be marked with
 // data-cx-section="<section-id>"; use each id from requiredSections at least once so preview and
 // import can verify the page structure. Sequence: recipe → page design → one manifest → context
 // → author HTML → validate → draft import.
@@ -440,9 +443,9 @@ func (s *PagesService) RecipesList(ctx context.Context, opts ...Option) (*PagesR
 // Lists the Clickmax page-template catalog so you can start a page from a ready-made design instead of
 // a blank one. Filter by `type` (e.g. `["checkout"]` to find a checkout/sales template, `["sales"]`,
 // `["capture"]`, `["upsell"]`, `["downsell"]`, `["thankYou"]`), `search`, or `tags`. Each result has
-// an `id` (pass it as `templateId` to `pages_create`) and `canUse` (false = the template needs a
-// higher plan tier; pick one with `canUse: true`). Use this BEFORE creating a page when the user wants
-// a page "with a checkout" or "from a template".
+// an `id` (pass it as `templateId` to [PagesService.Create]) and `canUse` (false = the template needs
+// a higher plan tier; pick one with `canUse: true`). Use this BEFORE creating a page when the user
+// wants a page "with a checkout" or "from a template".
 //
 // Calls POST /pages/templates-list.
 func (s *PagesService) TemplatesList(ctx context.Context, body PagesTemplatesListInput, opts ...Option) (*PagesTemplatesListOutput, error) {
@@ -498,10 +501,10 @@ func (s *PagesService) UpdateConfig(ctx context.Context, body PagesUpdateConfigI
 //
 // Validates the complete artifact manifest, required section markers, form, checkout, brand,
 // conversion, triggers, and target ownership WITHOUT writing or publishing. Fix every error, then pass
-// the exact same manifest, HTML, target, and offerId (or externalCheckout) to pages_import_html_draft;
-// that tool requires the manifest and enforces the same issues. TARGET: send EXACTLY ONE of `pageId`
-// or `placement` — both together is rejected here and on import; use `pageId` + `funnelId` to
-// validate a re-import that should inherit a funnel style.
+// the exact same manifest, HTML, target, and offerId (or externalCheckout) to
+// [PagesService.ImportHTMLDraft]; that tool requires the manifest and enforces the same issues.
+// TARGET: send EXACTLY ONE of `pageId` or `placement` — both together is rejected here and on
+// import; use `pageId` + `funnelId` to validate a re-import that should inherit a funnel style.
 //
 // Calls POST /pages/validate-html.
 func (s *PagesService) ValidateHTML(ctx context.Context, body PagesValidateHTMLInput, opts ...Option) (*PagesValidateHTMLOutput, error) {

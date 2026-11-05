@@ -16,8 +16,8 @@ type AttendantsService struct {
 // Delete a CRM attendant.
 //
 // Deletes an attendant. Destructive: the person loses access and their card assignments go with them
-// — prefer reassigning their open cards first (`attendants_list` reports `openCards`, and
-// `opportunities_bulk_assign_attendants` can move a whole selection at once). Restricted to
+// — prefer reassigning their open cards first ([AttendantsService.List] reports `openCards`, and
+// [OpportunitiesService.BulkAssignAttendants] can move a whole selection at once). Restricted to
 // owner/admin or a seat with the `attendants:manage` permission.
 //
 // Calls DELETE /attendants/delete.
@@ -57,7 +57,7 @@ func (s *AttendantsService) List(ctx context.Context, params AttendantsListParam
 //
 // Replaces the FULL set of attendant types carried by one attendant. Pass an empty `attendantTypeIds`
 // to clear them all. This says what the person CAN be on a card; the per-card typing is still chosen
-// in `cards_assign_attendants`. Restricted to owner/admin/editor.
+// in [CardsService.AssignAttendants]. Restricted to owner/admin/editor.
 //
 // Calls POST /attendants/set-types.
 func (s *AttendantsService) SetTypes(ctx context.Context, body AttendantsSetTypesInput, opts ...Option) (*AttendantsSetTypesOutput, error) {

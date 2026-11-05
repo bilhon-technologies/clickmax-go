@@ -16,10 +16,10 @@ type FlowsService struct {
 // List addable flow nodes.
 //
 // The catalog of addable flow nodes: each entry has a stable `key`, a friendly `label`/`description`,
-// the palette `section` it belongs to, the `stepType` to pass `flows_steps_create`'s `type`, and (when
-// applicable) the `action` name, `send_message` `channel`, or `httpRequest` preset. `comingSoon: true`
-// means the node is a locked UI stub with no engine support yet — never create a step matching one
-// of these. Use this before building anything beyond `delay`/`conditional` by hand, so the
+// the palette `section` it belongs to, the `stepType` to pass [FlowsService.StepsCreate]'s `type`, and
+// (when applicable) the `action` name, `send_message` `channel`, or `httpRequest` preset. `comingSoon:
+// true` means the node is a locked UI stub with no engine support yet — never create a step matching
+// one of these. Use this before building anything beyond `delay`/`conditional` by hand, so the
 // `type`/`action`/`channel` you pass is a real, executable combination instead of a guess.
 //
 // Calls GET /flows/actions-catalog.
@@ -35,16 +35,16 @@ func (s *FlowsService) ActionsCatalog(ctx context.Context, opts ...Option) (*Flo
 //
 // Publishes a flow (mode → `active`): an event-triggered flow starts matching its trigger events and
 // processing real contacts (sending messages, applying tags, etc.); a flow with the "Início manual"
-// trigger only goes live and sends nothing until a run is started with `flows_runs_start`. Accepts
-// `draft`, `scheduled` and `closed` (paused) flows — so it is also the RESUME of a flow paused with
-// `flows_close`, and it releases the messages held while paused; 417 for
+// trigger only goes live and sends nothing until a run is started with [FlowsService.RunsStart].
+// Accepts `draft`, `scheduled` and `closed` (paused) flows — so it is also the RESUME of a flow
+// paused with [FlowsService.Close], and it releases the messages held while paused; 417 for
 // `active`/`archived`/`template`. 417 also when the flow has no steps, its start step is not a
-// trigger, a message step has no sender configured (`flows_validate` → `incompleteChannelSteps`), or
-// the flow is locked by the area that owns it (pipeline/agenda/LiveChat automations are switched on
-// from that area) — EXCEPT a managed flow that was paused with `flows_close`, which can be resumed
-// here. High-impact and outward-facing — confirm with the user first. Validate the graph
-// (`flows_validate`) and make sure the trigger events are set before activating. Once active, step
-// edits are blocked.
+// trigger, a message step has no sender configured ([FlowsService.Validate] →
+// `incompleteChannelSteps`), or the flow is locked by the area that owns it (pipeline/agenda/LiveChat
+// automations are switched on from that area) — EXCEPT a managed flow that was paused with
+// [FlowsService.Close], which can be resumed here. High-impact and outward-facing — confirm with the
+// user first. Validate the graph ([FlowsService.Validate]) and make sure the trigger events are set
+// before activating. Once active, step edits are blocked.
 //
 // Calls POST /flows/activate.
 func (s *FlowsService) Activate(ctx context.Context, body FlowsActivateInput, opts ...Option) (*FlowsActivateOutput, error) {
@@ -61,8 +61,8 @@ func (s *FlowsService) Activate(ctx context.Context, body FlowsActivateInput, op
 // listing. Accepts `active`, `closed` and `template` flows (417 otherwise, e.g. a `draft`). Its queued
 // executions and those asleep on a timer are canceled (any other in-progress one is canceled the next
 // time it would run a step), its scheduled or running manual run is cancelled, failed executions can
-// no longer be retried, and there is no unarchive (`flows_activate` refuses `archived`). Returns the
-// updated flow. Confirm first — it takes the automation out of service.
+// no longer be retried, and there is no unarchive ([FlowsService.Activate] refuses `archived`).
+// Returns the updated flow. Confirm first — it takes the automation out of service.
 //
 // Calls DELETE /flows/archive.
 func (s *FlowsService) Archive(ctx context.Context, body FlowsArchiveInput, opts ...Option) (*FlowsArchiveOutput, error) {
@@ -76,13 +76,14 @@ func (s *FlowsService) Archive(ctx context.Context, body FlowsArchiveInput, opts
 // Close a flow.
 //
 // Pauses an `active` flow (mode → `closed`; any other mode is 417): no new contacts enter from the
-// trigger, and its scheduled or running manual run (`flows_runs_start`) is CANCELLED (pending blocks
-// never go out). Executions already in progress are NOT canceled: they keep running, but for a regular
-// flow the messages they send are held until the flow is resumed with `flows_activate` (managed
-// pipeline/agenda/LiveChat automations are not held). A paused flow can be edited and resumed with
-// `flows_activate` — managed ones included. Returns the updated flow. Use to pause/stop a running
-// automation (this is the lifecycle action — `flows_delete` is permanent removal; to stop one
-// contact use `flows_executions_cancel`, to stop only a run use `flows_runs_cancel`).
+// trigger, and its scheduled or running manual run ([FlowsService.RunsStart]) is CANCELLED (pending
+// blocks never go out). Executions already in progress are NOT canceled: they keep running, but for a
+// regular flow the messages they send are held until the flow is resumed with [FlowsService.Activate]
+// (managed pipeline/agenda/LiveChat automations are not held). A paused flow can be edited and resumed
+// with [FlowsService.Activate] — managed ones included. Returns the updated flow. Use to pause/stop
+// a running automation (this is the lifecycle action — [FlowsService.Delete] is permanent removal;
+// to stop one contact use [FlowsService.ExecutionsCancel], to stop only a run use
+// [FlowsService.RunsCancel]).
 //
 // Calls POST /flows/close.
 func (s *FlowsService) Close(ctx context.Context, body FlowsCloseInput, opts ...Option) (*FlowsCloseOutput, error) {
@@ -99,8 +100,8 @@ func (s *FlowsService) Close(ctx context.Context, body FlowsCloseInput, opts ...
 // in `statements[].type`, a friendly `label`/`description`, and `fields` (each with `field` name,
 // `label`, `valueType`, optional `enumValues`, and an `entity` hint when the field is a real id to
 // resolve — tag/list/page/etc. — never invent one). Use this before calling
-// `flows_steps_create`/`flows_steps_update` for a `conditional` step, or before editing one's
-// `statements`, so every statement matches a real, engine-executable shape instead of a guess.
+// [FlowsService.StepsCreate]/[FlowsService.StepsUpdate] for a `conditional` step, or before editing
+// one's `statements`, so every statement matches a real, engine-executable shape instead of a guess.
 //
 // Calls GET /flows/conditionals-catalog.
 func (s *FlowsService) ConditionalsCatalog(ctx context.Context, opts ...Option) (*FlowsConditionalsCatalogOutput, error) {
@@ -114,11 +115,11 @@ func (s *FlowsService) ConditionalsCatalog(ctx context.Context, opts ...Option) 
 // Create a flow.
 //
 // Creates an empty `draft` flow in a project. Requires `name` + `projectId`; optional `category`,
-// `icon`, `goal`, `useCases`, `funnelId`. Add steps with `flows_steps_create`. Leave `funnelId` unset
-// here: for a funnel-embedded automation, create the funnel `workflow` node first and link this flow
-// to it with `funnels_workflow_flow_set` (it owns the funnelId + syncs the funnel triggers onto the
-// flow); for a standalone flow, scope its trigger with a `funnelId`/`pageId` constraint instead. Do
-// not hand-set `funnelId`.
+// `icon`, `goal`, `useCases`, `funnelId`. Add steps with [FlowsService.StepsCreate]. Leave `funnelId`
+// unset here: for a funnel-embedded automation, create the funnel `workflow` node first and link this
+// flow to it with [FunnelsService.WorkflowFlowSet] (it owns the funnelId + syncs the funnel triggers
+// onto the flow); for a standalone flow, scope its trigger with a `funnelId`/`pageId` constraint
+// instead. Do not hand-set `funnelId`.
 //
 // Calls POST /flows/create.
 func (s *FlowsService) Create(ctx context.Context, body FlowsCreateInput, opts ...Option) (*FlowsCreateOutput, error) {
@@ -133,8 +134,8 @@ func (s *FlowsService) Create(ctx context.Context, body FlowsCreateInput, opts .
 //
 // Deletes a flow (soft delete): it disappears from listings, stops reacting to its trigger, its queued
 // executions and those asleep on a timer are canceled (any other in-progress one is canceled the next
-// time it would run a step), its scheduled or running manual run (`flows_runs_start`) is cancelled,
-// and execution history/metrics are preserved. Works on any mode except managed flows
+// time it would run a step), its scheduled or running manual run ([FlowsService.RunsStart]) is
+// cancelled, and execution history/metrics are preserved. Works on any mode except managed flows
 // (pipeline/funnel/agenda automations), which are rejected (409). Not undoable from the UI — confirm
 // with the user first. Emits `flow.deleted.v1`.
 //
@@ -178,8 +179,8 @@ func (s *FlowsService) EntityRefsResolve(ctx context.Context, body FlowsEntityRe
 // call or message cannot be undone. Returns `{ instanceId, status: 'canceled' }`. 409 when there is
 // nothing to stop: already `finished`/`failed`/`canceled`, or the id is not in this flow (the two are
 // deliberately indistinguishable). It affects only that one contact's run: it does NOT stop the flow
-// from taking new contacts (`flows_close`) nor remove the flow (`flows_delete`), and there is no bulk
-// cancel. Confirm with the user, naming the contact when known.
+// from taking new contacts ([FlowsService.Close]) nor remove the flow ([FlowsService.Delete]), and
+// there is no bulk cancel. Confirm with the user, naming the contact when known.
 //
 // Calls DELETE /flows/executions-cancel.
 func (s *FlowsService) ExecutionsCancel(ctx context.Context, body FlowsExecutionsCancelInput, opts ...Option) (*FlowsExecutionsCancelOutput, error) {
@@ -209,8 +210,8 @@ func (s *FlowsService) ExecutionsCancel(ctx context.Context, body FlowsExecution
 // `ai`/`manual`) and `toolCalls[]` (each tool the AI called in that session with `status`, `input`,
 // `output`, `errorCode`) — the answer to 'what did the AI find out, did it try to save the field,
 // and why did it exit there?'. Null on every other step. Read-only. Get the `instanceId` from
-// `flows_executions_list` or from `flows_test_runs_start`. To debug 'why did the test go down the
-// false branch?', read the conditional step's `evaluation`.
+// [FlowsService.ExecutionsList] or from [FlowsService.TestRunsStart]. To debug 'why did the test go
+// down the false branch?', read the conditional step's `evaluation`.
 //
 // Calls GET /flows/executions-get.
 func (s *FlowsService) ExecutionsGet(ctx context.Context, params FlowsExecutionsGetParams, opts ...Option) (*FlowsExecutionsGetOutput, error) {
@@ -225,23 +226,23 @@ func (s *FlowsService) ExecutionsGet(ctx context.Context, params FlowsExecutions
 //
 // Paginated execution history of ONE flow — one row = one contact's run through it. Each row:
 // `status` (`queued`/`pending`/`scheduled` = running or waiting, `finished`, `failed`, `canceled`),
-// `kind` (`production`, or `testLive` = a run started by `flows_test_runs_start`), the contact,
+// `kind` (`production`, or `testLive` = a run started by [FlowsService.TestRunsStart]), the contact,
 // `error`, `history` (step ids passed), the raw `state` payload, and the messages the run sent with
 // delivery status. The response also has flow-wide `counts` by status (scoped by `kind` only — NOT
 // narrowed by `status`/`q`/dates), `totalSteps` and `topErrors`: the top 10 failure reasons by
 // frequency, where `kind: 'execution'` entries are the exact `error` labels
-// `flows_executions_retry_by_error` takes. Filters: `status`; `q` (contact name/email/phone);
+// [FlowsService.ExecutionsRetryByError] takes. Filters: `status`; `q` (contact name/email/phone);
 // `startDate`/`endDate` (run creation time); `stepId` (runs positioned at OR that already passed
 // through that step — combine with `status` for the per-node success/failure drill-down); add
 // `stepScope: 'current'` to keep only the runs positioned at that step right now — with `status:
 // 'scheduled'` on a timer step, that is exactly who is waiting there); `kind` (omitted = production
 // only; `test` = test runs only; `all` = both); `runId` (only the executions created by one manual run
-// — id from `flows_runs_list`/`flows_runs_start`; each row also carries its `runId`, null for
-// event-triggered and test runs). Keep `perPage` small (default 10): every row embeds its full `state`
-// and messages. Use for 'did this contact go through the automation?', 'why are runs failing?', 'how
-// many are stuck?', 'who failed in yesterday's run?'. Contacts a run skipped by the cooldown never
-// become executions (see `debouncedCount` on the run). For the step-by-step of one run use
-// `flows_executions_get`. Read-only; it does not export a CSV.
+// — id from [FlowsService.RunsList]/[FlowsService.RunsStart]; each row also carries its `runId`,
+// null for event-triggered and test runs). Keep `perPage` small (default 10): every row embeds its
+// full `state` and messages. Use for 'did this contact go through the automation?', 'why are runs
+// failing?', 'how many are stuck?', 'who failed in yesterday's run?'. Contacts a run skipped by the
+// cooldown never become executions (see `debouncedCount` on the run). For the step-by-step of one run
+// use [FlowsService.ExecutionsGet]. Read-only; it does not export a CSV.
 //
 // Calls GET /flows/executions-list.
 func (s *FlowsService) ExecutionsList(ctx context.Context, params FlowsExecutionsListParams, opts ...Option) (*FlowsExecutionsListOutput, error) {
@@ -258,11 +259,12 @@ func (s *FlowsService) ExecutionsList(ctx context.Context, params FlowsExecution
 // there. It REPEATS that node's side effect (a failed message send is sent again; a failed HTTP
 // request is called again), clears the error and drops the failed attempt from the step history.
 // Retrying without fixing the cause (disconnected number, unapproved template, broken step config)
-// just fails again at the same node — diagnose first with `flows_executions_get`. Returns `{
-// instanceId, status: 'queued' }` at once; the outcome shows up later in `flows_executions_get`. 409
-// when it cannot be retried: no longer `failed`, a legacy dry-run test, or the flow is archived (a
+// just fails again at the same node — diagnose first with [FlowsService.ExecutionsGet]. Returns `{
+// instanceId, status: 'queued' }` at once; the outcome shows up later in [FlowsService.ExecutionsGet].
+// 409 when it cannot be retried: no longer `failed`, a legacy dry-run test, or the flow is archived (a
 // paused/`closed` flow CAN be retried). For all runs behind one failure reason use
-// `flows_executions_retry_by_error`. Confirm with the user first — it re-sends to a real contact.
+// [FlowsService.ExecutionsRetryByError]. Confirm with the user first — it re-sends to a real
+// contact.
 //
 // Calls POST /flows/executions-retry.
 func (s *FlowsService) ExecutionsRetry(ctx context.Context, body FlowsExecutionsRetryInput, opts ...Option) (*FlowsExecutionsRetryOutput, error) {
@@ -276,14 +278,14 @@ func (s *FlowsService) ExecutionsRetry(ctx context.Context, body FlowsExecutions
 // Retry all failed executions with one error.
 //
 // Bulk retry of the failed executions behind one row of the flow's top errors. `errors` = the EXACT
-// `error` labels (1–10) from `flows_executions_list` → `topErrors` entries with `kind:
+// `error` labels (1–10) from [FlowsService.ExecutionsList] → `topErrors` entries with `kind:
 // 'execution'` (send failures, `kind: 'message'`, are a different grain and are not retryable here);
 // optional `stepId` limits it to executions that stopped at that node. Re-queues at most 1000 per
 // call, most recently updated first; `retried` is how many went back to the queue and `remaining` how
 // many still failed with that error beyond the cap — call again to continue. Same effect per
-// execution as `flows_executions_retry`: the failed node runs again, so messages are re-sent,
+// execution as [FlowsService.ExecutionsRetry]: the failed node runs again, so messages are re-sent,
 // potentially to many contacts, and unfixed causes fail again. Before calling, size it with
-// `flows_executions_list` (`status: 'failed'`, `topErrors[].count`) and tell the user how many
+// [FlowsService.ExecutionsList] (`status: 'failed'`, `topErrors[].count`) and tell the user how many
 // contacts it touches. 409 when the flow is archived. Only production/test runs that actually executed
 // are eligible.
 //
@@ -300,11 +302,11 @@ func (s *FlowsService) ExecutionsRetryByError(ctx context.Context, body FlowsExe
 //
 // Full flow record (name, mode, category, projectId/funnelId, startStepId, steps). Pass `analytics:
 // true` to get `analytics` (`totalExecutions`, `uniqueContacts`, `emailsCollected`, `phonesCollected`
-// — only runs that actually executed, production plus `flows_test_runs_start` runs) and per-step
-// analytics on each step; that branch returns instead of `layoutSummary`, so do not combine them. Pass
-// `layoutSummary: true` only when you need the canvas thumbnail (nodes + edges) to render; it costs an
-// extra scan of the steps. For just the step graph + edges, prefer `flows_structure_get`; for
-// individual runs, `flows_executions_list`.
+// — only runs that actually executed, production plus [FlowsService.TestRunsStart] runs) and
+// per-step analytics on each step; that branch returns instead of `layoutSummary`, so do not combine
+// them. Pass `layoutSummary: true` only when you need the canvas thumbnail (nodes + edges) to render;
+// it costs an extra scan of the steps. For just the step graph + edges, prefer
+// [FlowsService.StructureGet]; for individual runs, [FlowsService.ExecutionsList].
 //
 // Calls GET /flows/get.
 func (s *FlowsService) Get(ctx context.Context, params FlowsGetParams, opts ...Option) (*FlowsGetOutput, error) {
@@ -339,30 +341,30 @@ func (s *FlowsService) GetMode(ctx context.Context, params FlowsGetModeParams, o
 // breaking anything; `capture: {timeoutMinutes?}` on a WhatsApp/Telegram/Instagram message makes it
 // wait for the reply), `update` (input/action), `connect` (`from` output `handle` → `to`),
 // `disconnect`, `remove` (`bridge` defaults true: reconnects predecessor to successor), `move`,
-// `setTriggers` (standalone flows only). `handle` is the canvas output name from `flows_structure_get`
-// `outputs` (null/omit = main output; `true`/`false` conditional; `continue`/`noSchedule` delay;
-// branch keys; `invalid`/`timeout` for a message that waits for a reply). Works on draft and paused
-// (`closed`) flows; an active flow must be paused first (`flows_close`) — ask the user. Returns
-// every visible step with its outputs + `orphanStepIds` + `triggerWithoutOutput`: if either is
-// non-empty/true, fix it in a follow-up call before telling the user it is done. New steps are
-// auto-placed next to their predecessor (`layout: 'organize'` re-lays out the whole flow). Example —
-// a flow fresh from `flows_create` has NO trigger step, so add it first, then wait 1h → SMS, wait
-// 23h → SMS: `ops: [{op:'add', ref:'$t', type:'trigger', input:{type:'event'}}, {op:'setTriggers',
-// triggerStart:[{eventName:'<from flows_triggers_catalog>', constraints:[]}]}, {op:'add', ref:'$w1',
-// type:'delay', input:{when:1}, after:{step:'$t'}}, {op:'add', ref:'$sms1', type:'send_message',
-// input:{type:'sms', message:{type:'text', content:'Oi {name}, seu carrinho: {checkout}'}},
-// after:{step:'$w1', handle:'continue'}}, {op:'add', ref:'$w2', type:'delay', input:{when:23},
-// after:{step:'$sms1'}}, {op:'add', ref:'$sms2', type:'send_message', input:{type:'sms',
-// message:{type:'text', content:'...'}}, after:{step:'$w2', handle:'continue'}}]`. Shapes that fail: a
-// message is `type: 'send_message'` with the channel in `input.type`
-// (`sms`/`gupshup`/`telegram`/`instagram`/`voice`), never `type: 'action'`; `delay.input.when` is in
-// HOURS and the step after a delay hangs on its `continue` output (a delay has no main output).
-// WhatsApp under an event trigger (cart, purchase…) needs `input.numberStrategy: 'fixed'` +
-// `input.gupshupAppId` (+ `input.gupshupTemplateId`/`input.paramMapping` for a template) at the INPUT
-// level, never inside `message` — easier with `flows_send_whatsapp`. E-mails never go in raw ops:
-// create each one with `flows_send_email` (`after` = the step before it) — a raw
-// `message.customHtml` or an empty `message.content` is rejected. Pass `ops` as a real array of
-// objects, not a string-built JSON.
+// `setTriggers` (standalone flows only). `handle` is the canvas output name from
+// [FlowsService.StructureGet] `outputs` (null/omit = main output; `true`/`false` conditional;
+// `continue`/`noSchedule` delay; branch keys; `invalid`/`timeout` for a message that waits for a
+// reply). Works on draft and paused (`closed`) flows; an active flow must be paused first
+// ([FlowsService.Close]) — ask the user. Returns every visible step with its outputs +
+// `orphanStepIds` + `triggerWithoutOutput`: if either is non-empty/true, fix it in a follow-up call
+// before telling the user it is done. New steps are auto-placed next to their predecessor (`layout:
+// 'organize'` re-lays out the whole flow). Example — a flow fresh from [FlowsService.Create] has NO
+// trigger step, so add it first, then wait 1h → SMS, wait 23h → SMS: `ops: [{op:'add', ref:'$t',
+// type:'trigger', input:{type:'event'}}, {op:'setTriggers', triggerStart:[{eventName:'<from
+// [FlowsService.TriggersCatalog]>', constraints:[]}]}, {op:'add', ref:'$w1', type:'delay',
+// input:{when:1}, after:{step:'$t'}}, {op:'add', ref:'$sms1', type:'send_message', input:{type:'sms',
+// message:{type:'text', content:'Oi {name}, seu carrinho: {checkout}'}}, after:{step:'$w1',
+// handle:'continue'}}, {op:'add', ref:'$w2', type:'delay', input:{when:23}, after:{step:'$sms1'}},
+// {op:'add', ref:'$sms2', type:'send_message', input:{type:'sms', message:{type:'text',
+// content:'...'}}, after:{step:'$w2', handle:'continue'}}]`. Shapes that fail: a message is `type:
+// 'send_message'` with the channel in `input.type` (`sms`/`gupshup`/`telegram`/`instagram`/`voice`),
+// never `type: 'action'`; `delay.input.when` is in HOURS and the step after a delay hangs on its
+// `continue` output (a delay has no main output). WhatsApp under an event trigger (cart, purchase…)
+// needs `input.numberStrategy: 'fixed'` + `input.gupshupAppId` (+
+// `input.gupshupTemplateId`/`input.paramMapping` for a template) at the INPUT level, never inside
+// `message` — easier with [FlowsService.SendWhatsapp]. E-mails never go in raw ops: create each one
+// with [FlowsService.SendEmail] (`after` = the step before it) — a raw `message.customHtml` or an
+// empty `message.content` is rejected. Pass `ops` as a real array of objects, not a string-built JSON.
 //
 // Calls POST /flows/graph-apply.
 func (s *FlowsService) GraphApply(ctx context.Context, body FlowsGraphApplyInput, opts ...Option) (*FlowsGraphApplyOutput, error) {
@@ -377,11 +379,11 @@ func (s *FlowsService) GraphApply(ctx context.Context, body FlowsGraphApplyInput
 //
 // Answers 'which message of which automation is this contact on, what comes next and when?' for
 // 1–100 contacts at once (`leadIds`; for an opportunity, take its contacts' lead ids from
-// `cards_get`). Returns the PRODUCTION executions of those contacts in flows that contain at least one
-// message step (WhatsApp/email/SMS/Telegram/voice/Instagram reply), newest first, at most 50 in total
-// across all the contacts — `truncated: true` means older ones were left out (ask for fewer contacts
-// to see more of each). Flows without message steps (tags, webhooks only) and test runs are not
-// included. Each item: `flowName`, `flowDeleted`, the execution `status`
+// [CardsService.Get]). Returns the PRODUCTION executions of those contacts in flows that contain at
+// least one message step (WhatsApp/email/SMS/Telegram/voice/Instagram reply), newest first, at most 50
+// in total across all the contacts — `truncated: true` means older ones were left out (ask for fewer
+// contacts to see more of each). Flows without message steps (tags, webhooks only) and test runs are
+// not included. Each item: `flowName`, `flowDeleted`, the execution `status`
 // (`queued`/`pending`/`scheduled` = still running or waiting, `finished`, `failed`, `canceled`),
 // `error`, `startedAt`/`updatedAt`, `resumesAt` (when a `scheduled` execution wakes up from its wait;
 // null otherwise) and `steps` = the flow's message steps in graph order from the start (main path
@@ -396,8 +398,8 @@ func (s *FlowsService) GraphApply(ctx context.Context, body FlowsGraphApplyInput
 // show as `upcoming` because it depends on the contact. The steps reflect the flow as it is NOW (an
 // edited flow may differ from what the contact saw; recorded deliveries still mark `sent`). Read-only,
 // workspace-scoped (contacts of another workspace just return nothing). It does not include the AI SDR
-// step's conversation messages — for that read the execution with `flows_executions_get`
-// (`steps[].aiSdr`). To stop one execution use `flows_executions_cancel` with its `flowId` +
+// step's conversation messages — for that read the execution with [FlowsService.ExecutionsGet]
+// (`steps[].aiSdr`). To stop one execution use [FlowsService.ExecutionsCancel] with its `flowId` +
 // `instanceId`.
 //
 // Calls POST /flows/lead-cadences.
@@ -425,15 +427,15 @@ func (s *FlowsService) LeadCadences(ctx context.Context, body FlowsLeadCadencesI
 // with ONE email send node), `linkClicked:<sendStepId>` (tracked link in a send node of
 // email/SMS/WhatsApp/Telegram/Instagram), `callResult:<sendStepId>` (outcome of a voice/IVR call
 // node), `webhook:<id>` (an HTTP-request node that calls another flow's webhook URL — in
-// `flows_link_targets_list` the id is that HTTP-request STEP; in `flows_link_sources_list` it is the
-// webhook a "webhook received" trigger points at). Malformed or unknown refs are silently ignored (no 400).
-// Each item: `flowId`, `name`, `mode` (`draft`/`active`/`closed` only — archived, templates and
-// deleted flows never appear), `kind` + `valueUuid` (which ref matched) and `stats` = production runs
-// only (`executions`, `finished`, `failed`; test runs excluded). Active flows first, then newest; at
-// most 200 rows; one item per (ref, flow). Scoped to the workspace; `excludeFlowId` removes one flow
-// (usually the one you are inspecting, so a flow that both applies and listens to the same tag does
-// not list itself). `action` = the step action that produces the ref. Read-only; the reverse question
-// is `flows_link_targets_list`.
+// [FlowsService.LinkTargetsList] the id is that HTTP-request STEP; in [FlowsService.LinkSourcesList]
+// it is the webhook a "webhook received" trigger points at). Malformed or unknown refs are silently
+// ignored (no 400). Each item: `flowId`, `name`, `mode` (`draft`/`active`/`closed` only — archived,
+// templates and deleted flows never appear), `kind` + `valueUuid` (which ref matched) and `stats` =
+// production runs only (`executions`, `finished`, `failed`; test runs excluded). Active flows first,
+// then newest; at most 200 rows; one item per (ref, flow). Scoped to the workspace; `excludeFlowId`
+// removes one flow (usually the one you are inspecting, so a flow that both applies and listens to the
+// same tag does not list itself). `action` = the step action that produces the ref. Read-only; the
+// reverse question is [FlowsService.LinkTargetsList].
 //
 // Calls POST /flows/link-sources-list.
 func (s *FlowsService) LinkSourcesList(ctx context.Context, body FlowsLinkSourcesListInput, opts ...Option) (*FlowsLinkSourcesListOutput, error) {
@@ -459,16 +461,16 @@ func (s *FlowsService) LinkSourcesList(ctx context.Context, body FlowsLinkSource
 // `emailFailed:<sendStepId>` (engagement with ONE email send node), `linkClicked:<sendStepId>`
 // (tracked link in a send node of email/SMS/WhatsApp/Telegram/Instagram), `callResult:<sendStepId>`
 // (outcome of a voice/IVR call node), `webhook:<id>` (an HTTP-request node that calls another flow's
-// webhook URL — in `flows_link_targets_list` the id is that HTTP-request STEP; in
-// `flows_link_sources_list` it is the webhook a "webhook received" trigger points at). Malformed or
-// unknown refs are silently ignored (no 400). Each item: `flowId`, `name`, `mode`
+// webhook URL — in [FlowsService.LinkTargetsList] the id is that HTTP-request STEP; in
+// [FlowsService.LinkSourcesList] it is the webhook a "webhook received" trigger points at). Malformed
+// or unknown refs are silently ignored (no 400). Each item: `flowId`, `name`, `mode`
 // (`draft`/`active`/`closed` only — archived, templates and deleted flows never appear), `kind` +
 // `valueUuid` (which ref matched) and `stats` = production runs only (`executions`, `finished`,
 // `failed`; test runs excluded). Active flows first, then newest; at most 200 rows; one item per (ref,
 // flow). Scoped to the workspace; `excludeFlowId` removes one flow (usually the one you are
 // inspecting, so a flow that both applies and listens to the same tag does not list itself).
 // `eventName` = the trigger event that matched. Read-only; the reverse question is
-// `flows_link_sources_list`.
+// [FlowsService.LinkSourcesList].
 //
 // Calls POST /flows/link-targets-list.
 func (s *FlowsService) LinkTargetsList(ctx context.Context, body FlowsLinkTargetsListInput, opts ...Option) (*FlowsLinkTargetsListOutput, error) {
@@ -489,8 +491,8 @@ func (s *FlowsService) LinkTargetsList(ctx context.Context, body FlowsLinkTarget
 // the flow record plus `triggers` (entry event names), `startStep`, `layoutSummary` (canvas thumbnail:
 // nodes + edges) and `instancesCount`/`contactsCount` (runs that actually executed — production and
 // `Testar` runs — and distinct contacts). It carries NO analytics, opt-in counters or CTR: for a
-// flow's KPIs use `flows_get` with `analytics: true`, and for run-level detail (status counts, top
-// errors, one contact's run) use `flows_executions_list`.
+// flow's KPIs use [FlowsService.Get] with `analytics: true`, and for run-level detail (status counts,
+// top errors, one contact's run) use [FlowsService.ExecutionsList].
 //
 // Calls POST /flows/list.
 func (s *FlowsService) List(ctx context.Context, body FlowsListInput, opts ...Option) (*FlowsListOutput, error) {
@@ -509,7 +511,7 @@ func (s *FlowsService) List(ctx context.Context, body FlowsListInput, opts ...Op
 // `startedAt`/`completedAt` and `recipientCount` (contacts it actually put into the flow, after the
 // cooldown). The last pending block's `scheduledAt` is the expected finish. Use to answer 'when does
 // my send finish?' or 'which cycle failed?'; for plain progress the `blocks` counts on
-// `flows_runs_list` are enough. Blocks only wait for their time when the flow paces them with an
+// [FlowsService.RunsList] are enough. Blocks only wait for their time when the flow paces them with an
 // interval; with the default interval 0 they all enter at once. 404 if the run is not in this flow.
 // Read-only.
 //
@@ -529,8 +531,8 @@ func (s *FlowsService) RunsBlocksList(ctx context.Context, params FlowsRunsBlock
 // blocks keep their schedule. It sends to real contacts earlier than planned (they would have received
 // it anyway). 409 unless the run is `running` and the block is still `pending` and waiting in the
 // queue; 404 for an unknown run/block. Returns the updated block. `blockIndex` from
-// `flows_runs_blocks_list`. Only meaningful when the flow spaces blocks with an interval; it does not
-// change the pace of the rest of the run.
+// [FlowsService.RunsBlocksList]. Only meaningful when the flow spaces blocks with an interval; it does
+// not change the pace of the rest of the run.
 //
 // Calls POST /flows/runs-blocks-promote.
 func (s *FlowsService) RunsBlocksPromote(ctx context.Context, body FlowsRunsBlocksPromoteInput, opts ...Option) (*FlowsRunsBlocksPromoteOutput, error) {
@@ -543,17 +545,17 @@ func (s *FlowsService) RunsBlocksPromote(ctx context.Context, body FlowsRunsBloc
 
 // Cancel a manual run of a flow.
 //
-// Cancels one `scheduled` or `running` run (`runId` from `flows_runs_list` or `flows_runs_start`):
-// what has not gone out does not go out — the scheduled launch is dropped and every block still
-// `pending` is cancelled, so the contacts in those blocks never enter. It does NOT cancel the
-// executions the run already created: those contacts keep going through the flow (stop one with
-// `flows_executions_cancel`); a block that was being materialized at that instant may still finish.
-// The flow stays published and keeps reacting to its trigger event (to stop that use `flows_close`,
-// which also cancels the live run). Returns the run with `status: 'cancelled'`. 409 when the run
-// already finished (`done`/`cancelled`/`failed`); 404 if it is not a run of this flow. Not undoable
-// — a new run with the same source would re-send to the contacts already reached unless the cooldown
-// skips them. Confirm with the user, saying how many contacts are still pending (`totalCount` −
-// `recipientCount`).
+// Cancels one `scheduled` or `running` run (`runId` from [FlowsService.RunsList] or
+// [FlowsService.RunsStart]): what has not gone out does not go out — the scheduled launch is dropped
+// and every block still `pending` is cancelled, so the contacts in those blocks never enter. It does
+// NOT cancel the executions the run already created: those contacts keep going through the flow (stop
+// one with [FlowsService.ExecutionsCancel]); a block that was being materialized at that instant may
+// still finish. The flow stays published and keeps reacting to its trigger event (to stop that use
+// [FlowsService.Close], which also cancels the live run). Returns the run with `status: 'cancelled'`.
+// 409 when the run already finished (`done`/`cancelled`/`failed`); 404 if it is not a run of this
+// flow. Not undoable — a new run with the same source would re-send to the contacts already reached
+// unless the cooldown skips them. Confirm with the user, saying how many contacts are still pending
+// (`totalCount` − `recipientCount`).
 //
 // Calls DELETE /flows/runs-cancel.
 func (s *FlowsService) RunsCancel(ctx context.Context, body FlowsRunsCancelInput, opts ...Option) (*FlowsRunsStartOutput, error) {
@@ -566,13 +568,13 @@ func (s *FlowsService) RunsCancel(ctx context.Context, body FlowsRunsCancelInput
 
 // Estimate a manual run of a flow.
 //
-// Sizes a manual run BEFORE starting it, for the same `source` `flows_runs_start` takes: `{ kind:
-// 'leads', leadIds }` (1–500 contacts), `{ kind: 'list', listId }`, `{ kind: 'tag', tagId }` or `{
-// kind: 'segment', segmentId }` (the segment is evaluated live now). Returns `audience` (how many
-// contacts the source has right now), `steps` = the message steps priced (`channel`, where `gupshup` =
-// WhatsApp, and `unitCost` in credits), `totalCost = audience × Σ unitCost`, `available` (workspace
-// credit balance; `null` = unlimited, can be negative) and `enough`, plus `debounceSeconds` = the
-// flow's cooldown: contacts who went through this flow within that window are SKIPPED by the run
+// Sizes a manual run BEFORE starting it, for the same `source` [FlowsService.RunsStart] takes: `{
+// kind: 'leads', leadIds }` (1–500 contacts), `{ kind: 'list', listId }`, `{ kind: 'tag', tagId }`
+// or `{ kind: 'segment', segmentId }` (the segment is evaluated live now). Returns `audience` (how
+// many contacts the source has right now), `steps` = the message steps priced (`channel`, where
+// `gupshup` = WhatsApp, and `unitCost` in credits), `totalCost = audience × Σ unitCost`, `available`
+// (workspace credit balance; `null` = unlimited, can be negative) and `enough`, plus `debounceSeconds`
+// = the flow's cooldown: contacts who went through this flow within that window are SKIPPED by the run
 // unless it is started with `skipDebounce`. How to read the cost: it only prices the messages EVERY
 // contact is guaranteed to reach — the sends from the start step until the first branch, wait
 // (delay/timeout), reply capture or AI SDR step; messages after that point are NOT counted, so a long
@@ -582,8 +584,8 @@ func (s *FlowsService) RunsCancel(ctx context.Context, body FlowsRunsCancelInput
 // nothing. Works on a flow that is not published yet, but it must have a start step (412 otherwise).
 // 404 when the flow, the list/tag/segment or any of the `leadIds` is not in this workspace (a list
 // must be a regular list, not a segment's synced list). Use it to confirm the audience size (and cost)
-// with the user before `flows_runs_start`; `audience` minus the contacts on cooldown is roughly how
-// many will enter.
+// with the user before [FlowsService.RunsStart]; `audience` minus the contacts on cooldown is roughly
+// how many will enter.
 //
 // Calls POST /flows/runs-estimate.
 func (s *FlowsService) RunsEstimate(ctx context.Context, body FlowsRunsEstimateInput, opts ...Option) (*FlowsRunsEstimateOutput, error) {
@@ -606,7 +608,8 @@ func (s *FlowsService) RunsEstimate(ctx context.Context, body FlowsRunsEstimateI
 // finished, failed} and `blocks` counts per status (progress of a running run), and `startedByName`
 // (who started it; null for runs migrated from old mass-send triggers). Use for 'did my send go out?',
 // 'how many entered / failed?', 'is something scheduled?'. Empty `data` = the flow was never run
-// manually. Read-only. Drill into the contacts of one run with `flows_executions_list` + `runId`.
+// manually. Read-only. Drill into the contacts of one run with [FlowsService.ExecutionsList] +
+// `runId`.
 //
 // Calls GET /flows/runs-list.
 func (s *FlowsService) RunsList(ctx context.Context, params FlowsRunsListParams, opts ...Option) (*FlowsRunsListOutput, error) {
@@ -625,34 +628,35 @@ func (s *FlowsService) RunsList(ctx context.Context, params FlowsRunsListParams,
 // real execution that sends WhatsApp/email/SMS, applies tags, moves cards, calls integrations and
 // spends credits, exactly like the trigger event would. Works for any published flow, whether its
 // trigger is "Início manual" or an event (the event keeps firing normally). Call
-// `flows_runs_estimate` first and confirm with the user the flow, the audience (source name + how many
-// contacts) and whether contacts on cooldown should be included. Options: `skipDebounce: true` = also
-// send to contacts who went through this flow within its cooldown (`debounceSeconds` from the
-// estimate); default false = they are skipped and counted in `debouncedCount`. `scheduledAt` (ISO
+// [FlowsService.RunsEstimate] first and confirm with the user the flow, the audience (source name +
+// how many contacts) and whether contacts on cooldown should be included. Options: `skipDebounce:
+// true` = also send to contacts who went through this flow within its cooldown (`debounceSeconds` from
+// the estimate); default false = they are skipped and counted in `debouncedCount`. `scheduledAt` (ISO
 // date, must be in the future, else 400) = do not send now: the run is created `scheduled` and
 // launches at that time. Pace: contacts enter in blocks of the flow's `dispatchBatchSize` (default 250)
 // spaced by `dispatchIntervalMinutes` (default 0 = all blocks queued at once, throughput limited by
 // the channel); both are copied when the run launches and can be changed beforehand with
-// `flows_update`. A plan above 5000 blocks is refused (400, raise the batch size). The audience is
-// FROZEN when the run launches (now, or at `scheduledAt`): contacts who join the list/tag/segment
+// [FlowsService.Update]. A plan above 5000 blocks is refused (400, raise the batch size). The audience
+// is FROZEN when the run launches (now, or at `scheduledAt`): contacts who join the list/tag/segment
 // later do not receive it; a segment is evaluated live at that moment. Refusals: 412 if the flow is
-// not published (`active` — publish with `flows_activate` first; drafts are tested with
-// `flows_test_runs_start` instead), has no start step, or contains a step that needs the trigger
+// not published (`active` — publish with [FlowsService.Activate] first; drafts are tested with
+// [FlowsService.TestRunsStart] instead), has no start step, or contains a step that needs the trigger
 // context (Instagram comment/story reply, WhatsApp through the number that received the conversation)
 // and therefore cannot run manually; 417 if its WhatsApp number is down or a message step has no
 // sender configured; 409 if the flow already has a `scheduled` or `running` run (one live run per flow
-// — wait, or `flows_runs_cancel` it); 404 when the source or any contact is not in this workspace
-// (lists: regular lists only); 417 "No contacts found" when the audience is empty — that attempt is
-// still recorded as a `failed` run. Credits: an IMMEDIATE run does not check the balance up front —
-// sends beyond the balance fail at send time; a SCHEDULED run is checked when it fires and, if the
-// balance does not cover it, becomes `failed` and the owner is notified (a scheduled run also becomes
-// `cancelled` if the flow is no longer published or its number is down at that time). Returns the run:
-// `status` (`scheduled` | `running` | `done` when the last block finished | `cancelled` | `failed`
-// with `errorMessage`), `sourceKind`/`sourceLabel`, `totalCount` (audience frozen), `recipientCount`
-// (executions created so far), `debouncedCount`, `executions` {total, finished, failed}, `blocks`
-// counts per status, `startedByName`. Follow it with `flows_runs_list`, its blocks with
-// `flows_runs_blocks_list`, and the individual contacts with `flows_executions_list` + `runId`. Not
-// the same as `flows_test_runs_start` (one contact, works on drafts, ignores cooldown).
+// — wait, or [FlowsService.RunsCancel] it); 404 when the source or any contact is not in this
+// workspace (lists: regular lists only); 417 "No contacts found" when the audience is empty — that
+// attempt is still recorded as a `failed` run. Credits: an IMMEDIATE run does not check the balance up
+// front — sends beyond the balance fail at send time; a SCHEDULED run is checked when it fires and,
+// if the balance does not cover it, becomes `failed` and the owner is notified (a scheduled run also
+// becomes `cancelled` if the flow is no longer published or its number is down at that time). Returns
+// the run: `status` (`scheduled` | `running` | `done` when the last block finished | `cancelled` |
+// `failed` with `errorMessage`), `sourceKind`/`sourceLabel`, `totalCount` (audience frozen),
+// `recipientCount` (executions created so far), `debouncedCount`, `executions` {total, finished,
+// failed}, `blocks` counts per status, `startedByName`. Follow it with [FlowsService.RunsList], its
+// blocks with [FlowsService.RunsBlocksList], and the individual contacts with
+// [FlowsService.ExecutionsList] + `runId`. Not the same as [FlowsService.TestRunsStart] (one contact,
+// works on drafts, ignores cooldown).
 //
 // Calls POST /flows/runs-start.
 func (s *FlowsService) RunsStart(ctx context.Context, body FlowsRunsStartInput, opts ...Option) (*FlowsRunsStartOutput, error) {
@@ -672,13 +676,13 @@ func (s *FlowsService) RunsStart(ctx context.Context, body FlowsRunsStartInput, 
 // HTML, replaces the slots — the only mode that actually reproduces a design). See the
 // clickmax-flows skill's email-authoring reference for which mode to pick and how to author
 // `customHtml`. Always try to resolve `emailSenderSignatureId` first with
-// `email_sender_signatures_list` (pick `confirmed: true`) and pass it — never fabricate a uuid. If
-// the workspace has no confirmed signature, create the node anyway WITHOUT the id (do not block or
+// [EmailSenderSignaturesService.List] (pick `confirmed: true`) and pass it — never fabricate a uuid.
+// If the workspace has no confirmed signature, create the node anyway WITHOUT the id (do not block or
 // refuse the request) and say so plainly in your reply: the user has no sender email configured yet,
 // so this message will not send until they add and verify one. Works on draft/template and paused
 // (`closed`) flows. Place it with `after` (inserts after an existing step, keeping the flow connected)
 // and/or `target` (the next step after this message); a message created with neither stays orphan
-// until you connect it (`flows_graph_apply`).
+// until you connect it ([FlowsService.GraphApply]).
 //
 // Calls POST /flows/send-email.
 func (s *FlowsService) SendEmail(ctx context.Context, body FlowsSendEmailInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
@@ -696,7 +700,7 @@ func (s *FlowsService) SendEmail(ctx context.Context, body FlowsSendEmailInput, 
 // {name}-style tokens. Works on draft/template and paused (`closed`) flows. Place it with `after`
 // (inserts after an existing step, keeping the flow connected) and/or `target` (the next step after
 // this message); a message created with neither stays orphan until you connect it
-// (`flows_graph_apply`).
+// ([FlowsService.GraphApply]).
 //
 // Calls POST /flows/send-instagram.
 func (s *FlowsService) SendInstagram(ctx context.Context, body FlowsSendInstagramInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
@@ -713,7 +717,7 @@ func (s *FlowsService) SendInstagram(ctx context.Context, body FlowsSendInstagra
 // to configure. Keep it short (SMS are billed per segment) and use {name}-style tokens to personalize.
 // Works on draft/template and paused (`closed`) flows. Place it with `after` (inserts after an
 // existing step, keeping the flow connected) and/or `target` (the next step after this message); a
-// message created with neither stays orphan until you connect it (`flows_graph_apply`).
+// message created with neither stays orphan until you connect it ([FlowsService.GraphApply]).
 //
 // Calls POST /flows/send-sms.
 func (s *FlowsService) SendSMS(ctx context.Context, body FlowsSendSMSInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
@@ -728,7 +732,7 @@ func (s *FlowsService) SendSMS(ctx context.Context, body FlowsSendSMSInput, opts
 //
 // Adds a TELEGRAM message node to a flow. `content` is the body (`format` defaults to `text`; use
 // image/video/audio/file with `fileExtension` for media — `content` is then the media URL). Always
-// try to resolve `telegramBotId` (the sender bot) first with `channel_instances_list` (`channel:
+// try to resolve `telegramBotId` (the sender bot) first with [ChannelInstancesService.List] (`channel:
 // 'telegram'`, `status: 'live'`) and pass it — never fabricate a uuid. If the workspace has no live
 // Telegram bot connected, create the node anyway WITHOUT the id (do not block or refuse the request)
 // and say so plainly in your reply: the user has no Telegram bot connected yet, so this message will
@@ -736,7 +740,7 @@ func (s *FlowsService) SendSMS(ctx context.Context, body FlowsSendSMSInput, opts
 // (halts the instance until the message arrives). Works on draft/template and paused (`closed`) flows.
 // Place it with `after` (inserts after an existing step, keeping the flow connected) and/or `target`
 // (the next step after this message); a message created with neither stays orphan until you connect it
-// (`flows_graph_apply`).
+// ([FlowsService.GraphApply]).
 //
 // Calls POST /flows/send-telegram.
 func (s *FlowsService) SendTelegram(ctx context.Context, body FlowsSendTelegramInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
@@ -754,7 +758,7 @@ func (s *FlowsService) SendTelegram(ctx context.Context, body FlowsSendTelegramI
 // when relevant). There is no sender/account to configure here. Works on draft/template and paused
 // (`closed`) flows. Place it with `after` (inserts after an existing step, keeping the flow connected)
 // and/or `target` (the next step after this message); a message created with neither stays orphan
-// until you connect it (`flows_graph_apply`).
+// until you connect it ([FlowsService.GraphApply]).
 //
 // Calls POST /flows/send-voice.
 func (s *FlowsService) SendVoice(ctx context.Context, body FlowsSendVoiceInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
@@ -775,25 +779,26 @@ func (s *FlowsService) SendVoice(ctx context.Context, body FlowsSendVoiceInput, 
 // text` is REJECTED here unless `numberStrategy: context` — i.e. unless the flow is started by the
 // contact's own inbound WhatsApp message, which is the only trigger that guarantees the window is
 // open. Every other trigger (funnel, tag, schedule, checkout) needs a template: create one with
-// `gupshup_templates_create`, send it for review with `gupshup_templates_submit`, and wire it here —
-// the node accepts a template that is still `pending`, so build the automation now and tell the user
-// it starts sending once Meta approves (hours to days). This is a DELIVERABILITY choice, not a cost
-// one — never reason about `text` as the 'free'/'no cost' option: the Meta conversation is billed
-// per window regardless of which format opens or continues it, and that pricing model changes over
-// time, so do not let it drive the format decision. `paramMapping` (with templates) is positional
-// {{...}} placeholders resolved against the lead + flow state, in template order — use
-// `gupshup_templates_get`/`gupshup_templates_list` to confirm the template is `approved` and get its
-// real param count before wiring this. `numberStrategy` is REQUIRED — there is no safe default
-// (guessing wrong sends from the wrong WhatsApp number, or the flow becomes invalid — FLOWS-1082 —
-// the moment its trigger turns out not to be WhatsApp). Check the flow's actual trigger
-// (`flows_structure_get`) before choosing: `fixed` + an explicit `gupshupAppId` (resolve it with
-// `channel_instances_list`) for any trigger that is NOT itself an inbound WhatsApp message (funnel,
-// tag, schedule, checkout — the common case); `context` ONLY when the trigger IS an inbound WhatsApp
-// message (it reuses the number the trigger came from). Set `callback: true` when the next step waits
-// for the contact reply or template-button click (it halts the instance until the interaction
-// arrives). Works on draft/template and paused (`closed`) flows. Place it with `after` (inserts after
-// an existing step, keeping the flow connected) and/or `target` (the next step after this message); a
-// message created with neither stays orphan until you connect it (`flows_graph_apply`).
+// [GupshupTemplatesService.Create], send it for review with [GupshupTemplatesService.Submit], and wire
+// it here — the node accepts a template that is still `pending`, so build the automation now and
+// tell the user it starts sending once Meta approves (hours to days). This is a DELIVERABILITY choice,
+// not a cost one — never reason about `text` as the 'free'/'no cost' option: the Meta conversation
+// is billed per window regardless of which format opens or continues it, and that pricing model
+// changes over time, so do not let it drive the format decision. `paramMapping` (with templates) is
+// positional {{...}} placeholders resolved against the lead + flow state, in template order — use
+// [GupshupTemplatesService.Get]/[GupshupTemplatesService.List] to confirm the template is `approved`
+// and get its real param count before wiring this. `numberStrategy` is REQUIRED — there is no safe
+// default (guessing wrong sends from the wrong WhatsApp number, or the flow becomes invalid —
+// FLOWS-1082 — the moment its trigger turns out not to be WhatsApp). Check the flow's actual trigger
+// ([FlowsService.StructureGet]) before choosing: `fixed` + an explicit `gupshupAppId` (resolve it with
+// [ChannelInstancesService.List]) for any trigger that is NOT itself an inbound WhatsApp message
+// (funnel, tag, schedule, checkout — the common case); `context` ONLY when the trigger IS an inbound
+// WhatsApp message (it reuses the number the trigger came from). Set `callback: true` when the next
+// step waits for the contact reply or template-button click (it halts the instance until the
+// interaction arrives). Works on draft/template and paused (`closed`) flows. Place it with `after`
+// (inserts after an existing step, keeping the flow connected) and/or `target` (the next step after
+// this message); a message created with neither stays orphan until you connect it
+// ([FlowsService.GraphApply]).
 //
 // Calls POST /flows/send-whatsapp.
 func (s *FlowsService) SendWhatsapp(ctx context.Context, body FlowsSendWhatsappInput, opts ...Option) (*FlowsStepsCreateOutput, error) {
@@ -807,9 +812,9 @@ func (s *FlowsService) SendWhatsapp(ctx context.Context, body FlowsSendWhatsappI
 // Connect a flow step output.
 //
 // Points ONE output of a step (`stepId`) to `target`, with the canvas rules (a message that waits for
-// a reply keeps its hidden capture chain). Prefer `flows_graph_apply` for anything beyond a single
-// link. Omit `handle` for the main output; otherwise pass the output name exactly as listed in
-// `flows_structure_get` `outputs` (`true`/`false` conditional, `continue`/`noSchedule` delay,
+// a reply keeps its hidden capture chain). Prefer [FlowsService.GraphApply] for anything beyond a
+// single link. Omit `handle` for the main output; otherwise pass the output name exactly as listed in
+// [FlowsService.StructureGet] `outputs` (`true`/`false` conditional, `continue`/`noSchedule` delay,
 // branch/button keys, `invalid`/`timeout` for a message waiting for a reply). `target: null`
 // disconnects that output. Works on draft and paused (`closed`) flows. Never set `target` to the
 // flow's `trigger` step id — the trigger is the entry point only, and pointing anything back at it
@@ -828,22 +833,22 @@ func (s *FlowsService) StepsConnect(ctx context.Context, body FlowsStepsConnectI
 // Create a flow step.
 //
 // Adds one step to a flow (`draft`/`template` or paused `closed`; an active flow must be paused first
-// with `flows_close` — ask the user). Prefer `flows_graph_apply` to build or change a graph: it
-// adds, inserts in the middle and connects several steps in one atomic call. Pass `type` and a
-// type-specific `input` (plus `action` for action steps). For message nodes prefer the
+// with [FlowsService.Close] — ask the user). Prefer [FlowsService.GraphApply] to build or change a
+// graph: it adds, inserts in the middle and connects several steps in one atomic call. Pass `type` and
+// a type-specific `input` (plus `action` for action steps). For message nodes prefer the
 // channel-specific tools
-// (`flows_send_email`/`flows_send_sms`/`flows_send_whatsapp`/`flows_send_voice`/`flows_send_telegram`/`flows_send_instagram`)
+// ([FlowsService.SendEmail]/[FlowsService.SendSMS]/[FlowsService.SendWhatsapp]/[FlowsService.SendVoice]/[FlowsService.SendTelegram]/[FlowsService.SendInstagram])
 // — they have precise per-channel schemas. For any other action (`assignOpportunity`,
 // `updateOpportunityCard`, `createLeadTask`, `httpRequest`, …) or logic node (`randomizer`,
-// `switch`), call `flows_actions_catalog` first — it is the only place the valid `type`+`action`
-// combination and `comingSoon` locks are documented. For a `conditional` step, call
-// `flows_conditionals_catalog` first to pick a real `statements[].type` and its fields — never guess
-// one. The `trigger` step is the flow entry (one per flow); set `triggerStart`/`triggerExit` inline
-// only for a standalone flow — for a flow inside a funnel4 `workflow` node leave them empty, the
-// funnel owns the triggers. `target` sets this NEW step's own outputs (uuid = main output, or
+// `switch`), call [FlowsService.ActionsCatalog] first — it is the only place the valid
+// `type`+`action` combination and `comingSoon` locks are documented. For a `conditional` step, call
+// [FlowsService.ConditionalsCatalog] first to pick a real `statements[].type` and its fields — never
+// guess one. The `trigger` step is the flow entry (one per flow); set `triggerStart`/`triggerExit`
+// inline only for a standalone flow — for a flow inside a funnel4 `workflow` node leave them empty,
+// the funnel owns the triggers. `target` sets this NEW step's own outputs (uuid = main output, or
 // `{handle: uuid}`); it does not connect anything INTO the new step — do that with
-// `flows_graph_apply` (`add` with `after`, or `connect`), or the step stays orphan. Never target the
-// trigger step id: it is the entry point only, and any step pointing back at it makes the worker
+// [FlowsService.GraphApply] (`add` with `after`, or `connect`), or the step stays orphan. Never target
+// the trigger step id: it is the entry point only, and any step pointing back at it makes the worker
 // reprocess the automation from the start forever (infinite loop) — the backend rejects this with a 400.
 //
 // Calls POST /flows/steps-create.
@@ -859,9 +864,9 @@ func (s *FlowsService) StepsCreate(ctx context.Context, body FlowsStepsCreateInp
 //
 // Removes one step (and the hidden reply-capture chain of a message) and clears every output that
 // pointed to it — it does NOT reconnect the predecessor to the successor. To remove a step from the
-// middle of a chain and keep the flow connected, use `flows_graph_apply` `remove` (bridge defaults
-// true). Destructive. Works on draft and paused (`closed`) flows; executions paused on the removed
-// step are cancelled.
+// middle of a chain and keep the flow connected, use [FlowsService.GraphApply] `remove` (bridge
+// defaults true). Destructive. Works on draft and paused (`closed`) flows; executions paused on the
+// removed step are cancelled.
 //
 // Calls DELETE /flows/steps-delete.
 func (s *FlowsService) StepsDelete(ctx context.Context, body FlowsStepsDeleteInput, opts ...Option) (*FlowsStepsDeleteOutput, error) {
@@ -878,13 +883,13 @@ func (s *FlowsService) StepsDelete(ctx context.Context, body FlowsStepsDeleteInp
 // Send only the side you are changing: omitting `triggerStart` or `triggerExit` preserves the current
 // events on that side; pass an explicit empty array to clear a side. Within a side, the array you send
 // replaces that side's events. Each constraint's `op` (from the matching scope in
-// `flows_triggers_catalog`) shapes it: `EQ` — single value in
+// [FlowsService.TriggersCatalog]) shapes it: `EQ` — single value in
 // `valueUuid`/`valueString`/`valueNumber`/`valueBoolean`/`valueDate` (matching `valueType`); `IN` —
 // membership, `valueJson` as an array of values; `CONTAINS`/`NOT_CONTAINS` — free-text partial
 // match, `valueJson` as an array of keywords, optional `caseSensitive` (default false). Standalone
 // flows only — for a flow inside a funnel4 `workflow` node the triggers are owned by the funnel and
-// this is rejected. `draft`/`template` flows only; on a paused (`closed`) flow use `flows_graph_apply`
-// `setTriggers` (same semantics).
+// this is rejected. `draft`/`template` flows only; on a paused (`closed`) flow use
+// [FlowsService.GraphApply] `setTriggers` (same semantics).
 //
 // Calls POST /flows/steps-triggers-set.
 func (s *FlowsService) StepsTriggersSet(ctx context.Context, body FlowsStepsTriggersSetInput, opts ...Option) (*FlowsStepsTriggersSetOutput, error) {
@@ -898,9 +903,9 @@ func (s *FlowsService) StepsTriggersSet(ctx context.Context, body FlowsStepsTrig
 // Update a flow step.
 //
 // Updates a step `input` / `action` / `dependencies` / `meta` on a `draft`/`template` flow. Does not
-// change connections (use `flows_graph_apply` / `flows_steps_connect`). On a paused (`closed`) flow,
-// change `input`/`action` with `flows_graph_apply` `update` instead (it also keeps a message's
-// reply-capture chain intact).
+// change connections (use [FlowsService.GraphApply] / [FlowsService.StepsConnect]). On a paused
+// (`closed`) flow, change `input`/`action` with [FlowsService.GraphApply] `update` instead (it also
+// keeps a message's reply-capture chain intact).
 //
 // Calls POST /flows/steps-update.
 func (s *FlowsService) StepsUpdate(ctx context.Context, body FlowsStepsUpdateInput, opts ...Option) (*FlowsStepsUpdateOutput, error) {
@@ -920,7 +925,7 @@ func (s *FlowsService) StepsUpdate(ctx context.Context, body FlowsStepsUpdateInp
 // unconnected). Hidden reply-capture steps (collect/timeout) are not listed: their outputs show up on
 // the message that owns them. Also returns `edges` (from → handle → to) and `startStepId`. The
 // `trigger` step carries the flow's `triggerStart`/`triggerExit` event arrays (entry/exit). Call
-// before `flows_graph_apply` to learn the real step ids and the exact `handle` names.
+// before [FlowsService.GraphApply] to learn the real step ids and the exact `handle` names.
 //
 // Calls GET /flows/structure-get.
 func (s *FlowsService) StructureGet(ctx context.Context, params FlowsStructureGetParams, opts ...Option) (*FlowsStructureGetOutput, error) {
@@ -938,17 +943,18 @@ func (s *FlowsService) StructureGet(ctx context.Context, params FlowsStructureGe
 // contact, applies tags, moves cards, calls integrations, spends credits, honors delays/timeouts (a
 // 'wait 2 days' step holds it for 2 days) and COUNTS in the flow's success rate and per-step counters
 // (it shows as `kind: 'testLive'`). Only test on the user's own contact, and name the recipient when
-// confirming. Not the same as `flows_activate`: it affects only that one contact, needs no published
-// flow (works on `draft`) and skips the same-contact debounce, so re-running for the same contact
-// always works. It starts directly at the flow's start step — it does NOT prove the real trigger
-// event would fire the flow (activate and observe for that) — and runs the SAVED graph. Payload: it
-// is deduced from the entry trigger's constraints (a flow scoped to offer X gets `offerId = X`); pass
-// `payload` (max 64 keys, keys up to 64 chars) only to fill fields the trigger does not pin or to
-// override them — take a real one from `flows_trigger_samples_list`; `leadId` always wins. 404 if
-// the contact is not in this workspace; 409 if the flow has no start step yet. Returns `{ instanceId,
-// kind }` immediately while the run proceeds asynchronously: poll `flows_executions_get` with that id
-// (per-step trace, conditional evaluation, effects) or find it in `flows_executions_list` with `kind:
-// 'test'`. Do not use on an archived flow: the worker cancels its executions at the first step.
+// confirming. Not the same as [FlowsService.Activate]: it affects only that one contact, needs no
+// published flow (works on `draft`) and skips the same-contact debounce, so re-running for the same
+// contact always works. It starts directly at the flow's start step — it does NOT prove the real
+// trigger event would fire the flow (activate and observe for that) — and runs the SAVED graph.
+// Payload: it is deduced from the entry trigger's constraints (a flow scoped to offer X gets `offerId
+// = X`); pass `payload` (max 64 keys, keys up to 64 chars) only to fill fields the trigger does not
+// pin or to override them — take a real one from [FlowsService.TriggerSamplesList]; `leadId` always
+// wins. 404 if the contact is not in this workspace; 409 if the flow has no start step yet. Returns `{
+// instanceId, kind }` immediately while the run proceeds asynchronously: poll
+// [FlowsService.ExecutionsGet] with that id (per-step trace, conditional evaluation, effects) or find
+// it in [FlowsService.ExecutionsList] with `kind: 'test'`. Do not use on an archived flow: the worker
+// cancels its executions at the first step.
 //
 // Calls POST /flows/test-runs-start.
 func (s *FlowsService) TestRunsStart(ctx context.Context, body FlowsTestRunsStartInput, opts ...Option) (*FlowsTestRunsStartOutput, error) {
@@ -962,11 +968,11 @@ func (s *FlowsService) TestRunsStart(ctx context.Context, body FlowsTestRunsStar
 // List recent trigger occurrences of a flow.
 //
 // Up to the 10 most recent PRODUCTION executions of the flow, each with its contact and `payload` =
-// the execution `state`. Use to reuse a real event as the `payload` of `flows_test_runs_start`, or to
-// answer 'what did the event carry when it fired for that contact?'. Test runs are excluded. Caveat:
-// `payload` is the whole instance state as stored now, so beyond the trigger fields (offer, pipeline,
-// stage…) it can include values the run collected or wrote later. Empty `data` when the flow never
-// ran in production. Read-only.
+// the execution `state`. Use to reuse a real event as the `payload` of [FlowsService.TestRunsStart],
+// or to answer 'what did the event carry when it fired for that contact?'. Test runs are excluded.
+// Caveat: `payload` is the whole instance state as stored now, so beyond the trigger fields (offer,
+// pipeline, stage…) it can include values the run collected or wrote later. Empty `data` when the
+// flow never ran in production. Read-only.
 //
 // Calls GET /flows/trigger-samples-list.
 func (s *FlowsService) TriggerSamplesList(ctx context.Context, params FlowsTriggerSamplesListParams, opts ...Option) (*FlowsTriggerSamplesListOutput, error) {
@@ -986,12 +992,12 @@ func (s *FlowsService) TriggerSamplesList(ctx context.Context, params FlowsTrigg
 // need every event. Each entry has a friendly `label`, a `description`, the `group` it belongs to, and
 // the `scopes` (`field`/`label`/`valueType`/`op`) it can be narrowed by. Use it to (1) translate a
 // stored event into its friendly label before talking to the user, and (2) pick a valid `eventName`
-// before calling `flows_steps_triggers_set` — see that tool's description for how to shape a scope
-// into a constraint. Never invent an event name; never show `eventName` to the user. For an entity
-// scope (e.g. `mediaId`/post -> `instagram_posts_list`, `listId`/list -> `lists_list`), resolve the
-// real id with that scope's picker tool first — never guess or fabricate one. For a scope with no
-// such picker tool, only set it when the user gives you the concrete value(s); otherwise omit the
-// scope.
+// before calling [FlowsService.StepsTriggersSet] — see that tool's description for how to shape a
+// scope into a constraint. Never invent an event name; never show `eventName` to the user. For an
+// entity scope (e.g. `mediaId`/post -> [InstagramPostsService.List], `listId`/list ->
+// [ListsService.List]), resolve the real id with that scope's picker tool first — never guess or
+// fabricate one. For a scope with no such picker tool, only set it when the user gives you the
+// concrete value(s); otherwise omit the scope.
 //
 // Calls GET /flows/triggers-catalog.
 func (s *FlowsService) TriggersCatalog(ctx context.Context, params FlowsTriggersCatalogParams, opts ...Option) (*FlowsTriggersCatalogOutput, error) {
@@ -1034,14 +1040,15 @@ func (s *FlowsService) Update(ctx context.Context, body FlowsUpdateInput, opts .
 // unset); `variableOutsideTriggerContext` (a message uses a variable its trigger does not provide,
 // `detail` = the variable, e.g. the webinar magic link; it would render empty). Warnings never make
 // `valid` false. Not checked statically: numbers taken from the trigger context (`numberStrategy:
-// 'context'`). Note that `flows_activate` itself only refuses a missing entry trigger and incomplete
-// channel nodes — the other `error` codes are NOT blocked at activation but the sends will fail, so
-// fix them first. A step targeting the trigger step (infinite loop) is rejected at write time by
-// `flows_steps_connect`/`flows_steps_create`, so this check does not look for it. To test with a real
-// contact instead, see `flows_test_runs_start`. Also returned: `triggerWithoutOutput` — the trigger
-// connects to nothing while other steps exist, so the automation fires and does nothing.
-// `orphanStepIds` and `triggerWithoutOutput` are what YOU must clear before telling the user the flow
-// is ready (fix them with `flows_graph_apply`), even though neither makes `valid` false.
+// 'context'`). Note that [FlowsService.Activate] itself only refuses a missing entry trigger and
+// incomplete channel nodes — the other `error` codes are NOT blocked at activation but the sends
+// will fail, so fix them first. A step targeting the trigger step (infinite loop) is rejected at write
+// time by [FlowsService.StepsConnect]/[FlowsService.StepsCreate], so this check does not look for it.
+// To test with a real contact instead, see [FlowsService.TestRunsStart]. Also returned:
+// `triggerWithoutOutput` — the trigger connects to nothing while other steps exist, so the
+// automation fires and does nothing. `orphanStepIds` and `triggerWithoutOutput` are what YOU must
+// clear before telling the user the flow is ready (fix them with [FlowsService.GraphApply]), even
+// though neither makes `valid` false.
 //
 // Calls GET /flows/validate.
 func (s *FlowsService) Validate(ctx context.Context, params FlowsValidateParams, opts ...Option) (*FlowsValidateOutput, error) {
@@ -3900,7 +3907,7 @@ const (
 // FlowsSendEmailInput is the request body of [FlowsService.SendEmail].
 type FlowsSendEmailInput struct {
 	// Id of the flow to add the step to. Must be `draft`/`template` or paused (`closed`); an active
-	// flow must be paused first (`flows_close`) — ask the user.
+	// flow must be paused first ([FlowsService.Close]) — ask the user.
 	FlowID string `json:"flowId"`
 	// Email subject line. Supports {name}/{email}/{telephone} personalization tokens.
 	Subject string `json:"subject"`
@@ -3971,11 +3978,12 @@ type FlowsSendEmailInput struct {
 	// email-authoring reference for the authoring rules (table layout, inline styles only, one CTA).
 	CustomHTML *string `json:"customHtml,omitzero"`
 	// Verified sender signature id (EmailSenderSignatures). Resolve one with
-	// `email_sender_signatures_list` (pick `confirmed: true`) and pass it whenever one exists; never
-	// fabricate a uuid. Omit ONLY when the workspace has no confirmed signature at all — the node
-	// saves fine, but sending will fail (fatal at hermes message creation, not caught by activation)
-	// until a signature is added. When you omit it, you MUST tell the user in your reply that they
-	// have no sender email configured yet and the message will not send until they add and verify one.
+	// [EmailSenderSignaturesService.List] (pick `confirmed: true`) and pass it whenever one exists;
+	// never fabricate a uuid. Omit ONLY when the workspace has no confirmed signature at all — the
+	// node saves fine, but sending will fail (fatal at hermes message creation, not caught by
+	// activation) until a signature is added. When you omit it, you MUST tell the user in your reply
+	// that they have no sender email configured yet and the message will not send until they add and
+	// verify one.
 	EmailSenderSignatureID *string `json:"emailSenderSignatureId,omitzero"`
 	// Id of the next step this message's main output goes to. Optional. Does not connect anything INTO
 	// this message — use `after` for that.
@@ -3998,8 +4006,9 @@ type FlowsSendEmailInput struct {
 type FlowsSendEmailInputAfter struct {
 	// Id of the existing step to insert this message after.
 	Step string `json:"step"`
-	// Output of that step to insert on, as listed in `flows_structure_get` `outputs` (omit/null = main
-	// output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main output).
+	// Output of that step to insert on, as listed in [FlowsService.StructureGet] `outputs` (omit/null
+	// = main output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main
+	// output).
 	Handle Nullable[string] `json:"handle,omitzero"`
 }
 
@@ -4029,7 +4038,7 @@ const (
 // FlowsSendInstagramInput is the request body of [FlowsService.SendInstagram].
 type FlowsSendInstagramInput struct {
 	// Id of the flow to add the step to. Must be `draft`/`template` or paused (`closed`); an active
-	// flow must be paused first (`flows_close`) — ask the user.
+	// flow must be paused first ([FlowsService.Close]) — ask the user.
 	FlowID string `json:"flowId"`
 	// Message body. Personalization tokens use a flat lead key in SINGLE braces: {name}, {email},
 	// {telephone} (the only recognized lead fields — never {{name}} nor {nome}). Checkout links:
@@ -4056,15 +4065,16 @@ type FlowsSendInstagramInput struct {
 type FlowsSendInstagramInputAfter struct {
 	// Id of the existing step to insert this message after.
 	Step string `json:"step"`
-	// Output of that step to insert on, as listed in `flows_structure_get` `outputs` (omit/null = main
-	// output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main output).
+	// Output of that step to insert on, as listed in [FlowsService.StructureGet] `outputs` (omit/null
+	// = main output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main
+	// output).
 	Handle Nullable[string] `json:"handle,omitzero"`
 }
 
 // FlowsSendSMSInput is the request body of [FlowsService.SendSMS].
 type FlowsSendSMSInput struct {
 	// Id of the flow to add the step to. Must be `draft`/`template` or paused (`closed`); an active
-	// flow must be paused first (`flows_close`) — ask the user.
+	// flow must be paused first ([FlowsService.Close]) — ask the user.
 	FlowID string `json:"flowId"`
 	// Message body. Personalization tokens use a flat lead key in SINGLE braces: {name}, {email},
 	// {telephone} (the only recognized lead fields — never {{name}} nor {nome}). Checkout links:
@@ -4091,15 +4101,16 @@ type FlowsSendSMSInput struct {
 type FlowsSendSMSInputAfter struct {
 	// Id of the existing step to insert this message after.
 	Step string `json:"step"`
-	// Output of that step to insert on, as listed in `flows_structure_get` `outputs` (omit/null = main
-	// output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main output).
+	// Output of that step to insert on, as listed in [FlowsService.StructureGet] `outputs` (omit/null
+	// = main output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main
+	// output).
 	Handle Nullable[string] `json:"handle,omitzero"`
 }
 
 // FlowsSendTelegramInput is the request body of [FlowsService.SendTelegram].
 type FlowsSendTelegramInput struct {
 	// Id of the flow to add the step to. Must be `draft`/`template` or paused (`closed`); an active
-	// flow must be paused first (`flows_close`) — ask the user.
+	// flow must be paused first ([FlowsService.Close]) — ask the user.
 	FlowID string `json:"flowId"`
 	// Message body. Personalization tokens use a flat lead key in SINGLE braces: {name}, {email},
 	// {telephone} (the only recognized lead fields — never {{name}} nor {nome}). Checkout links:
@@ -4107,12 +4118,12 @@ type FlowsSendTelegramInput struct {
 	Content string `json:"content"`
 	// Message format. Defaults to `text`; for media, `content` is the media URL.
 	Format *FlowsSendTelegramInputFormat `json:"format,omitzero"`
-	// Sender Telegram bot id (channel instance). Resolve one with `channel_instances_list` (channel:
-	// telegram, status: live) and pass it whenever one exists; never fabricate a uuid. Omit ONLY when
-	// the workspace has no live Telegram bot connected at all — the node saves fine, but sending
-	// will fail (fatal at hermes message creation, not caught by activation) until a bot is connected.
-	// When you omit it, you MUST tell the user in your reply that they have no Telegram bot connected
-	// yet and the message will not send until they connect one.
+	// Sender Telegram bot id (channel instance). Resolve one with [ChannelInstancesService.List]
+	// (channel: telegram, status: live) and pass it whenever one exists; never fabricate a uuid. Omit
+	// ONLY when the workspace has no live Telegram bot connected at all — the node saves fine, but
+	// sending will fail (fatal at hermes message creation, not caught by activation) until a bot is
+	// connected. When you omit it, you MUST tell the user in your reply that they have no Telegram bot
+	// connected yet and the message will not send until they connect one.
 	TelegramBotID *string `json:"telegramBotId,omitzero"`
 	// File extension for image/video/audio/file formats.
 	FileExtension *string `json:"fileExtension,omitzero"`
@@ -4139,8 +4150,9 @@ type FlowsSendTelegramInput struct {
 type FlowsSendTelegramInputAfter struct {
 	// Id of the existing step to insert this message after.
 	Step string `json:"step"`
-	// Output of that step to insert on, as listed in `flows_structure_get` `outputs` (omit/null = main
-	// output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main output).
+	// Output of that step to insert on, as listed in [FlowsService.StructureGet] `outputs` (omit/null
+	// = main output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main
+	// output).
 	Handle Nullable[string] `json:"handle,omitzero"`
 }
 
@@ -4161,7 +4173,7 @@ const (
 // FlowsSendVoiceInput is the request body of [FlowsService.SendVoice].
 type FlowsSendVoiceInput struct {
 	// Id of the flow to add the step to. Must be `draft`/`template` or paused (`closed`); an active
-	// flow must be paused first (`flows_close`) — ask the user.
+	// flow must be paused first ([FlowsService.Close]) — ask the user.
 	FlowID string `json:"flowId"`
 	// Audio URL/reference to play in the call (the recorded/uploaded URA audio).
 	Content string `json:"content"`
@@ -4188,23 +4200,24 @@ type FlowsSendVoiceInput struct {
 type FlowsSendVoiceInputAfter struct {
 	// Id of the existing step to insert this message after.
 	Step string `json:"step"`
-	// Output of that step to insert on, as listed in `flows_structure_get` `outputs` (omit/null = main
-	// output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main output).
+	// Output of that step to insert on, as listed in [FlowsService.StructureGet] `outputs` (omit/null
+	// = main output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main
+	// output).
 	Handle Nullable[string] `json:"handle,omitzero"`
 }
 
 // FlowsSendWhatsappInput is the request body of [FlowsService.SendWhatsapp].
 type FlowsSendWhatsappInput struct {
 	// Id of the flow to add the step to. Must be `draft`/`template` or paused (`closed`); an active
-	// flow must be paused first (`flows_close`) — ask the user.
+	// flow must be paused first ([FlowsService.Close]) — ask the user.
 	FlowID string `json:"flowId"`
 	// Meaning depends on `format`. `format: 'text'`: the free-form message body — personalization
 	// tokens use a flat lead key in SINGLE braces: {name}, {email}, {telephone} (never
 	// {{name}}/{nome}); checkout links: {checkout} or {checkout:offerId}. `format: 'template'`: this
 	// is NOT the message text — it is the approved template's `elementName` (resolve with
-	// `gupshup_templates_list`/`gupshup_templates_get`), and the real copy comes from the template
-	// itself, personalized via `paramMapping`. Writing prose here in template mode points the node at
-	// a template that does not exist and the builder rejects it as `templateNotFound`.
+	// [GupshupTemplatesService.List]/[GupshupTemplatesService.Get]), and the real copy comes from the
+	// template itself, personalized via `paramMapping`. Writing prose here in template mode points the
+	// node at a template that does not exist and the builder rejects it as `templateNotFound`.
 	Content string `json:"content"`
 	// `text`: free-form body, delivers ONLY inside the 24h customer-care window (a message the contact
 	// sent in the last 24h) — fails outside it, and is only accepted here together with
@@ -4214,15 +4227,15 @@ type FlowsSendWhatsappInput struct {
 	// both formats bill the same way (per Meta conversation window), so `text` is not the 'free'
 	// option.
 	Format FlowsSendWhatsappInputFormat `json:"format"`
-	// Specific WABA app (channel instance) id — resolve it with `channel_instances_list`. Required
-	// for the send to work when `numberStrategy` is `fixed` (there is no workspace default fallback).
-	// Ignored with `numberStrategy` `context`.
+	// Specific WABA app (channel instance) id — resolve it with [ChannelInstancesService.List].
+	// Required for the send to work when `numberStrategy` is `fixed` (there is no workspace default
+	// fallback). Ignored with `numberStrategy` `context`.
 	GupshupAppID *string `json:"gupshupAppId,omitzero"`
 	// Approved template id, required when `format: template` — resolve/confirm it with
-	// `gupshup_templates_get`/`gupshup_templates_list` (must be `status: approved`).
+	// [GupshupTemplatesService.Get]/[GupshupTemplatesService.List] (must be `status: approved`).
 	GupshupTemplateID *string `json:"gupshupTemplateId,omitzero"`
 	// `context`: use the app the trigger brought in the instance state. Only correct when the flow's
-	// trigger IS itself an inbound WhatsApp message — check with `flows_structure_get` first.
+	// trigger IS itself an inbound WhatsApp message — check with [FlowsService.StructureGet] first.
 	// `fixed`: use `gupshupAppId` (required in this mode) — the correct choice for any other trigger
 	// (funnel, tag, schedule, checkout). Real fallback behavior of `context` WITHOUT actual trigger
 	// context: the step falls back to the owner's single live WhatsApp number, and only fails
@@ -4256,8 +4269,9 @@ type FlowsSendWhatsappInput struct {
 type FlowsSendWhatsappInputAfter struct {
 	// Id of the existing step to insert this message after.
 	Step string `json:"step"`
-	// Output of that step to insert on, as listed in `flows_structure_get` `outputs` (omit/null = main
-	// output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main output).
+	// Output of that step to insert on, as listed in [FlowsService.StructureGet] `outputs` (omit/null
+	// = main output; e.g. `true`/`false` of a conditional; `continue` for a delay, which has no main
+	// output).
 	Handle Nullable[string] `json:"handle,omitzero"`
 }
 
@@ -4280,12 +4294,12 @@ const (
 // FlowsSendWhatsappInputNumberStrategy is the type of [FlowsSendWhatsappInput.NumberStrategy].
 //
 // `context`: use the app the trigger brought in the instance state. Only correct when the flow's
-// trigger IS itself an inbound WhatsApp message — check with `flows_structure_get` first. `fixed`:
-// use `gupshupAppId` (required in this mode) — the correct choice for any other trigger (funnel,
-// tag, schedule, checkout). Real fallback behavior of `context` WITHOUT actual trigger context: the
-// step falls back to the owner's single live WhatsApp number, and only fails permanently at send time
-// if there are 0 or 2+ live numbers — fragile, disappears the moment a 2nd number is connected, do
-// not rely on it.
+// trigger IS itself an inbound WhatsApp message — check with [FlowsService.StructureGet] first.
+// `fixed`: use `gupshupAppId` (required in this mode) — the correct choice for any other trigger
+// (funnel, tag, schedule, checkout). Real fallback behavior of `context` WITHOUT actual trigger
+// context: the step falls back to the owner's single live WhatsApp number, and only fails permanently
+// at send time if there are 0 or 2+ live numbers — fragile, disappears the moment a 2nd number is
+// connected, do not rely on it.
 type FlowsSendWhatsappInputNumberStrategy string
 
 // Values of [FlowsSendWhatsappInputNumberStrategy].

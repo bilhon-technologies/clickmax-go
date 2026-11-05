@@ -34,7 +34,7 @@ func (s *PlansService) CancelCurrentPlan(ctx context.Context, body PlansCancelCu
 // Preview the impact of canceling the current plan.
 //
 // Returns the projected dollar impact and scheduled expiration if the workspace cancels its current
-// Clickmax SaaS subscription. Run before `plans_cancel_current_plan` to surface prorated impact.
+// Clickmax SaaS subscription. Run before [PlansService.CancelCurrentPlan] to surface prorated impact.
 //
 // Calls GET /plans/cancel-preview.
 func (s *PlansService) CancelPreview(ctx context.Context, opts ...Option) (*PlansCancelPreviewOutput, error) {

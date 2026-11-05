@@ -17,7 +17,7 @@ type SocialPostsService struct {
 //
 // Cancels every target of the post that is not published yet (draft, scheduled, failed). Targets
 // already publishing finish on their own; published ones stay on the network. A cancelled target
-// cannot be scheduled again — use `social_posts_duplicate`.
+// cannot be scheduled again — use [SocialPostsService.Duplicate].
 //
 // Calls DELETE /social-posts/cancel.
 func (s *SocialPostsService) Cancel(ctx context.Context, body SocialPostsCancelInput, opts ...Option) (*SocialPostsCancelOutput, error) {
@@ -31,11 +31,12 @@ func (s *SocialPostsService) Cancel(ctx context.Context, body SocialPostsCancelI
 // Create a social post.
 //
 // Creates a DRAFT post (`mode: draft`, the only mode here) with one target per account
-// (`social_accounts_list`). Nothing is sent. Set each target `scheduledAt` (or the post
-// `defaultScheduledAt`); to use the queue, read `social_queue_next_free_slot` and put its
-// `scheduledAt` on the target. Then call `social_posts_schedule` or `social_posts_publish_now`, which
-// ask the person to approve. Media: Drive files (`source: drive`) or an upload from
-// `social_media_upload_url`. A rule failure is a 422 that lists the `issues` and writes nothing.
+// ([SocialAccountsService.List]). Nothing is sent. Set each target `scheduledAt` (or the post
+// `defaultScheduledAt`); to use the queue, read [SocialService.QueueNextFreeSlot] and put its
+// `scheduledAt` on the target. Then call [SocialPostsService.Schedule] or
+// [SocialPostsService.PublishNow], which ask the person to approve. Media: Drive files (`source:
+// drive`) or an upload from [SocialService.MediaUploadURL]. A rule failure is a 422 that lists the
+// `issues` and writes nothing.
 //
 // Calls POST /social-posts/create.
 func (s *SocialPostsService) Create(ctx context.Context, body SocialPostsCreateInput, opts ...Option) (*SocialPostsGetOutput, error) {
@@ -106,7 +107,7 @@ func (s *SocialPostsService) List(ctx context.Context, body SocialPostsListInput
 // Publish a social post now.
 //
 // Publishes every draft target of the post right now, on the public profiles. Each target ends
-// `published` or `failed` a few moments later; read it back with `social_posts_get`.
+// `published` or `failed` a few moments later; read it back with [SocialPostsService.Get].
 //
 // Calls POST /social-posts/publish-now.
 func (s *SocialPostsService) PublishNow(ctx context.Context, body SocialPostsPublishNowInput, opts ...Option) (*SocialPostsGetOutput, error) {
@@ -121,7 +122,7 @@ func (s *SocialPostsService) PublishNow(ctx context.Context, body SocialPostsPub
 //
 // Schedules the draft targets of the post (all, or only `targetIds`) at their saved time. Once the
 // time comes the post goes LIVE on the public profile. Fails when `issues` remain or a saved time has
-// passed — fix with `social_targets_update` first.
+// passed — fix with [SocialService.TargetsUpdate] first.
 //
 // Calls POST /social-posts/schedule.
 func (s *SocialPostsService) Schedule(ctx context.Context, body SocialPostsScheduleInput, opts ...Option) (*SocialPostsGetOutput, error) {
@@ -149,8 +150,8 @@ func (s *SocialPostsService) SetMedia(ctx context.Context, body SocialPostsSetMe
 // Update a social post.
 //
 // Changes the caption, zone or default time, adds DRAFT targets (`addTargets`, `mode: draft` only;
-// schedule them with `social_posts_schedule`) or cancels targets (`removeTargetIds`). Only targets
-// that are not published yet change; per-network fields are on `social_targets_update`.
+// schedule them with [SocialPostsService.Schedule]) or cancels targets (`removeTargetIds`). Only
+// targets that are not published yet change; per-network fields are on [SocialService.TargetsUpdate].
 //
 // Calls POST /social-posts/update.
 func (s *SocialPostsService) Update(ctx context.Context, body SocialPostsUpdateInput, opts ...Option) (*SocialPostsGetOutput, error) {

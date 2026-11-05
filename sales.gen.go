@@ -15,8 +15,8 @@ type SalesService struct {
 
 // Get buyer info for a sale.
 //
-// Returns buyer identity and contact info for a sale. Separate from `sales_get_details` because buyer
-// records live in a different store.
+// Returns buyer identity and contact info for a sale. Separate from [SalesService.GetDetails] because
+// buyer records live in a different store.
 //
 // Calls GET /sales/get-buyer.
 func (s *SalesService) GetBuyer(ctx context.Context, params SalesGetBuyerParams, opts ...Option) (*SalesGetBuyerOutput, error) {

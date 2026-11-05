@@ -18,16 +18,16 @@ type CustomFieldsService struct {
 // Applies the SAME patch to many custom fields at once (the management-screen bulk actions): `ids` is
 // 1-500 unique custom-field ids and `patch` takes ONLY `isActive`, `groupName`, `filterable`, `pinned`
 // and `required` (at least one). Label, key, type and options are per-field identity and are NOT
-// accepted here — use `custom_fields_update` field by field. `isActive: false` INACTIVATES the
+// accepted here — use [CustomFieldsService.Update] field by field. `isActive: false` INACTIVATES the
 // fields (the product calls it "excluir"): definitions and stored contact values are kept and
 // `isActive: true` reverses it, but the fields vanish from lists, forms, cards and filters while
 // segments, automations, forms, dashboards, reports, schedules and stage rules that reference them are
-// NOT blocked or cleaned up — read `usageCount` in `custom_fields_managed_list` (or `references` in
-// `custom_fields_insights`) first. `groupName: null` (or blank) moves the fields out of any group; a
-// text moves them all into that group. Reactivating a select/multi_select/radio field that has no
-// options fails. ALL-OR-NOTHING and synchronous: one id outside the workspace fails the whole batch
-// with not-found and nothing changes. Returns only `{ updated }` (the count) — read the rows back
-// with `custom_fields_managed_list`.
+// NOT blocked or cleaned up — read `usageCount` in [CustomFieldsService.ManagedList] (or
+// `references` in [CustomFieldsService.Insights]) first. `groupName: null` (or blank) moves the fields
+// out of any group; a text moves them all into that group. Reactivating a select/multi_select/radio
+// field that has no options fails. ALL-OR-NOTHING and synchronous: one id outside the workspace fails
+// the whole batch with not-found and nothing changes. Returns only `{ updated }` (the count) — read
+// the rows back with [CustomFieldsService.ManagedList].
 //
 // Calls POST /custom-fields/bulk-update.
 func (s *CustomFieldsService) BulkUpdate(ctx context.Context, body CustomFieldsBulkUpdateInput, opts ...Option) (*CustomFieldsBulkUpdateOutput, error) {
@@ -55,8 +55,8 @@ func (s *CustomFieldsService) BulkUpdate(ctx context.Context, body CustomFieldsB
 // with a conflict if an ACTIVE field with the same `fieldName` already exists for that `entityType`.
 // If an INACTIVE (deleted) field has that `fieldName`, it is NOT rejected: that old field is revived
 // and overwritten with the config you send, keeping its id and any values contacts still hold —
-// check `custom_fields_managed_list` with `isActive: false` first when the name may have been used
-// before.
+// check [CustomFieldsService.ManagedList] with `isActive: false` first when the name may have been
+// used before.
 //
 // Calls POST /custom-fields/create.
 func (s *CustomFieldsService) Create(ctx context.Context, body CustomFieldsCreateInput, opts ...Option) (*CustomFieldsCreateOutput, error) {
@@ -94,9 +94,10 @@ func (s *CustomFieldsService) GroupNames(ctx context.Context, params CustomField
 // number/currency/percentage/rating, null otherwise) and `references` — the NAMED resources that
 // consume the field (`kind`: segment | flow | form | dashboard | report | schedule | stageRule, with
 // `id`, `name`, `meta`, `parentId`). `references` is the answer to "what breaks if I deactivate this
-// field": read it before `custom_fields_update`/`custom_fields_bulk_update` with `isActive: false`.
-// Scans the stored values, so it is heavier than the list — call it per field, not in a loop over
-// hundreds. Fails for an unknown `customFieldId`. For who filled it, use `custom_fields_records`.
+// field": read it before [CustomFieldsService.Update]/[CustomFieldsService.BulkUpdate] with `isActive:
+// false`. Scans the stored values, so it is heavier than the list — call it per field, not in a loop
+// over hundreds. Fails for an unknown `customFieldId`. For who filled it, use
+// [CustomFieldsService.Records].
 //
 // Calls GET /custom-fields/insights.
 func (s *CustomFieldsService) Insights(ctx context.Context, params CustomFieldsInsightsParams, opts ...Option) (*CustomFieldsInsightsOutput, error) {
@@ -113,18 +114,18 @@ func (s *CustomFieldsService) Insights(ctx context.Context, params CustomFieldsI
 // fields configured in the CRM, NOT the native/built-in fields. Each returned field is tagged with
 // `entityType`: "leads" = custom fields on leads/contacts, "opportunities" = custom fields on
 // opportunity (deal / kanban card) records, "objects" = the fields of ONE custom object (Imóveis,
-// Contratos… — see `custom_objects_list`), which REQUIRES `objectId` (passing `objectId` alone
-// implies "objects"; "objects" without it is 400). Pass `entityType` to list only one kind; omit it to
-// return leads + opportunities in one call (object fields are never included without `objectId`).
-// Optionally pass `filterable: true` to restrict to fields usable in segment/list filters. Returns
-// ONLY ACTIVE fields (inactivated/"deleted" ones are hidden — see `custom_fields_managed_list` with
-// `isActive: false`), in the configured `order`, as one unpaginated array with the full definition:
-// `fieldName`, `displayName`, `fieldType`, `entityType`, `groupName`, `options`, `order`, and
-// visibility flags. It carries NO fill/usage/health numbers and, in workspaces with hundreds of
-// fields, is heavy — for fill rate, usage, health, search or paging use
-// `custom_fields_managed_list`. Use this whenever the user mentions "campos customizados", "custom
-// fields", or "customFields" for leads or opportunities — and to get the field ids (`id`) a custom
-// object needs for its records, filters and values.
+// Contratos… — see [CustomObjectsService.List]), which REQUIRES `objectId` (passing `objectId`
+// alone implies "objects"; "objects" without it is 400). Pass `entityType` to list only one kind; omit
+// it to return leads + opportunities in one call (object fields are never included without
+// `objectId`). Optionally pass `filterable: true` to restrict to fields usable in segment/list
+// filters. Returns ONLY ACTIVE fields (inactivated/"deleted" ones are hidden — see
+// [CustomFieldsService.ManagedList] with `isActive: false`), in the configured `order`, as one
+// unpaginated array with the full definition: `fieldName`, `displayName`, `fieldType`, `entityType`,
+// `groupName`, `options`, `order`, and visibility flags. It carries NO fill/usage/health numbers and,
+// in workspaces with hundreds of fields, is heavy — for fill rate, usage, health, search or paging
+// use [CustomFieldsService.ManagedList]. Use this whenever the user mentions "campos customizados",
+// "custom fields", or "customFields" for leads or opportunities — and to get the field ids (`id`) a
+// custom object needs for its records, filters and values.
 //
 // Calls GET /custom-fields/list.
 func (s *CustomFieldsService) List(ctx context.Context, params CustomFieldsListParams, opts ...Option) (*CustomFieldsListOutput, error) {
@@ -139,22 +140,23 @@ func (s *CustomFieldsService) List(ctx context.Context, params CustomFieldsListP
 //
 // The custom-field MANAGEMENT view: a searchable, paginated list where every field carries how much it
 // is used. `entityType` ("leads" | "opportunities" | "objects" + `objectId`) is REQUIRED here, unlike
-// `custom_fields_list`; for an object the denominator of `fillRate` is its live records. Filters:
-// `search` (case-insensitive substring of `displayName`, `fieldName` or `description`), `fieldType`,
-// `health`, `groupName` (exact group name; an empty string keeps only fields WITHOUT a group),
-// `required`, and `isActive` (omitted = active fields; `false` lists the inactivated/"deleted" ones,
-// the place to find a field to reactivate). Each row: identity (`id`, `fieldName`, `displayName`,
-// `fieldType`, `description`, `groupName`, `order`), flags (`required`, `filterable`, `pinned`),
-// `fillCount` / `totalEntities` / `fillRate` (0..1; the denominator is ALL leads, or ALL opportunity
-// cards, of the workspace), `lastEditedAt`, `usageCount` + `usageByKind` (how many segments, flows,
-// forms, dashboards, reports, schedules and stage rules reference the field) and `health`: `unused` =
-// no consumer and under 5% filled (safe archive candidate), `critical` = has consumers but under 25%
-// filled, `attention` = under 60% filled, `healthy` otherwise. Ordered by group A-Z (ungrouped last),
-// then the configured `order`. Lighter than `custom_fields_list`: rows omit `options`, `defaultValue`
-// and the `showIn*` flags — use that tool (or `custom_fields_insights` for one field) when you need
-// them. Numbers come from a workspace snapshot cached for seconds (fill) to ~30s (consumers), so a
-// value written a moment ago may not show yet; INACTIVE rows always come back with zero fill/usage
-// (and so `unused`), not real numbers. `perPage` 1-2000, default 10.
+// [CustomFieldsService.List]; for an object the denominator of `fillRate` is its live records.
+// Filters: `search` (case-insensitive substring of `displayName`, `fieldName` or `description`),
+// `fieldType`, `health`, `groupName` (exact group name; an empty string keeps only fields WITHOUT a
+// group), `required`, and `isActive` (omitted = active fields; `false` lists the inactivated/"deleted"
+// ones, the place to find a field to reactivate). Each row: identity (`id`, `fieldName`,
+// `displayName`, `fieldType`, `description`, `groupName`, `order`), flags (`required`, `filterable`,
+// `pinned`), `fillCount` / `totalEntities` / `fillRate` (0..1; the denominator is ALL leads, or ALL
+// opportunity cards, of the workspace), `lastEditedAt`, `usageCount` + `usageByKind` (how many
+// segments, flows, forms, dashboards, reports, schedules and stage rules reference the field) and
+// `health`: `unused` = no consumer and under 5% filled (safe archive candidate), `critical` = has
+// consumers but under 25% filled, `attention` = under 60% filled, `healthy` otherwise. Ordered by
+// group A-Z (ungrouped last), then the configured `order`. Lighter than [CustomFieldsService.List]:
+// rows omit `options`, `defaultValue` and the `showIn*` flags — use that tool (or
+// [CustomFieldsService.Insights] for one field) when you need them. Numbers come from a workspace
+// snapshot cached for seconds (fill) to ~30s (consumers), so a value written a moment ago may not show
+// yet; INACTIVE rows always come back with zero fill/usage (and so `unused`), not real numbers.
+// `perPage` 1-2000, default 10.
 //
 // Calls GET /custom-fields/managed-list.
 func (s *CustomFieldsService) ManagedList(ctx context.Context, params CustomFieldsManagedListParams, opts ...Option) (*CustomFieldsManagedListOutput, error) {
@@ -171,11 +173,11 @@ func (s *CustomFieldsService) ManagedList(ctx context.Context, params CustomFiel
 // "objects" + `objectId`, required): `totalFields` (active), `inactiveFields`, `totalEntities`,
 // `avgFillRate` (mean of the per-field fill rates, 0..1), `healthDistribution` (`healthy` /
 // `attention` / `critical` / `unused` field counts, same verdict rules as
-// `custom_fields_managed_list`), `typeCounts` (fields per `fieldType`) and `groups` (`name` — null =
-// ungrouped —, `count`, `avgFillRate`; A-Z, ungrouped last). Always computed over the WHOLE active
-// scope, never a filtered slice. Same short-lived snapshot as `custom_fields_managed_list`. Start here
-// for "how healthy are my custom fields?", then drill into `custom_fields_managed_list` with `health`
-// / `groupName`.
+// [CustomFieldsService.ManagedList]), `typeCounts` (fields per `fieldType`) and `groups` (`name` —
+// null = ungrouped —, `count`, `avgFillRate`; A-Z, ungrouped last). Always computed over the WHOLE
+// active scope, never a filtered slice. Same short-lived snapshot as
+// [CustomFieldsService.ManagedList]. Start here for "how healthy are my custom fields?", then drill
+// into [CustomFieldsService.ManagedList] with `health` / `groupName`.
 //
 // Calls GET /custom-fields/overview.
 func (s *CustomFieldsService) Overview(ctx context.Context, params CustomFieldsOverviewParams, opts ...Option) (*CustomFieldsOverviewOutput, error) {
@@ -195,8 +197,8 @@ func (s *CustomFieldsService) Overview(ctx context.Context, params CustomFieldsO
 // and can be null), `value` rendered as TEXT (multi-select options joined by commas), `source` (how
 // the value got in: manual | import | form | booking | webchat | flow | api | system | unknown —
 // unknown = stored before the origin was tracked) and `filledAt`. Use it to audit what people actually
-// typed or where the data comes from; use `custom_fields_insights` for the aggregate view. Fails for
-// an unknown `customFieldId`.
+// typed or where the data comes from; use [CustomFieldsService.Insights] for the aggregate view. Fails
+// for an unknown `customFieldId`.
 //
 // Calls GET /custom-fields/records.
 func (s *CustomFieldsService) Records(ctx context.Context, params CustomFieldsRecordsParams, opts ...Option) (*CustomFieldsRecordsOutput, error) {
@@ -216,10 +218,10 @@ func (s *CustomFieldsService) Records(ctx context.Context, params CustomFieldsRe
 // `label` on save regardless of what is sent. `isActive: false` is how a field is DELETED in the
 // product: a soft delete that keeps the definition and the stored values but hides the field from
 // lists, forms, cards and filters, WITHOUT cleaning up segments, automations, forms, dashboards or
-// reports that reference it (check `custom_fields_insights` `references` first); `isActive: true`
-// brings it back. A blank `groupName` removes the field from its group. For the same change on many
-// fields use `custom_fields_bulk_update`. Fails for an unknown `customFieldId`, and fails with a
-// conflict if changing `fieldName`/`entityType` collides with another field. OBJECT fields:
+// reports that reference it (check [CustomFieldsService.Insights] `references` first); `isActive:
+// true` brings it back. A blank `groupName` removes the field from its group. For the same change on
+// many fields use [CustomFieldsService.BulkUpdate]. Fails for an unknown `customFieldId`, and fails
+// with a conflict if changing `fieldName`/`entityType` collides with another field. OBJECT fields:
 // `entityType`/`objectId` cannot change (400) and `fieldName` is silently ignored; the object title
 // field cannot be deactivated or moved away from `text`.
 //

@@ -16,7 +16,7 @@ type AttendantTypesService struct {
 //
 // Creates an attendant type with `name` and optional `description`, `color` (hex, max 7 chars) and
 // `emoji`. The new type is workspace-wide; attaching it to a pipeline (with its default commission) is
-// a separate call to `pipelines_attendant_types_set`. Restricted to owner/admin/editor.
+// a separate call to [PipelinesService.AttendantTypesSet]. Restricted to owner/admin/editor.
 //
 // Calls POST /attendant-types/create.
 func (s *AttendantTypesService) Create(ctx context.Context, body AttendantTypesCreateInput, opts ...Option) (*AttendantTypesCreateOutput, error) {
@@ -47,7 +47,8 @@ func (s *AttendantTypesService) Delete(ctx context.Context, body AttendantTypesD
 // `id`, `name`, `color`, `emoji`, display order and `memberCount`. An attendant type is the ROLE ON A
 // CARD used for commission splits; it is orthogonal to what the attendant may DO, which is decided by
 // the permissions of their workspace seat. Resolve `attendantTypeId` here before using it in
-// `cards_assign_attendants`, `pipelines_attendant_types_set` or `attendants_set_types`.
+// [CardsService.AssignAttendants], [PipelinesService.AttendantTypesSet] or
+// [AttendantsService.SetTypes].
 //
 // Calls GET /attendant-types/list.
 func (s *AttendantTypesService) List(ctx context.Context, opts ...Option) (*AttendantTypesListOutput, error) {
@@ -77,7 +78,7 @@ func (s *AttendantTypesService) Reorder(ctx context.Context, body AttendantTypes
 //
 // Patches an attendant type `name`, `description`, `color` or `emoji`. Only the keys sent are changed.
 // The returned `memberCount` is always 0 on this response — it is not recomputed here; read it back
-// with `attendant_types_list`. Restricted to owner/admin/editor.
+// with [AttendantTypesService.List]. Restricted to owner/admin/editor.
 //
 // Calls POST /attendant-types/update.
 func (s *AttendantTypesService) Update(ctx context.Context, body AttendantTypesUpdateInput, opts ...Option) (*AttendantTypesUpdateOutput, error) {

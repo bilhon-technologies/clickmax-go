@@ -17,7 +17,7 @@ type SocialAccountsService struct {
 //
 // Starts the OAuth connection of a new account and returns `url` + `nonce`. Give the `url` to the
 // person: they must open it and log in on the network themselves. Then poll
-// `social_accounts_connect_result` with the `nonce`.
+// [SocialAccountsService.ConnectResult] with the `nonce`.
 //
 // Calls POST /social-accounts/connect.
 func (s *SocialAccountsService) Connect(ctx context.Context, body SocialAccountsConnectInput, opts ...Option) (*SocialAccountsConnectOutput, error) {
@@ -45,10 +45,11 @@ func (s *SocialAccountsService) ConnectPages(ctx context.Context, params SocialA
 
 // Read the result of an account connection.
 //
-// Reads the outcome of a connection started by `social_accounts_connect` or
-// `social_accounts_reconnect`. `pending` = the person has not finished the login yet; `select_pages` =
-// call `social_accounts_connect_pages` and `social_accounts_connect_select_pages`; `connected` lists
-// the new accounts; `failed` carries `errorCode`.
+// Reads the outcome of a connection started by [SocialAccountsService.Connect] or
+// [SocialAccountsService.Reconnect]. `pending` = the person has not finished the login yet;
+// `select_pages` = call [SocialAccountsService.ConnectPages] and
+// [SocialAccountsService.ConnectSelectPages]; `connected` lists the new accounts; `failed` carries
+// `errorCode`.
 //
 // Calls GET /social-accounts/connect-result.
 func (s *SocialAccountsService) ConnectResult(ctx context.Context, params SocialAccountsConnectResultParams, opts ...Option) (*SocialAccountsConnectResultOutput, error) {
@@ -62,7 +63,7 @@ func (s *SocialAccountsService) ConnectResult(ctx context.Context, params Social
 // Connect the chosen pages.
 //
 // Finishes a `select_pages` connection with the page ids the person chose (from
-// `social_accounts_connect_pages`). LinkedIn takes exactly one id (`personal` or one page id);
+// [SocialAccountsService.ConnectPages]). LinkedIn takes exactly one id (`personal` or one page id);
 // Facebook takes up to 25. Returns the connected accounts and the pages that failed.
 //
 // Calls POST /social-accounts/connect-select-pages.
@@ -106,8 +107,8 @@ func (s *SocialAccountsService) List(ctx context.Context, opts ...Option) (*Soci
 // Reconnect a social account.
 //
 // Starts a new OAuth login for an account in `needs_reconnect`. Same flow as
-// `social_accounts_connect`: give the returned `url` to the person, then poll
-// `social_accounts_connect_result` with the `nonce`.
+// [SocialAccountsService.Connect]: give the returned `url` to the person, then poll
+// [SocialAccountsService.ConnectResult] with the `nonce`.
 //
 // Calls POST /social-accounts/reconnect.
 func (s *SocialAccountsService) Reconnect(ctx context.Context, body SocialAccountsReconnectInput, opts ...Option) (*SocialAccountsConnectOutput, error) {

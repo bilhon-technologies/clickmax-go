@@ -65,8 +65,8 @@ func (s *DriveService) CommentsList(ctx context.Context, params DriveCommentsLis
 //
 // Folders and files the user starred (favorites are per person), most recently starred first,
 // paginated with `page`/`perPage` (default 10). Same `{ kind, folder | file }` row shape as
-// `drive_search`. Items in the trash or that the user lost access to are hidden; the star is kept and
-// the item reappears if it is restored.
+// [DriveService.Search]. Items in the trash or that the user lost access to are hidden; the star is
+// kept and the item reappears if it is restored.
 //
 // Calls GET /drive/favorites-list.
 func (s *DriveService) FavoritesList(ctx context.Context, params DriveFavoritesListParams, opts ...Option) (*DriveFavoritesListOutput, error) {
@@ -96,14 +96,14 @@ func (s *DriveService) FavoritesSet(ctx context.Context, body DriveFavoritesSetI
 // Who has access to a Drive item.
 //
 // The 'Who has access' list of a folder or file: one entry per person with the `role` GRANTED to them.
-// `inherited: false` = a direct share on this item (`shareId` is set and `drive_shares_revoke` removes
-// it, with `sharedBy`/`sharedAt`). `inherited: true` = comes from the space (`inheritedFrom: 'space'`:
-// its members, the owner of a personal space, the workspace owner) or from a shared parent folder
-// (`inheritedFrom: 'folder'` + `inheritedFromName`) and can only be changed there. A direct entry
-// beats an inherited one; among inherited ones the highest role wins. Roles are the granted ones,
-// before the seat cap: a viewer-seat person listed as `editor` still acts as `reader`. Everyone in the
-// workspace can read the 'Plataforma' space and is not listed. Requires view access; 404 if the caller
-// cannot see the item.
+// `inherited: false` = a direct share on this item (`shareId` is set and [DriveService.SharesRevoke]
+// removes it, with `sharedBy`/`sharedAt`). `inherited: true` = comes from the space (`inheritedFrom:
+// 'space'`: its members, the owner of a personal space, the workspace owner) or from a shared parent
+// folder (`inheritedFrom: 'folder'` + `inheritedFromName`) and can only be changed there. A direct
+// entry beats an inherited one; among inherited ones the highest role wins. Roles are the granted
+// ones, before the seat cap: a viewer-seat person listed as `editor` still acts as `reader`. Everyone
+// in the workspace can read the 'Plataforma' space and is not listed. Requires view access; 404 if the
+// caller cannot see the item.
 //
 // Calls GET /drive/items-access.
 func (s *DriveService) ItemsAccess(ctx context.Context, params DriveItemsAccessParams, opts ...Option) (*DriveItemsAccessOutput, error) {
@@ -120,8 +120,8 @@ func (s *DriveService) ItemsAccess(ctx context.Context, params DriveItemsAccessP
 // `action` (`created` | `uploaded` | `renamed` | `moved` | `shared` | `unshared` | `commented` |
 // `trashed` | `restored`), the `actor` (id, name, email) and a free-form `meta` with the detail (old
 // and new name, destination, role granted, comment preview). Views and downloads are not logged here
-// (they are per person, in `drive_recents_list`), and a folder's trail does not include what happened
-// to the items inside it — query those individually. Requires view access.
+// (they are per person, in [DriveService.RecentsList]), and a folder's trail does not include what
+// happened to the items inside it — query those individually. Requires view access.
 //
 // Calls GET /drive/items-activity.
 func (s *DriveService) ItemsActivity(ctx context.Context, params DriveItemsActivityParams, opts ...Option) (*DriveItemsActivityOutput, error) {
@@ -153,16 +153,16 @@ func (s *DriveService) ItemsActivity(ctx context.Context, params DriveItemsActiv
 // is an implicit owner of every space; a workspace admin does NOT see spaces they were not invited to.
 // A direct item share is a second source of access — the more permissive wins, then the seat cap
 // applies. Wrong role → 403 `DRIVE_FORBIDDEN`; an item the caller cannot see → 404 (existence is
-// not revealed). STORAGE: one quota per workspace (see `drive_storage_usage`); trashed items keep
-// counting until purged; files in Google-backed spaces do not. FEATURE FLAG: in the Clickmax web app
-// the Drive menu and routes are behind the per-account `drive` flag, released by Clickmax back-office
-// (always on in dev/staging). The API behind these tools does NOT check that flag — no error is
-// returned when it is off and every Drive tool works anyway. If the user says Drive is missing from
-// their menu, that is the flag: these tools cannot enable it, tell them to contact support. NOT
-// possible through Drive tools: uploading files or reading file bytes (upload happens in the web app;
-// `drive_files_download_url` only returns a temporary link), public/anyone-with-link sharing (sharing
-// is always to a named workspace member), copying or moving items across spaces, editing file contents
-// or searching inside them.
+// not revealed). STORAGE: one quota per workspace (see [DriveService.StorageUsage]); trashed items
+// keep counting until purged; files in Google-backed spaces do not. FEATURE FLAG: in the Clickmax web
+// app the Drive menu and routes are behind the per-account `drive` flag, released by Clickmax
+// back-office (always on in dev/staging). The API behind these tools does NOT check that flag — no
+// error is returned when it is off and every Drive tool works anyway. If the user says Drive is
+// missing from their menu, that is the flag: these tools cannot enable it, tell them to contact
+// support. NOT possible through Drive tools: uploading files or reading file bytes (upload happens in
+// the web app; [DriveFilesService.DownloadURL] only returns a temporary link), public/anyone-with-link
+// sharing (sharing is always to a named workspace member), copying or moving items across spaces,
+// editing file contents or searching inside them.
 //
 // Calls GET /drive/overview.
 func (s *DriveService) Overview(ctx context.Context, opts ...Option) (*DriveOverviewOutput, error) {
@@ -185,8 +185,8 @@ func (s *DriveService) Overview(ctx context.Context, opts ...Option) (*DriveOver
 // visible to the caller, so `files: 0` can mean "nothing I can see", never a workspace total, and
 // other people's private 'Meu drive' never counts. `sharedSpaces` is empty when the person has no
 // active role. 404 `DRIVE_PERSON_NOT_FOUND` for someone who never had a seat in this workspace. Needs
-// Drive read access. To list a person's files beyond the 4 recent ones use `drive_search` with
-// `ownerId`; for their CRM work profile use `workspace_members_get`.
+// Drive read access. To list a person's files beyond the 4 recent ones use [DriveService.Search] with
+// `ownerId`; for their CRM work profile use [WorkspaceMembersService.Get].
 //
 // Calls GET /drive/people-get.
 func (s *DriveService) PeopleGet(ctx context.Context, params DrivePeopleGetParams, opts ...Option) (*DrivePeopleGetOutput, error) {
@@ -202,10 +202,11 @@ func (s *DriveService) PeopleGet(ctx context.Context, params DrivePeopleGetParam
 // Files THIS user most recently opened, downloaded, uploaded or edited (`lastAction`: `opened` |
 // `downloaded` | `uploaded` | `edited`, plus `accessedAt`), newest first. Files only — never
 // folders. `limit` 1–100, default 20; not paginated. It is per person, not team activity (for who
-// did what to an item use `drive_items_activity`). Access is rechecked on every call: files the user
-// can no longer see, or that are in the trash, do not show. History is capped at 200 entries per
+// did what to an item use [DriveService.ItemsActivity]). Access is rechecked on every call: files the
+// user can no longer see, or that are in the trash, do not show. History is capped at 200 entries per
 // person and a repeated touch of the same file within 5 minutes is not re-recorded. Note that
-// `drive_files_download_url` and `drive_files_update` add entries to this list for the calling user.
+// [DriveFilesService.DownloadURL] and [DriveFilesService.Update] add entries to this list for the
+// calling user.
 //
 // Calls GET /drive/recents-list.
 func (s *DriveService) RecentsList(ctx context.Context, params DriveRecentsListParams, opts ...Option) (*DriveRecentsListOutput, error) {
@@ -226,7 +227,7 @@ func (s *DriveService) RecentsList(ctx context.Context, params DriveRecentsListP
 // excludes folders), `ownerId` (user id that created the item), `spaceId`, and `from`/`to` (ISO
 // date-time range on last modification). At least one of `q` or a filter is required (422
 // `DRIVE_SEARCH_QUERY_REQUIRED`) — this is not a "list everything" tool; browse a space with
-// `drive_files_browse` instead. `from` later than `to` → 400. Most recently modified first,
+// [DriveFilesService.Browse] instead. `from` later than `to` → 400. Most recently modified first,
 // paginated with `page`/`perPage` (default 10). Returns `{ data: [{ kind: 'folder', folder } | { kind:
 // 'file', file }], meta }`; every row carries `location` (space + folder path, ready to tell the user
 // where it lives) and `isFavorite`.
@@ -245,19 +246,20 @@ func (s *DriveService) Search(ctx context.Context, params DriveSearchParams, opt
 // Shares ONE folder or file with ONE named person of the workspace: pass exactly one of `folderId` /
 // `fileId` (422 `DRIVE_SHARE_TARGET_INVALID` otherwise), the `userId` and a `role` of `reader` |
 // `commenter` | `editor`. `owner` is refused (422 `DRIVE_SHARE_ROLE_INVALID`) — ownership is a space
-// role; use `drive_spaces_members_add`. Sharing a folder covers everything inside it, including files
-// added later; sharing a file covers only that file. The person then finds it under
-// `drive_shares_with_me`. There is NO public or anyone-with-the-link mode: access is always to a named
-// person who must be the workspace owner or an ACTIVE workspace member (422
+// role; use [DriveSpacesService.MembersAdd]. Sharing a folder covers everything inside it, including
+// files added later; sharing a file covers only that file. The person then finds it under
+// [DriveService.SharesWithMe]. There is NO public or anyone-with-the-link mode: access is always to a
+// named person who must be the workspace owner or an ACTIVE workspace member (422
 // `DRIVE_USER_NOT_IN_WORKSPACE`); sharing with yourself is refused (422 `DRIVE_SHARE_SELF`). Get
-// `userId` from `workspace_members_list` (`id`), `drive_spaces_members_list` or the `personId` of
-// `attendants_list`. Requires editor or owner on the item — a reader or commenter cannot re-share
-// (403 `DRIVE_FORBIDDEN`). An item in the trash cannot be shared (404), and neither can items of a
-// Google-backed space (422 `DRIVE_SHARE_NATIVE_ONLY`). Re-sharing with the same person UPDATES their
-// role (upsert). The role is added to whatever access the person already has — the more permissive
-// wins — and is capped by their workspace seat (viewer, guest, finance_only and attendant seats stay
-// `reader`). Because it exposes data to a third person, confirm the item, the person and the role with
-// the user before calling. Returns the share row; its `id` is the `shareId` for `drive_shares_revoke`.
+// `userId` from [WorkspaceMembersService.List] (`id`), [DriveSpacesService.MembersList] or the
+// `personId` of [AttendantsService.List]. Requires editor or owner on the item — a reader or
+// commenter cannot re-share (403 `DRIVE_FORBIDDEN`). An item in the trash cannot be shared (404), and
+// neither can items of a Google-backed space (422 `DRIVE_SHARE_NATIVE_ONLY`). Re-sharing with the same
+// person UPDATES their role (upsert). The role is added to whatever access the person already has —
+// the more permissive wins — and is capped by their workspace seat (viewer, guest, finance_only and
+// attendant seats stay `reader`). Because it exposes data to a third person, confirm the item, the
+// person and the role with the user before calling. Returns the share row; its `id` is the `shareId`
+// for [DriveService.SharesRevoke].
 //
 // Calls POST /drive/shares-create.
 func (s *DriveService) SharesCreate(ctx context.Context, body DriveSharesCreateInput, opts ...Option) (*DriveSharesCreateOutput, error) {
@@ -274,8 +276,9 @@ func (s *DriveService) SharesCreate(ctx context.Context, body DriveSharesCreateI
 // membership, a share on a parent folder), and the item itself is untouched — it can be shared
 // again. Same permission as sharing: editor or owner on the item. Not idempotent: 404
 // `DRIVE_SHARE_NOT_FOUND` once it is gone. Only DIRECT shares can be revoked here (`inherited: false`
-// in `drive_items_access`). Inherited access is changed at its origin: `drive_spaces_members_remove` /
-// `drive_spaces_members_update` for space access, or the share on the parent folder.
+// in [DriveService.ItemsAccess]). Inherited access is changed at its origin:
+// [DriveSpacesService.MembersRemove] / [DriveSpacesService.MembersUpdate] for space access, or the
+// share on the parent folder.
 //
 // Calls POST /drive/shares-revoke.
 func (s *DriveService) SharesRevoke(ctx context.Context, body DriveSharesRevokeInput, opts ...Option) (*DriveSharesRevokeOutput, error) {
@@ -291,9 +294,9 @@ func (s *DriveService) SharesRevoke(ctx context.Context, body DriveSharesRevokeI
 // Folders and files other people shared DIRECTLY with the user, newest first, paginated with
 // `page`/`perPage` (default 10). Each row has `shareId`, the granted `role`, `sharedAt`, `sharedBy`
 // and exactly one of `folder` / `file` (with `location`; use its `spaceId` to open a shared folder
-// with `drive_files_browse`). It does not list what is inside shared folders (browse into them), the
-// spaces the user is a member of (`drive_spaces_list`) or trashed items. `meta.countItens` is the
-// total, the number shown on the sidebar 'Compartilhados comigo' badge.
+// with [DriveFilesService.Browse]). It does not list what is inside shared folders (browse into them),
+// the spaces the user is a member of ([DriveSpacesService.List]) or trashed items. `meta.countItens`
+// is the total, the number shown on the sidebar 'Compartilhados comigo' badge.
 //
 // Calls GET /drive/shares-with-me.
 func (s *DriveService) SharesWithMe(ctx context.Context, params DriveSharesWithMeParams, opts ...Option) (*DriveSharesWithMeOutput, error) {
@@ -316,9 +319,9 @@ func (s *DriveService) SharesWithMe(ctx context.Context, params DriveSharesWithM
 // (100%+); `breakdown` by category (`creatives`, `documents`, `sales_assets`, `contracts_invoices`,
 // `other`) and `fileCount`. All byte fields are decimal STRINGS (BigInt): do not do float math on
 // them, format them (GB/MB) only when reporting. When `exceeded`, new uploads are refused (422
-// `DRIVE_QUOTA_EXCEEDED`); the way to free space is purging the trash (`drive_trash_purge` /
-// `drive_trash_empty`), because trashing alone frees nothing. Buying more storage is a billing matter
-// this API does not cover.
+// `DRIVE_QUOTA_EXCEEDED`); the way to free space is purging the trash ([DriveTrashService.Purge] /
+// [DriveTrashService.Empty]), because trashing alone frees nothing. Buying more storage is a billing
+// matter this API does not cover.
 //
 // Calls GET /drive/storage-usage.
 func (s *DriveService) StorageUsage(ctx context.Context, opts ...Option) (*DriveStorageUsageOutput, error) {
@@ -331,7 +334,7 @@ func (s *DriveService) StorageUsage(ctx context.Context, opts ...Option) (*Drive
 
 // DriveCommentsAddInput is the request body of [DriveService.CommentsAdd].
 type DriveCommentsAddInput struct {
-	// File id, from `drive_files_browse` or `drive_search`.
+	// File id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FileID string `json:"fileId"`
 	Body   string `json:"body"`
 }
@@ -359,9 +362,9 @@ type DriveCommentsAddOutputAuthor struct {
 
 // DriveCommentsDeleteInput is the request body of [DriveService.CommentsDelete].
 type DriveCommentsDeleteInput struct {
-	// File id, from `drive_files_browse` or `drive_search`.
+	// File id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FileID string `json:"fileId"`
-	// Comment id, from `drive_comments_list`.
+	// Comment id, from [DriveService.CommentsList].
 	CommentID string `json:"commentId"`
 }
 
@@ -398,7 +401,7 @@ type DriveCommentsListOutputDataItemAuthor struct {
 
 // DriveCommentsListParams holds the query parameters of [DriveService.CommentsList].
 type DriveCommentsListParams struct {
-	// File id, from `drive_files_browse` or `drive_search`.
+	// File id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FileID string
 }
 
@@ -1409,9 +1412,9 @@ const (
 
 // DrivePeopleGetParams holds the query parameters of [DriveService.PeopleGet].
 type DrivePeopleGetParams struct {
-	// User id of the person: `id` in `workspace_members_list`, `user.id` in
-	// `drive_spaces_members_list`, `owner.id` of a Drive row, or `personId` in `attendants_list`
-	// (never the attendant `id`).
+	// User id of the person: `id` in [WorkspaceMembersService.List], `user.id` in
+	// [DriveSpacesService.MembersList], `owner.id` of a Drive row, or `personId` in
+	// [AttendantsService.List] (never the attendant `id`).
 	UserID string
 }
 
@@ -1993,8 +1996,8 @@ type DriveSharesCreateOutputUser struct {
 
 // DriveSharesRevokeInput is the request body of [DriveService.SharesRevoke].
 type DriveSharesRevokeInput struct {
-	// Share id: `id` returned by `drive_shares_create`, or `shareId` of a `drive_items_access` entry
-	// with `inherited: false`.
+	// Share id: `id` returned by [DriveService.SharesCreate], or `shareId` of a
+	// [DriveService.ItemsAccess] entry with `inherited: false`.
 	ShareID string `json:"shareId"`
 }
 

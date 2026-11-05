@@ -16,22 +16,22 @@ type WorkspaceMembersService struct {
 // Get a workspace member's profile.
 //
 // The profile header of ONE person of the workspace (Members screen → click the person), by `userId`
-// (the `id` from `workspace_members_list`). Returns identity (`firstName`, `lastName`, `email`,
+// (the `id` from [WorkspaceMembersService.List]). Returns identity (`firstName`, `lastName`, `email`,
 // `phone`, `imageUrl`), `role`, `status`, `memberSince` (when the seat was created), `invitedAt` +
 // `invitedBy` (`{ id, name }`, null when unknown), `permissionGroups`, `lastAccessedAt` (null = no
 // access recorded) and `stats`: `opportunities` = OPEN opportunity cards where the person is the
 // responsible attendant; `leads` = distinct contacts on those cards; `activities` = contact
 // activity-timeline events where the person is the actor (opportunity changes, meetings, field edits,
 // notes and similar actions done in the app) in the last 8 weeks (a work-volume signal — NOT the
-// tasks and appointments of `activities_list`); `activitySeries` = the same count in 8 rolling 7-day
-// buckets, OLDEST FIRST, the LAST one being the most recent 7 days. It also returns the ids to go
-// deeper: `attendantId` = the person CRM attendant profile in this workspace — pass it as
-// `attendantIds` to `cards_list`, `tasks_list` or `activities_list` to see their opportunities,
-// follow-ups and schedule; it is null for a pending invitation or a management-only person without an
-// attendant profile (then those tools have nothing for them — say so instead of guessing). `seatId`
-// identifies the seat. 404 when the person has no seat in this workspace (never belonged, or removed
-// for good). Needs the `seats` read permission (the Members screen permission), stricter than
-// `workspace_members_list`.
+// tasks and appointments of [ActivitiesService.List]); `activitySeries` = the same count in 8 rolling
+// 7-day buckets, OLDEST FIRST, the LAST one being the most recent 7 days. It also returns the ids to
+// go deeper: `attendantId` = the person CRM attendant profile in this workspace — pass it as
+// `attendantIds` to [CardsService.List], [TasksService.List] or [ActivitiesService.List] to see their
+// opportunities, follow-ups and schedule; it is null for a pending invitation or a management-only
+// person without an attendant profile (then those tools have nothing for them — say so instead of
+// guessing). `seatId` identifies the seat. 404 when the person has no seat in this workspace (never
+// belonged, or removed for good). Needs the `seats` read permission (the Members screen permission),
+// stricter than [WorkspaceMembersService.List].
 //
 // Calls GET /workspace-members/get.
 func (s *WorkspaceMembersService) Get(ctx context.Context, params WorkspaceMembersGetParams, opts ...Option) (*WorkspaceMembersGetOutput, error) {
@@ -45,20 +45,20 @@ func (s *WorkspaceMembersService) Get(ctx context.Context, params WorkspaceMembe
 // List workspace members.
 //
 // Paginated list of the PEOPLE of the workspace (every seat: owner, admins, members and pending
-// invitations) — broader than `attendants_list`, which only has people with a CRM attendant profile.
-// Each row: `id` (the person USER id — the `userId` that `workspace_members_get`,
-// `drive_people_get`, `drive_shares_create` and `drive_spaces_members_add` take; NOT an attendant id),
-// `firstName`, `lastName`, `email`, `imageUrl`, `role` (`owner` | `admin` | `member`), `status`
-// (`pending` = invited, not accepted yet | `active` | `removed` = deactivated, can be reactivated in
-// the web app; people removed for good are never listed), `invitedAt` and `permissionGroups` (the job
-// roles/"cargos" of the seat; the person can do the UNION of them; empty is normal for owner/admin,
-// who bypass them, and for a `member` means they reach nothing). Filters: `search` (case-insensitive
-// part of first name, last name or e-mail), `status`. Paginated with `page`/`perPage` (default 10, max 2000)
-// and `meta` (`countItens`, `countPages`): to find someone use `search` instead of paging; before
-// saying a person is not in the workspace, search by name AND by e-mail. `withStats: true` adds
-// `lastAccessedAt` and `stats` per row (same numbers as `workspace_members_get`) and requires the
-// `seats` read permission (403 otherwise); leave it off for a plain lookup. Needs the `workspace` read
-// permission.
+// invitations) — broader than [AttendantsService.List], which only has people with a CRM attendant
+// profile. Each row: `id` (the person USER id — the `userId` that [WorkspaceMembersService.Get],
+// [DriveService.PeopleGet], [DriveService.SharesCreate] and [DriveSpacesService.MembersAdd] take; NOT
+// an attendant id), `firstName`, `lastName`, `email`, `imageUrl`, `role` (`owner` | `admin` |
+// `member`), `status` (`pending` = invited, not accepted yet | `active` | `removed` = deactivated, can
+// be reactivated in the web app; people removed for good are never listed), `invitedAt` and
+// `permissionGroups` (the job roles/"cargos" of the seat; the person can do the UNION of them; empty
+// is normal for owner/admin, who bypass them, and for a `member` means they reach nothing). Filters:
+// `search` (case-insensitive part of first name, last name or e-mail), `status`. Paginated with
+// `page`/`perPage` (default 10, max 2000) and `meta` (`countItens`, `countPages`): to find someone use
+// `search` instead of paging; before saying a person is not in the workspace, search by name AND by
+// e-mail. `withStats: true` adds `lastAccessedAt` and `stats` per row (same numbers as
+// [WorkspaceMembersService.Get]) and requires the `seats` read permission (403 otherwise); leave it
+// off for a plain lookup. Needs the `workspace` read permission.
 //
 // Calls GET /workspace-members/list.
 func (s *WorkspaceMembersService) List(ctx context.Context, params WorkspaceMembersListParams, opts ...Option) (*WorkspaceMembersListOutput, error) {

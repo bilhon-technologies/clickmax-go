@@ -15,21 +15,22 @@ type OpportunitiesService struct {
 
 // Apply tags to many opportunity cards.
 //
-// Adds `tagIds` (at least one, from `tags_list`) to a whole card selection. This ADDS tags, it never
-// removes the ones already there — there is no bulk tag-removal endpoint; use `cards_remove_tags`
-// per card for that. Targeting is either `cardIds` (an explicit non-empty list — above 200 ids it is
-// a 400, describe the selection with `allMatching` instead) OR `allMatching: true` with a `scope` —
-// `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of them is required;
-// sending both, or neither, is a 400. `scope.filters` reapplies the board filters of `cards_list` —
-// `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more filters"
-// `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
+// Adds `tagIds` (at least one, from [TagsService.List]) to a whole card selection. This ADDS tags, it
+// never removes the ones already there — there is no bulk tag-removal endpoint; use
+// [CardsService.RemoveTags] per card for that. Targeting is either `cardIds` (an explicit non-empty
+// list — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR
+// `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually
+// exclusive and one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies
+// the board filters of [CardsService.List] — `search`, `attendantIds`, `productNames`,
+// `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`,
+// `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS),
+// `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
 // `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-apply-tags.
@@ -45,25 +46,26 @@ func (s *OpportunitiesService) BulkApplyTags(ctx context.Context, body Opportuni
 //
 // Replaces the attendant ROLES (SDR, Closer…) on a whole card selection: every existing role of
 // those cards is deleted and `assignments` is written in its place. `assignments` needs at least one
-// entry of `{ attendantId, attendantTypeId?, isPrimary? }` — resolve ids with `attendants_list` and
-// `attendant_types_list`; attendants must be operational (a seat that only exists for scheduling or
-// finance is rejected). Commission is NOT written by this bulk path — the commission fields the
-// schema still lists are ignored, so the new roles carry no commission and any commission the cards
-// had is lost with the old roles; set it per card afterwards with `cards_attendant_commission_update`.
-// This does not touch who is RESPONSIBLE for the next action — that is
-// `opportunities_bulk_set_responsible`. Targeting is either `cardIds` (an explicit non-empty list —
-// above 200 ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true`
-// with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of
-// them is required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
-// `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more
-// filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
+// entry of `{ attendantId, attendantTypeId?, isPrimary? }` — resolve ids with
+// [AttendantsService.List] and [AttendantTypesService.List]; attendants must be operational (a seat
+// that only exists for scheduling or finance is rejected). Commission is NOT written by this bulk path
+// — the commission fields the schema still lists are ignored, so the new roles carry no commission
+// and any commission the cards had is lost with the old roles; set it per card afterwards with
+// [CardsService.AttendantCommissionUpdate]. This does not touch who is RESPONSIBLE for the next action
+// — that is [OpportunitiesService.BulkSetResponsible]. Targeting is either `cardIds` (an explicit
+// non-empty list — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR
+// `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually
+// exclusive and one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies
+// the board filters of [CardsService.List] — `search`, `attendantIds`, `productNames`,
+// `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`,
+// `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS),
+// `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
 // `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-assign-attendants.
@@ -82,22 +84,23 @@ func (s *OpportunitiesService) BulkAssignAttendants(ctx context.Context, body Op
 // cards enters once. The list exists immediately and the answer carries its `listId` in both modes;
 // `affected` (sync) is the number of contacts in the list, not of cards. Above 200 cards the list is
 // filled in the background: `listId` comes back with the `jobId`, and the list stays partially filled
-// until `opportunities_bulk_jobs_status` finishes. Each call creates one more list — it never adds
-// to an existing one (use `lists_update_leads` for that). Restricted attendant roles get 403, the same
-// as creating a list by hand. Targeting is either `cardIds` (an explicit non-empty list — above 200
-// ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true` with a
-// `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of them is
-// required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
-// `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more
-// filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
-// `jobId` until it finishes; an async answer means nothing has been applied yet.
+// until [OpportunitiesService.BulkJobsStatus] finishes. Each call creates one more list — it never
+// adds to an existing one (use [ListsService.UpdateLeads] for that). Restricted attendant roles get
+// 403, the same as creating a list by hand. Targeting is either `cardIds` (an explicit non-empty list
+// — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching:
+// true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and
+// one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies the board
+// filters of [CardsService.List] — `search`, `attendantIds`, `productNames`, `funnelNames`,
+// `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`,
+// `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To`
+// — and the advanced `conditions` tree of [OpportunitiesService.Query] (contact fields included,
+// through its `lead` node). Everything is ANDed, so the selection matches what the board shows for the
+// same filters; card ordering never changes WHICH cards are picked. A filter that is active but that a
+// mass action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`)
+// is a 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection
+// is at most 200 cards, or `{ mode: "async", jobId }` above that — poll
+// [OpportunitiesService.BulkJobsStatus] with that `jobId` until it finishes; an async answer means
+// nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-create-list.
 func (s *OpportunitiesService) BulkCreateList(ctx context.Context, body OpportunitiesBulkCreateListInput, opts ...Option) (*OpportunitiesBulkCreateListOutput, error) {
@@ -112,21 +115,21 @@ func (s *OpportunitiesService) BulkCreateList(ctx context.Context, body Opportun
 //
 // Creates ONE follow-up task per card across a whole selection: `type` (`task` | `call` | `whatsapp` |
 // `meeting`), `title`, optional `description`, `deadline` and `attendantId`. Same tasks that
-// `tasks_list` returns. Use `tasks_create_batch` instead when each task differs per card. Targeting is
-// either `cardIds` (an explicit non-empty list — above 200 ids it is a 400, describe the selection
-// with `allMatching` instead) OR `allMatching: true` with a `scope` — `{ pipelineId, stageId?,
-// filters? }`. The two are mutually exclusive and one of them is required; sending both, or neither,
-// is a 400. `scope.filters` reapplies the board filters of `cards_list` — `search`, `attendantIds`,
-// `productNames`, `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`,
-// `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax`
-// (CENTS), `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
-// `opportunities_query` (contact fields included, through its `lead` node). Everything is ANDed, so
-// the selection matches what the board shows for the same filters; card ordering never changes WHICH
-// cards are picked. A filter that is active but that a mass action cannot apply (`forecastEligible`,
-// `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never silently dropped.
-// Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or `{ mode: "async",
-// jobId }` above that — poll `opportunities_bulk_jobs_status` with that `jobId` until it finishes;
-// an async answer means nothing has been applied yet.
+// [TasksService.List] returns. Use [TasksService.CreateBatch] instead when each task differs per card.
+// Targeting is either `cardIds` (an explicit non-empty list — above 200 ids it is a 400, describe
+// the selection with `allMatching` instead) OR `allMatching: true` with a `scope` — `{ pipelineId,
+// stageId?, filters? }`. The two are mutually exclusive and one of them is required; sending both, or
+// neither, is a 400. `scope.filters` reapplies the board filters of [CardsService.List] — `search`,
+// `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more filters" `temperatures`,
+// `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`, `referredBy`,
+// `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree
+// of [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
+// `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-create-next-action.
 func (s *OpportunitiesService) BulkCreateNextAction(ctx context.Context, body OpportunitiesBulkCreateNextActionInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -140,21 +143,22 @@ func (s *OpportunitiesService) BulkCreateNextAction(ctx context.Context, body Op
 // Delete many opportunity cards.
 //
 // Deletes a whole card selection. Highly destructive and not undoable — confirm the exact selection
-// with `cards_list` or `opportunities_query` first, and prefer marking the cards `won`/`lost` (via
-// `cards_update`) when they still matter for reporting. Targeting is either `cardIds` (an explicit
-// non-empty list — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR
-// `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually
-// exclusive and one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies
-// the board filters of `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`,
-// `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`,
-// `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To`
-// — and the advanced `conditions` tree of `opportunities_query` (contact fields included, through
-// its `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
-// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
-// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
-// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
-// most 200 cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status`
-// with that `jobId` until it finishes; an async answer means nothing has been applied yet.
+// with [CardsService.List] or [OpportunitiesService.Query] first, and prefer marking the cards
+// `won`/`lost` (via [CardsService.Update]) when they still matter for reporting. Targeting is either
+// `cardIds` (an explicit non-empty list — above 200 ids it is a 400, describe the selection with
+// `allMatching` instead) OR `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters?
+// }`. The two are mutually exclusive and one of them is required; sending both, or neither, is a 400.
+// `scope.filters` reapplies the board filters of [CardsService.List] — `search`, `attendantIds`,
+// `productNames`, `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`,
+// `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax`
+// (CENTS), `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
+// `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls DELETE /opportunities/bulk-delete.
 func (s *OpportunitiesService) BulkDelete(ctx context.Context, body OpportunitiesBulkDeleteInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -184,9 +188,9 @@ func (s *OpportunitiesService) BulkJobsHistory(ctx context.Context, params Oppor
 // Get the status of a bulk opportunity job.
 //
 // Polls the background job returned as `jobId` by any `opportunities_bulk_*` tool that answered `mode:
-// "async"` (including `opportunities_bulk_create_list`, whose list fills as the job runs), reporting
-// its progress and outcome. A `jobId` from another workspace, or one that already expired from the
-// queue, returns not-found.
+// "async"` (including [OpportunitiesService.BulkCreateList], whose list fills as the job runs),
+// reporting its progress and outcome. A `jobId` from another workspace, or one that already expired
+// from the queue, returns not-found.
 //
 // Calls GET /opportunities/bulk-jobs-status.
 func (s *OpportunitiesService) BulkJobsStatus(ctx context.Context, params OpportunitiesBulkJobsStatusParams, opts ...Option) (*OpportunitiesBulkJobsStatusOutput, error) {
@@ -200,23 +204,24 @@ func (s *OpportunitiesService) BulkJobsStatus(ctx context.Context, params Opport
 // Move many opportunity cards.
 //
 // Moves a whole card selection to `targetStageId`, inside the pipeline that stage belongs to (to
-// change pipeline use `opportunities_bulk_transfer`). Targeting is either `cardIds` (an explicit
+// change pipeline use [OpportunitiesService.BulkTransfer]). Targeting is either `cardIds` (an explicit
 // non-empty list — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR
 // `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually
 // exclusive and one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies
-// the board filters of `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`,
-// `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`,
-// `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To`
-// — and the advanced `conditions` tree of `opportunities_query` (contact fields included, through
-// its `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
-// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
-// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
-// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
-// most 200 cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status`
-// with that `jobId` until it finishes; an async answer means nothing has been applied yet. Unlike
-// `cards_move`, this takes no position anchors — the cards land at the end of the destination stage
-// — and it does NOT run the stage passage rules (WIP limit, required fields, direction), so it can
-// fill a `block`-mode stage past its limit. Cards that actually change stage restart their
+// the board filters of [CardsService.List] — `search`, `attendantIds`, `productNames`,
+// `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`,
+// `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS),
+// `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
+// `jobId` until it finishes; an async answer means nothing has been applied yet. Unlike
+// [CardsService.Move], this takes no position anchors — the cards land at the end of the destination
+// stage — and it does NOT run the stage passage rules (WIP limit, required fields, direction), so it
+// can fill a `block`-mode stage past its limit. Cards that actually change stage restart their
 // time-in-stage, get a history entry and publish the stage-move event; cards already in the
 // destination stage are untouched. The card status (open/won/lost) is never changed by a move.
 //
@@ -233,20 +238,21 @@ func (s *OpportunitiesService) BulkMove(ctx context.Context, body OpportunitiesB
 //
 // Sets `expectedClosingDate` (a calendar date, `YYYY-MM-DD`, or `null` to clear it) on a whole card
 // selection. This is the date the forecast buckets an open deal by, so clearing it drops those cards
-// out of `pipelines_forecast`. Targeting is either `cardIds` (an explicit non-empty list — above 200
-// ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true` with a
-// `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of them is
-// required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
-// `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more
-// filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
-// `jobId` until it finishes; an async answer means nothing has been applied yet.
+// out of [PipelinesService.Forecast]. Targeting is either `cardIds` (an explicit non-empty list —
+// above 200 ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true`
+// with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of
+// them is required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
+// [CardsService.List] — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the
+// "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`,
+// `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the
+// advanced `conditions` tree of [OpportunitiesService.Query] (contact fields included, through its
+// `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
+// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
+// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
+// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
+// most 200 cards, or `{ mode: "async", jobId }` above that — poll
+// [OpportunitiesService.BulkJobsStatus] with that `jobId` until it finishes; an async answer means
+// nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-set-closing-date.
 func (s *OpportunitiesService) BulkSetClosingDate(ctx context.Context, body OpportunitiesBulkSetClosingDateInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -259,22 +265,23 @@ func (s *OpportunitiesService) BulkSetClosingDate(ctx context.Context, body Oppo
 
 // Set an opportunity custom field on many cards.
 //
-// Sets one custom field (`customFieldId` from `custom_fields_list` with `entityType: "opportunities"`)
-// on a whole card selection. `value` is raw and coerced by field type: string for text/select, number
-// for number, ISO string for date, boolean for boolean, string array for multi_select — and `null`
-// CLEARS the stored value. Targeting is either `cardIds` (an explicit non-empty list — above 200 ids
-// it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true` with a
-// `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of them is
-// required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
-// `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more
-// filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
+// Sets one custom field (`customFieldId` from [CustomFieldsService.List] with `entityType:
+// "opportunities"`) on a whole card selection. `value` is raw and coerced by field type: string for
+// text/select, number for number, ISO string for date, boolean for boolean, string array for
+// multi_select — and `null` CLEARS the stored value. Targeting is either `cardIds` (an explicit
+// non-empty list — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR
+// `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually
+// exclusive and one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies
+// the board filters of [CardsService.List] — `search`, `attendantIds`, `productNames`,
+// `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`,
+// `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS),
+// `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
 // `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-set-custom-field.
@@ -293,16 +300,17 @@ func (s *OpportunitiesService) BulkSetCustomField(ctx context.Context, body Oppo
 // is a 400, describe the selection with `allMatching` instead) OR `allMatching: true` with a `scope`
 // — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of them is
 // required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
-// `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more
-// filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
-// `jobId` until it finishes; an async answer means nothing has been applied yet.
+// [CardsService.List] — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the
+// "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`,
+// `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the
+// advanced `conditions` tree of [OpportunitiesService.Query] (contact fields included, through its
+// `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
+// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
+// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
+// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
+// most 200 cards, or `{ mode: "async", jobId }` above that — poll
+// [OpportunitiesService.BulkJobsStatus] with that `jobId` until it finishes; an async answer means
+// nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-set-priority.
 func (s *OpportunitiesService) BulkSetPriority(ctx context.Context, body OpportunitiesBulkSetPriorityInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -318,25 +326,26 @@ func (s *OpportunitiesService) BulkSetPriority(ctx context.Context, body Opportu
 // Sets WHO OWES THE NEXT ACTION (the responsible attendant) on a whole card selection. `assignment` is
 // `{ mode, ... }`: `fixed` + `attendantId` gives every card to one person; `multiple` + `attendantIds`
 // (max 100) rotates evenly between those people, in the order given; `round_robin` + `teamId` (from
-// `teams_list`) runs the pipeline distribution engine over the team and logs the assignments.
+// [TeamsService.List]) runs the pipeline distribution engine over the team and logs the assignments.
 // Attendants must be operational and linked to the pipeline of the cards. The selection must sit in
 // ONE pipeline — explicit `cardIds` spanning pipelines is a 400. This is not
-// `opportunities_bulk_assign_attendants`: roles and their commission are left untouched. With
+// [OpportunitiesService.BulkAssignAttendants]: roles and their commission are left untouched. With
 // `round_robin`, cards with nobody eligible stay unassigned and are not counted in `affected`.
 // Management-only: a plain attendant session gets 403. Targeting is either `cardIds` (an explicit
 // non-empty list — above 200 ids it is a 400, describe the selection with `allMatching` instead) OR
 // `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually
 // exclusive and one of them is required; sending both, or neither, is a 400. `scope.filters` reapplies
-// the board filters of `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`,
-// `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`,
-// `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To`
-// — and the advanced `conditions` tree of `opportunities_query` (contact fields included, through
-// its `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
-// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
-// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
-// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
-// most 200 cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status`
-// with that `jobId` until it finishes; an async answer means nothing has been applied yet.
+// the board filters of [CardsService.List] — `search`, `attendantIds`, `productNames`,
+// `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`,
+// `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS),
+// `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
+// `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-set-responsible.
 func (s *OpportunitiesService) BulkSetResponsible(ctx context.Context, body OpportunitiesBulkSetResponsibleInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -351,21 +360,21 @@ func (s *OpportunitiesService) BulkSetResponsible(ctx context.Context, body Oppo
 //
 // Sets the card `temperature` label (`hot` | `warm` | `cold` | `frozen`, or `null` to clear it) on a
 // whole card selection. This is the MANUAL label of the opportunity, NOT the contact's 0–100
-// Temperature (which the engine computes; see `temperature_settings_get`). Targeting is either
+// Temperature (which the engine computes; see [TemperatureService.SettingsGet]). Targeting is either
 // `cardIds` (an explicit non-empty list — above 200 ids it is a 400, describe the selection with
 // `allMatching` instead) OR `allMatching: true` with a `scope` — `{ pipelineId, stageId?, filters?
 // }`. The two are mutually exclusive and one of them is required; sending both, or neither, is a 400.
-// `scope.filters` reapplies the board filters of `cards_list` — `search`, `attendantIds`,
+// `scope.filters` reapplies the board filters of [CardsService.List] — `search`, `attendantIds`,
 // `productNames`, `funnelNames`, `status`, plus the "more filters" `temperatures`, `priorities`,
 // `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`, `referredBy`, `valueMin`/`valueMax`
 // (CENTS), `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree of
-// `opportunities_query` (contact fields included, through its `lead` node). Everything is ANDed, so
-// the selection matches what the board shows for the same filters; card ordering never changes WHICH
-// cards are picked. A filter that is active but that a mass action cannot apply (`forecastEligible`,
-// `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never silently dropped.
-// Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or `{ mode: "async",
-// jobId }` above that — poll `opportunities_bulk_jobs_status` with that `jobId` until it finishes;
-// an async answer means nothing has been applied yet.
+// [OpportunitiesService.Query] (contact fields included, through its `lead` node). Everything is
+// ANDed, so the selection matches what the board shows for the same filters; card ordering never
+// changes WHICH cards are picked. A filter that is active but that a mass action cannot apply
+// (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never
+// silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or
+// `{ mode: "async", jobId }` above that — poll [OpportunitiesService.BulkJobsStatus] with that
+// `jobId` until it finishes; an async answer means nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-set-temperature.
 func (s *OpportunitiesService) BulkSetTemperature(ctx context.Context, body OpportunitiesBulkSetTemperatureInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -383,16 +392,17 @@ func (s *OpportunitiesService) BulkSetTemperature(ctx context.Context, body Oppo
 // ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true` with a
 // `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of them is
 // required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
-// `cards_list` — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more
-// filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`,
-// `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced
-// `conditions` tree of `opportunities_query` (contact fields included, through its `lead` node).
-// Everything is ANDed, so the selection matches what the board shows for the same filters; card
-// ordering never changes WHICH cards are picked. A filter that is active but that a mass action cannot
-// apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is
-// never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at most 200
-// cards, or `{ mode: "async", jobId }` above that — poll `opportunities_bulk_jobs_status` with that
-// `jobId` until it finishes; an async answer means nothing has been applied yet.
+// [CardsService.List] — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the
+// "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`,
+// `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the
+// advanced `conditions` tree of [OpportunitiesService.Query] (contact fields included, through its
+// `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
+// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
+// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
+// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
+// most 200 cards, or `{ mode: "async", jobId }` above that — poll
+// [OpportunitiesService.BulkJobsStatus] with that `jobId` until it finishes; an async answer means
+// nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-set-value.
 func (s *OpportunitiesService) BulkSetValue(ctx context.Context, body OpportunitiesBulkSetValueInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -412,25 +422,26 @@ func (s *OpportunitiesService) BulkSetValue(ctx context.Context, body Opportunit
 // attendant and role type exist there — send false to clear the responsible or ALL roles. Surviving
 // roles take the commission configured for their type in the destination pipeline (or none), so
 // commissions of the origin pipeline do not follow the cards; dropped roles and rewritten commissions
-// cannot be restored by transferring back. Like `opportunities_bulk_move`, it skips the stage passage
-// rules; cards that change stage get a history entry, and the stage-move and entered/left-stage events
-// are published (so "entered a stage" flow triggers and stage automations of the destination fire).
-// Management-only: a plain attendant session gets 403. With `allMatching` the scope pipeline must
-// differ from `targetPipelineId` (same pipeline is a 400 — use `opportunities_bulk_move`). Targeting
-// is either `cardIds` (an explicit non-empty list — above 200 ids it is a 400, describe the
-// selection with `allMatching` instead) OR `allMatching: true` with a `scope` — `{ pipelineId,
-// stageId?, filters? }`. The two are mutually exclusive and one of them is required; sending both, or
-// neither, is a 400. `scope.filters` reapplies the board filters of `cards_list` — `search`,
-// `attendantIds`, `productNames`, `funnelNames`, `status`, plus the "more filters" `temperatures`,
-// `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`, `origins`, `referredBy`,
-// `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the advanced `conditions` tree
-// of `opportunities_query` (contact fields included, through its `lead` node). Everything is ANDed, so
-// the selection matches what the board shows for the same filters; card ordering never changes WHICH
-// cards are picked. A filter that is active but that a mass action cannot apply (`forecastEligible`,
-// `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a 400 — it is never silently dropped.
-// Returns `{ mode: "sync", affected }` when the selection is at most 200 cards, or `{ mode: "async",
-// jobId }` above that — poll `opportunities_bulk_jobs_status` with that `jobId` until it finishes;
-// an async answer means nothing has been applied yet.
+// cannot be restored by transferring back. Like [OpportunitiesService.BulkMove], it skips the stage
+// passage rules; cards that change stage get a history entry, and the stage-move and
+// entered/left-stage events are published (so "entered a stage" flow triggers and stage automations of
+// the destination fire). Management-only: a plain attendant session gets 403. With `allMatching` the
+// scope pipeline must differ from `targetPipelineId` (same pipeline is a 400 — use
+// [OpportunitiesService.BulkMove]). Targeting is either `cardIds` (an explicit non-empty list —
+// above 200 ids it is a 400, describe the selection with `allMatching` instead) OR `allMatching: true`
+// with a `scope` — `{ pipelineId, stageId?, filters? }`. The two are mutually exclusive and one of
+// them is required; sending both, or neither, is a 400. `scope.filters` reapplies the board filters of
+// [CardsService.List] — `search`, `attendantIds`, `productNames`, `funnelNames`, `status`, plus the
+// "more filters" `temperatures`, `priorities`, `tagIds`, `leadIds`, `companyIds`, `offerIds`,
+// `origins`, `referredBy`, `valueMin`/`valueMax` (CENTS), `expectedClosingDateFrom`/`To` — and the
+// advanced `conditions` tree of [OpportunitiesService.Query] (contact fields included, through its
+// `lead` node). Everything is ANDed, so the selection matches what the board shows for the same
+// filters; card ordering never changes WHICH cards are picked. A filter that is active but that a mass
+// action cannot apply (`forecastEligible`, `forecastIncludeWon`, `cardIds`, `viewAsAttendantId`) is a
+// 400 — it is never silently dropped. Returns `{ mode: "sync", affected }` when the selection is at
+// most 200 cards, or `{ mode: "async", jobId }` above that — poll
+// [OpportunitiesService.BulkJobsStatus] with that `jobId` until it finishes; an async answer means
+// nothing has been applied yet.
 //
 // Calls POST /opportunities/bulk-transfer.
 func (s *OpportunitiesService) BulkTransfer(ctx context.Context, body OpportunitiesBulkTransferInput, opts ...Option) (*OpportunitiesBulkMoveOutput, error) {
@@ -445,10 +456,10 @@ func (s *OpportunitiesService) BulkTransfer(ctx context.Context, body Opportunit
 //
 // Runs the UNIFIED opportunity filter and returns `{ count, cardIds }` — ids only, never full cards,
 // and `count` is the total ignoring pagination. Use it to answer "how many / which cards match X"
-// across a whole workspace, or as the selection step before `cards_get`. `filters` is a FLAT array of
-// nodes linked by `parentId` (never a nested object): each node is `{ field, operator, negation,
-// parentId, order, value* }`, where `field` is one of `title`, `value`, `isRecurring`, `priority`,
-// `temperature`, `status`, `origin`, `referredBy`, `lossReason`, `createdAt`, `updatedAt`,
+// across a whole workspace, or as the selection step before [CardsService.Get]. `filters` is a FLAT
+// array of nodes linked by `parentId` (never a nested object): each node is `{ field, operator,
+// negation, parentId, order, value* }`, where `field` is one of `title`, `value`, `isRecurring`,
+// `priority`, `temperature`, `status`, `origin`, `referredBy`, `lossReason`, `createdAt`, `updatedAt`,
 // `expectedClosingDate`, `wonAt`, `lostAt`, `productId`, `offerId`, `pipelineId`, `stageId`,
 // `funnelId`, `responsibleAttendantId`, `tagId`, `attendantId`, `companyId`, `leadId`,
 // `customFieldText`/`Number`/`Date`/`Boolean`/`Select` (with `customFieldId`), `taskStatus`,
@@ -457,16 +468,17 @@ func (s *OpportunitiesService) BulkTransfer(ctx context.Context, body Opportunit
 // LINKED CONTACT — see below). The value goes in the slot matching the field type: `valueString`,
 // `valueNumber`, `valueDate`, `valueBool` or `valueUuid`. A `lead` node has `operator` `childrenAnd` |
 // `childrenOr` and carries the contact conditions as a JSON STRING in `valueString` (send
-// `JSON.stringify` of the array): a non-empty array of the same flat nodes `segments_preview_count`
-// takes (any contact field, Temperature `temperatureScore`, Score `leadScore`, custom fields of the
-// contact as `customFieldText`/`Number`/`Date`/`Boolean`/`Select` with `customFieldId` — there is NO
-// generic `customField` key —, tags, payments, `suspectedFraud`…), e.g. the array
+// `JSON.stringify` of the array): a non-empty array of the same flat nodes
+// [SegmentsService.PreviewCount] takes (any contact field, Temperature `temperatureScore`, Score
+// `leadScore`, custom fields of the contact as `customFieldText`/`Number`/`Date`/`Boolean`/`Select`
+// with `customFieldId` — there is NO generic `customField` key —, tags, payments,
+// `suspectedFraud`…), e.g. the array
 // `[{"id":"a","order":0,"field":"city","operator":"equals","negation":false,"valueString":"São
 // Paulo"}]` stringified. All conditions inside ONE `lead` node must hold for the same contact; a card
 // with several contacts matches when at least ONE contact does; `negation: true` on the node means "no
 // linked contact matches". Optional `pipelineId` scopes the query; `limit` (max 200) and `offset` page
 // the id list. To get the matching cards themselves in one call instead, pass the same array as
-// `conditions` to `cards_list`.
+// `conditions` to [CardsService.List].
 //
 // Calls POST /opportunities/query.
 func (s *OpportunitiesService) Query(ctx context.Context, body OpportunitiesQueryInput, opts ...Option) (*OpportunitiesQueryOutput, error) {

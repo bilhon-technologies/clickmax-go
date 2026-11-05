@@ -15,8 +15,8 @@ type EmailMailboxesService struct {
 // Get an e-mail mailbox.
 //
 // Reads one connected company e-mail mailbox (IMAP/SMTP inbox whose e-mails land in Conversations)
-// WITHOUT any secret — the password is never returned. `id` = a `channel_instances_list` row with
-// `channel: 'email'`. Returns: the address and server settings
+// WITHOUT any secret — the password is never returned. `id` = a [ChannelInstancesService.List] row
+// with `channel: 'email'`. Returns: the address and server settings
 // (`imapHost`/`imapPort`/`imapSecure`/`imapUsername`, same for `smtp*`); connection health —
 // `lastSuccessAt` (last error-free sync), `failingSince` (null = healthy; otherwise failing without
 // interruption since then), `consecutiveFailures`, `lastErrorCode` + `lastError` (`auth_failed` =
@@ -47,22 +47,22 @@ func (s *EmailMailboxesService) Get(ctx context.Context, params EmailMailboxesGe
 // Conversations, so the team does not start with an empty inbox. ONE SHOT PER MAILBOX, forever: once
 // requested it can never be repeated, extended to 30 days or redone, even after it finished (409
 // `EMAIL_HISTORY_ALREADY_REQUESTED`). Confirm the window with the user first. Check
-// `email_mailboxes_get` BEFORE calling: if `lastSuccessAt` is null (the mailbox never synced
+// [EmailMailboxesService.Get] BEFORE calling: if `lastSuccessAt` is null (the mailbox never synced
 // successfully) the import closes immediately with nothing imported and the one shot is spent — fix
 // the connection first. It runs in the BACKGROUND in small batches after the new e-mails of each sync
 // cycle (roughly 10 e-mails a minute); this call only schedules it and returns the mailbox with
-// `historyImport` started (`processed: 0`, `total: null`). Follow progress with `email_mailboxes_get`
-// (`processed` of `total`, done when `completedAt` is set). Only the inbox is read (never the Sent
-// folder), up to the e-mails already present when it was requested. EFFECTS: each old e-mail becomes
-// an inbound message with its ORIGINAL date in the sender conversation in this mailbox. The sender is
-// matched to a contact by e-mail address and a NEW CONTACT is created when none exists; the existing
-// conversation in this mailbox is reused, otherwise a NEW CONVERSATION is created. A closed
-// conversation receives the message but stays closed. It fires NO new-message reactions: no unread
-// counter or unread badge, no automations, no Speed to Lead, no Temperature change, no AI SDR or
-// copilot reply. Skipped like in the daily sync: newsletters/mailing lists, no-reply and automatic
-// replies, bounce notices, e-mails sent by the mailbox itself, and e-mails already in Conversations.
-// Needs the `email-inbox` manage permission; same mailbox access rule as `email_mailboxes_get` (404
-// otherwise).
+// `historyImport` started (`processed: 0`, `total: null`). Follow progress with
+// [EmailMailboxesService.Get] (`processed` of `total`, done when `completedAt` is set). Only the inbox
+// is read (never the Sent folder), up to the e-mails already present when it was requested. EFFECTS:
+// each old e-mail becomes an inbound message with its ORIGINAL date in the sender conversation in this
+// mailbox. The sender is matched to a contact by e-mail address and a NEW CONTACT is created when none
+// exists; the existing conversation in this mailbox is reused, otherwise a NEW CONVERSATION is
+// created. A closed conversation receives the message but stays closed. It fires NO new-message
+// reactions: no unread counter or unread badge, no automations, no Speed to Lead, no Temperature
+// change, no AI SDR or copilot reply. Skipped like in the daily sync: newsletters/mailing lists,
+// no-reply and automatic replies, bounce notices, e-mails sent by the mailbox itself, and e-mails
+// already in Conversations. Needs the `email-inbox` manage permission; same mailbox access rule as
+// [EmailMailboxesService.Get] (404 otherwise).
 //
 // Calls POST /email-mailboxes/history-import-start.
 func (s *EmailMailboxesService) HistoryImportStart(ctx context.Context, body EmailMailboxesHistoryImportStartInput, opts ...Option) (*EmailMailboxesGetOutput, error) {
@@ -78,7 +78,7 @@ func (s *EmailMailboxesService) HistoryImportStart(ctx context.Context, body Ema
 // Changes the sending settings of one mailbox — never its credentials or connection. PARTIAL update:
 // an omitted field stays as it is; `null` or an empty/blank string CLEARS `fromName`, `signatureText`
 // or `signatureLogoUrl` (values are trimmed). Returns the updated mailbox (same shape as
-// `email_mailboxes_get`). Changes apply to the next e-mails sent; nothing already sent changes.
+// [EmailMailboxesService.Get]). Changes apply to the next e-mails sent; nothing already sent changes.
 // `fromName` (max 120) = name before the address in `From`; line breaks or control characters are
 // refused (400 `EMAIL_INVALID_FROM_NAME`). `signatureText` (max 2000, composer markup) and
 // `signatureLogoUrl` (https only, max 2048, else 400 `EMAIL_INVALID_SIGNATURE_LOGO`) form the default
@@ -89,8 +89,8 @@ func (s *EmailMailboxesService) HistoryImportStart(ctx context.Context, body Ema
 // contact or a conversation created; (2) replies sent through Clickmax are also saved in the mailbox
 // Sent folder, except on Gmail and Outlook/Office 365, which already keep that copy. Only what is sent
 // after switching it on is mirrored — the old Sent folder is never imported. Needs the `email-inbox`
-// manage permission; same mailbox access rule as `email_mailboxes_get` (404 otherwise). Re-running
-// with the same values changes nothing.
+// manage permission; same mailbox access rule as [EmailMailboxesService.Get] (404 otherwise).
+// Re-running with the same values changes nothing.
 //
 // Calls POST /email-mailboxes/settings-update.
 func (s *EmailMailboxesService) SettingsUpdate(ctx context.Context, body EmailMailboxesSettingsUpdateInput, opts ...Option) (*EmailMailboxesGetOutput, error) {
@@ -137,7 +137,7 @@ type EmailMailboxesGetOutputHistoryImport struct {
 
 // EmailMailboxesGetParams holds the query parameters of [EmailMailboxesService.Get].
 type EmailMailboxesGetParams struct {
-	// The mailbox's connected-channel id: `id` of a `channel_instances_list` row with `channel:
+	// The mailbox's connected-channel id: `id` of a [ChannelInstancesService.List] row with `channel:
 	// 'email'` (its `displayName` is the mailbox address).
 	ID string
 }
@@ -151,7 +151,7 @@ func (p EmailMailboxesGetParams) values() url.Values {
 // EmailMailboxesHistoryImportStartInput is the request body of
 // [EmailMailboxesService.HistoryImportStart].
 type EmailMailboxesHistoryImportStartInput struct {
-	// The mailbox's connected-channel id: `id` of a `channel_instances_list` row with `channel:
+	// The mailbox's connected-channel id: `id` of a [ChannelInstancesService.List] row with `channel:
 	// 'email'` (its `displayName` is the mailbox address).
 	ID string `json:"id"`
 	// How far back to bring e-mails: `7` or `30` days. No other window exists.
@@ -160,7 +160,7 @@ type EmailMailboxesHistoryImportStartInput struct {
 
 // EmailMailboxesSettingsUpdateInput is the request body of [EmailMailboxesService.SettingsUpdate].
 type EmailMailboxesSettingsUpdateInput struct {
-	// The mailbox's connected-channel id: `id` of a `channel_instances_list` row with `channel:
+	// The mailbox's connected-channel id: `id` of a [ChannelInstancesService.List] row with `channel:
 	// 'email'` (its `displayName` is the mailbox address).
 	ID string `json:"id"`
 	// Display name shown before the address in the `From` of sent e-mails (e.g. "Ana da Loja

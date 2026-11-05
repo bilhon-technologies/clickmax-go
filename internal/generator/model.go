@@ -254,7 +254,38 @@ func build(doc *document, reserved map[string]string) (*model, error) {
 			return nil, fmt.Errorf("%s is not used by any operation", name)
 		}
 	}
+	linkDocs(m)
 	return m, nil
+}
+
+// linkDocs turns the tool names in every spec description into doc links. A tool name two
+// operations share links to neither.
+func linkDocs(m *model) {
+	links := map[string]string{}
+	methods := slices.Clone(m.root)
+	for _, svc := range m.services {
+		methods = append(methods, svc.methods...)
+	}
+	for _, mt := range methods {
+		name := toolName(mt.path)
+		if _, dup := links[name]; dup {
+			links[name] = ""
+		} else {
+			links[name] = mt.link
+		}
+	}
+	for _, mt := range methods {
+		mt.summary = linkToolNames(mt.summary, links)
+		mt.desc = linkToolNames(mt.desc, links)
+	}
+	for _, d := range m.decls {
+		for i := range d.doc {
+			d.doc[i] = linkToolNames(d.doc[i], links)
+		}
+		for _, f := range d.fields {
+			f.doc = linkToolNames(f.doc, links)
+		}
+	}
 }
 
 // constants names enum values once every type name is taken, so a constant can never push a type

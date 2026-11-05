@@ -16,7 +16,7 @@ type ManagedFlowsService struct {
 // Delete a managed flow.
 //
 // Deletes a managed automation and the flow behind it. Destructive and not undoable — prefer
-// `managed_flows_set_active` with `active: false` when the automation may be needed again.
+// [ManagedFlowsService.SetActive] with `active: false` when the automation may be needed again.
 //
 // Calls DELETE /managed-flows/delete.
 func (s *ManagedFlowsService) Delete(ctx context.Context, body ManagedFlowsDeleteInput, opts ...Option) (*ManagedFlowsDeleteOutput, error) {
@@ -29,9 +29,9 @@ func (s *ManagedFlowsService) Delete(ctx context.Context, body ManagedFlowsDelet
 
 // List the managed flows of a pipeline.
 //
-// Same rows as `managed_flows_list_by_stage` but for the whole pipeline in one query, each carrying
-// its `stageId` so they can be grouped by column. This is the board behind "Modo automação". A
-// pipeline belonging to another workspace returns an empty array rather than an error.
+// Same rows as [ManagedFlowsService.ListByStage] but for the whole pipeline in one query, each
+// carrying its `stageId` so they can be grouped by column. This is the board behind "Modo
+// automação". A pipeline belonging to another workspace returns an empty array rather than an error.
 //
 // Calls GET /managed-flows/list-by-pipeline.
 func (s *ManagedFlowsService) ListByPipeline(ctx context.Context, params ManagedFlowsListByPipelineParams, opts ...Option) (*ManagedFlowsListByPipelineOutput, error) {
@@ -50,7 +50,7 @@ func (s *ManagedFlowsService) ListByPipeline(ctx context.Context, params Managed
 // underlying `flowId`, its `mode`, `config` and execution `stats` (test runs that never executed are
 // not counted). For `gatilho_passagem`, `config.eventName` is the configured event and `agingDays` the
 // "card stuck for N days" threshold (null otherwise). The row `id` is the `managedFlowId` that
-// `managed_flows_upsert` takes to edit that automation.
+// [ManagedFlowsService.Upsert] takes to edit that automation.
 //
 // Calls GET /managed-flows/list-by-stage.
 func (s *ManagedFlowsService) ListByStage(ctx context.Context, params ManagedFlowsListByStageParams, opts ...Option) (*ManagedFlowsListByStageOutput, error) {
@@ -64,7 +64,7 @@ func (s *ManagedFlowsService) ListByStage(ctx context.Context, params ManagedFlo
 // Activate or pause a managed flow.
 //
 // Turns one managed automation on or off without deleting it, via `active: true|false`. This is the
-// reversible counterpart of `managed_flows_delete` and the right way to stop an automation
+// reversible counterpart of [ManagedFlowsService.Delete] and the right way to stop an automation
 // temporarily.
 //
 // Calls POST /managed-flows/set-active.
@@ -80,15 +80,15 @@ func (s *ManagedFlowsService) SetActive(ctx context.Context, body ManagedFlowsSe
 //
 // Creates (or replaces) one managed automation on a stage and returns `{ managedFlowId, flowId }`. The
 // body is discriminated by `type`: `atribuicao` takes `strategy` (`auto` | `fixo`) plus `teamId` (see
-// `teams_list`), `temperature` or a fixed `attendantId`; `entrada_externa` takes either `eventName`
-// (any event of the flows catalogue, with optional `offerIds`/`scopes`/`value`) or `funnelIds` (lead
-// captured by a funnel creates a card here); `gatilho_passagem` takes `eventName` plus optional
-// `fieldConstraint`, `agingDays`, `offerIds`, `webhookUrl` (an https:// URL that also receives the
-// opportunity when the card moves), `scopes`, and is THE tool for "when X happens, move the
-// opportunity to this stage" whatever X is — a booked meeting, a reply, a tag; `eventName` for both
-// of these MUST come from `flows_triggers_catalog`, never invented, and the user must see that entry
-// `label` (e.g. "Reunião Agendada"), never the raw `eventName`; the catalogue is wider than this
-// endpoint accepts, so skip entries of the `mass` group (and, for `gatilho_passagem`, the
+// [TeamsService.List]), `temperature` or a fixed `attendantId`; `entrada_externa` takes either
+// `eventName` (any event of the flows catalogue, with optional `offerIds`/`scopes`/`value`) or
+// `funnelIds` (lead captured by a funnel creates a card here); `gatilho_passagem` takes `eventName`
+// plus optional `fieldConstraint`, `agingDays`, `offerIds`, `webhookUrl` (an https:// URL that also
+// receives the opportunity when the card moves), `scopes`, and is THE tool for "when X happens, move
+// the opportunity to this stage" whatever X is — a booked meeting, a reply, a tag; `eventName` for
+// both of these MUST come from [FlowsService.TriggersCatalog], never invented, and the user must see
+// that entry `label` (e.g. "Reunião Agendada"), never the raw `eventName`; the catalogue is wider
+// than this endpoint accepts, so skip entries of the `mass` group (and, for `gatilho_passagem`, the
 // received-webhook event) — sending one is a 400; narrow it with that entry `scopes`, resolving
 // entity ids through the matching picker tool instead of guessing; `acao_delay` takes `delayHours`
 // (0–8760), a `label`, and an `actionKind` from the Matriz catalogue (`notifyOwner`, `addTag`,
@@ -97,12 +97,13 @@ func (s *ManagedFlowsService) SetActive(ctx context.Context, body ManagedFlowsSe
 // `presetGoogleCalendar`, `presetCalendly`) with that action flat fields alongside it. EDITING:
 // without `managedFlowId`, `acao_delay` ALWAYS creates a new automation and `gatilho_passagem` matches
 // by `eventName` (changing the event creates a second trigger) — so to change an existing
-// `acao_delay` or `gatilho_passagem`, first call `managed_flows_list_by_stage`, then send the full new
-// config with `managedFlowId` = that row `id`; it is updated in place (same `flowId`, history kept). A
-// `managedFlowId` from another stage or type is a 404; moving a `gatilho_passagem` to an event that
-// already has a trigger on the stage is a 409. `atribuicao` (one per stage) and `entrada_externa` (one
-// per event, or one by funnel) are always replaced in place and take no `managedFlowId`. `projectId`
-// is optional everywhere — the server resolves the workspace default project when it is omitted.
+// `acao_delay` or `gatilho_passagem`, first call [ManagedFlowsService.ListByStage], then send the full
+// new config with `managedFlowId` = that row `id`; it is updated in place (same `flowId`, history
+// kept). A `managedFlowId` from another stage or type is a 404; moving a `gatilho_passagem` to an
+// event that already has a trigger on the stage is a 409. `atribuicao` (one per stage) and
+// `entrada_externa` (one per event, or one by funnel) are always replaced in place and take no
+// `managedFlowId`. `projectId` is optional everywhere — the server resolves the workspace default
+// project when it is omitted.
 //
 // Calls POST /managed-flows/upsert.
 func (s *ManagedFlowsService) Upsert(ctx context.Context, body ManagedFlowsUpsertInput, opts ...Option) (*ManagedFlowsUpsertOutput, error) {

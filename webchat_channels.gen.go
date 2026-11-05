@@ -16,9 +16,9 @@ type WebchatChannelsService struct {
 //
 // Creates a webchat bot (chat widget channel). Requires `name`. Optional `projectId`, widget settings,
 // `appearance`, and a `preChatFlow` {enabled, steps}. Starts ENABLED (live as soon as the user embeds
-// it on a page); pass `enabled: false` via `webchat_channels_update` to keep it offline. Prefer
-// editing an existing channel with `webchat_channels_update` when the user already opened one in the
-// builder. STEP SHAPES (discriminated by `type`; every `id` unique, ≤64 chars): `message` {text,
+// it on a page); pass `enabled: false` via [WebchatChannelsService.Update] to keep it offline. Prefer
+// editing an existing channel with [WebchatChannelsService.Update] when the user already opened one in
+// the builder. STEP SHAPES (discriminated by `type`; every `id` unique, ≤64 chars): `message` {text,
 // next?}; `capture` {text?, fields:[{key:"name"|"email"|"phone", label?, required}] (1–3), next?};
 // `question` {text, options:[{id,label,next?}] (1–6), answerField?} for clickable options or {text,
 // answerMode:"text", options:[], next?, answerField?} for free text; `condition`
@@ -42,8 +42,8 @@ func (s *WebchatChannelsService) Create(ctx context.Context, body WebchatChannel
 //
 // Fetches one webchat bot by `channelId` with its full configuration: widget settings
 // (`welcomeMessage`, `position`, `primaryColor`, `avatarUrl`, `allowedOrigins`, `appearance`) and the
-// pre-chat bot flow (`preChatFlow.steps`). Read it before editing: `webchat_channels_update` replaces
-// `preChatFlow` as a whole, so build on the current steps.
+// pre-chat bot flow (`preChatFlow.steps`). Read it before editing: [WebchatChannelsService.Update]
+// replaces `preChatFlow` as a whole, so build on the current steps.
 //
 // Calls GET /webchat-channels/get.
 func (s *WebchatChannelsService) Get(ctx context.Context, params WebchatChannelsGetParams, opts ...Option) (*WebchatChannelsGetOutput, error) {
@@ -58,7 +58,7 @@ func (s *WebchatChannelsService) Get(ctx context.Context, params WebchatChannels
 //
 // Lists the workspace's webchat bots (embeddable chat widget channels) with `id`, `name`, `enabled`,
 // `projectId`, and `stepsCount`/`preChatEnabled` for the pre-chat bot flow. Use it to find a channel
-// id before reading or editing one. Read the full configuration with `webchat_channels_get`.
+// id before reading or editing one. Read the full configuration with [WebchatChannelsService.Get].
 //
 // Calls GET /webchat-channels/list.
 func (s *WebchatChannelsService) List(ctx context.Context, opts ...Option) (*WebchatChannelsListOutput, error) {
@@ -74,15 +74,16 @@ func (s *WebchatChannelsService) List(ctx context.Context, opts ...Option) (*Web
 // Updates one webchat bot by `channelId`. Any subset of `name`, `projectId`, `enabled` (true publishes
 // the widget, false takes it offline), `welcomeMessage`, `position`, `primaryColor`, `avatarUrl`,
 // `allowedOrigins`, `appearance`, `preChatFlow`. `preChatFlow` is REPLACED as a whole document
-// ({enabled, steps}) — read the channel first with `webchat_channels_get` and send the complete step
-// list. Keep `preChatFlow.enabled: true` so the bot runs; `enabled: false`, `steps: []` or null means
-// the widget opens straight into live chat. Every flow must terminate: end each path with a `handoff`
-// (human takes over) or an `end` step. STEP SHAPES (discriminated by `type`; every `id` unique, ≤64
-// chars): `message` {text, next?}; `capture` {text?, fields:[{key:"name"|"email"|"phone", label?,
-// required}] (1–3), next?}; `question` {text, options:[{id,label,next?}] (1–6), answerField?} for
-// clickable options or {text, answerMode:"text", options:[], next?, answerField?} for free text;
-// `condition` {variable:"choice"|"name"|"email"|"phone", op:"contains"|"equals"|"exists", value?,
-// next?, elseNext?}; `ai` {text, instruction?, branches:[{id,label,description?,next?}] (1–8),
+// ({enabled, steps}) — read the channel first with [WebchatChannelsService.Get] and send the
+// complete step list. Keep `preChatFlow.enabled: true` so the bot runs; `enabled: false`, `steps: []`
+// or null means the widget opens straight into live chat. Every flow must terminate: end each path
+// with a `handoff` (human takes over) or an `end` step. STEP SHAPES (discriminated by `type`; every
+// `id` unique, ≤64 chars): `message` {text, next?}; `capture` {text?,
+// fields:[{key:"name"|"email"|"phone", label?, required}] (1–3), next?}; `question` {text,
+// options:[{id,label,next?}] (1–6), answerField?} for clickable options or {text, answerMode:"text",
+// options:[], next?, answerField?} for free text; `condition`
+// {variable:"choice"|"name"|"email"|"phone", op:"contains"|"equals"|"exists", value?, next?,
+// elseNext?}; `ai` {text, instruction?, branches:[{id,label,description?,next?}] (1–8),
 // fallbackNext?}; `handoff` {text?, assignTo?} (terminal, sends to a human); `end` {text?} (terminal).
 // A `next` is another step id, `"handoff"`, `"end"`, or omitted to fall through to the next step in
 // array order. `answerField` maps the answer to a lead field (`name`, `email`, `telephone`, `city`…

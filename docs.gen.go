@@ -14,9 +14,9 @@ type DocsService struct {
 
 // Read a Clickmax documentation page.
 //
-// Returns the full markdown of one documentation page, by the `path` a `docs_search` result gave you
-// (e.g. `/faq/messaging/create-whatsapp-message-templates`). Answer support questions from this text
-// and cite `url` as the source. Only pages present in the documentation index are served.
+// Returns the full markdown of one documentation page, by the `path` a [DocsService.Search] result
+// gave you (e.g. `/faq/messaging/create-whatsapp-message-templates`). Answer support questions from
+// this text and cite `url` as the source. Only pages present in the documentation index are served.
 //
 // Calls GET /docs/pages-get.
 func (s *DocsService) PagesGet(ctx context.Context, params DocsPagesGetParams, opts ...Option) (*DocsPagesGetOutput, error) {
@@ -33,8 +33,8 @@ func (s *DocsService) PagesGet(ctx context.Context, params DocsPagesGetParams, o
 // query is split into terms, so pass the user's question or its key words (e.g. "template aprovado
 // meta disparo em massa"), not an exact title. Returns the best pages with a snippet and `coverage`
 // (share of the query terms the page contains) to judge relevance; read the winner with
-// `docs_pages_get` before answering. `lang` defaults to `pt-BR`. Product documentation only — it
-// does not search the workspace's own data.
+// [DocsService.PagesGet] before answering. `lang` defaults to `pt-BR`. Product documentation only —
+// it does not search the workspace's own data.
 //
 // Calls GET /docs/search.
 func (s *DocsService) Search(ctx context.Context, params DocsSearchParams, opts ...Option) (*DocsSearchOutput, error) {

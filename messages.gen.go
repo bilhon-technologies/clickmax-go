@@ -17,8 +17,8 @@ type MessagesService struct {
 // Account-wide message performance for a period, per channel (email, WhatsApp = `gupshup`, SMS,
 // Telegram…), covering campaigns AND automations together: volume, reached, opened, failed, bounces,
 // spam complaints, and open/failure/bounce rates. `openRate` = opened / reached (first opens only).
-// Clicks are not available here — use `broadcasts_list` for click rates. Call twice (current and
-// previous window of the same length) to show a trend.
+// Clicks are not available here — use [BroadcastsService.List] for click rates. Call twice (current
+// and previous window of the same length) to show a trend.
 //
 // Calls GET /messages/metrics.
 func (s *MessagesService) Metrics(ctx context.Context, params MessagesMetricsParams, opts ...Option) (*MessagesMetricsOutput, error) {

@@ -15,13 +15,13 @@ type CustomObjectRecordsService struct {
 
 // Bulk delete custom-object records.
 //
-// Deletes many records of `objectId` at once — like `custom_object_records_delete`, with NO restore.
-// Needs `custom-objects:delete`; only records in the user's scope are touched. Pick the records with
-// EITHER `recordIds` (1-10000) OR `allMatching: true` + the same `filters`/`search` as
-// `custom_object_records_query` (re-evaluated when the action runs; `allMatching` with no filters =
-// EVERY record the user can reach). Zero matches is 400. Up to 200 records it runs now and returns `{
-// mode: "sync", affected }`; above that it returns `{ mode: "async", jobId }` — poll
-// `custom_object_records_bulk_jobs_status`. Always show the user how many records (and which, when
+// Deletes many records of `objectId` at once — like [CustomObjectRecordsService.Delete], with NO
+// restore. Needs `custom-objects:delete`; only records in the user's scope are touched. Pick the
+// records with EITHER `recordIds` (1-10000) OR `allMatching: true` + the same `filters`/`search` as
+// [CustomObjectRecordsService.Query] (re-evaluated when the action runs; `allMatching` with no filters
+// = EVERY record the user can reach). Zero matches is 400. Up to 200 records it runs now and returns
+// `{ mode: "sync", affected }`; above that it returns `{ mode: "async", jobId }` — poll
+// [CustomObjectRecordsService.BulkJobsStatus]. Always show the user how many records (and which, when
 // few) will go before calling.
 //
 // Calls DELETE /custom-object-records/bulk-delete.
@@ -51,16 +51,16 @@ func (s *CustomObjectRecordsService) BulkJobsStatus(ctx context.Context, params 
 // Bulk update custom-object records.
 //
 // Applies ONE change to many records of `objectId`. `target`: `field` (`customFieldId` + `value` —
-// same formats as `custom_object_records_set_values`; omitting `value` CLEARS the field; not allowed
-// on the title field or on unique fields, 400), `responsible` (`responsibleAttendantId`, `null` =
-// nobody; without `:all` only yourself) or `note` (`note` 1-5000, added to each record history). Needs
-// `custom-objects:update`; only records in the user's scope are touched. Pick the records with EITHER
-// `recordIds` (1-10000) OR `allMatching: true` + the same `filters`/`search` as
-// `custom_object_records_query` (re-evaluated when the action runs; `allMatching` with no filters =
-// EVERY record the user can reach). Zero matches is 400. Up to 200 records it runs now and returns `{
-// mode: "sync", affected }`; above that it returns `{ mode: "async", jobId }` — poll
-// `custom_object_records_bulk_jobs_status`. Confirm the count with `custom_object_records_query` (same
-// filters) before running it.
+// same formats as [CustomObjectRecordsService.SetValues]; omitting `value` CLEARS the field; not
+// allowed on the title field or on unique fields, 400), `responsible` (`responsibleAttendantId`,
+// `null` = nobody; without `:all` only yourself) or `note` (`note` 1-5000, added to each record
+// history). Needs `custom-objects:update`; only records in the user's scope are touched. Pick the
+// records with EITHER `recordIds` (1-10000) OR `allMatching: true` + the same `filters`/`search` as
+// [CustomObjectRecordsService.Query] (re-evaluated when the action runs; `allMatching` with no filters
+// = EVERY record the user can reach). Zero matches is 400. Up to 200 records it runs now and returns
+// `{ mode: "sync", affected }`; above that it returns `{ mode: "async", jobId }` — poll
+// [CustomObjectRecordsService.BulkJobsStatus]. Confirm the count with
+// [CustomObjectRecordsService.Query] (same filters) before running it.
 //
 // Calls POST /custom-object-records/bulk-update.
 func (s *CustomObjectRecordsService) BulkUpdate(ctx context.Context, body CustomObjectRecordsBulkUpdateInput, opts ...Option) (*CustomObjectRecordsBulkUpdateOutput, error) {
@@ -90,19 +90,19 @@ func (s *CustomObjectRecordsService) ClearValue(ctx context.Context, body Custom
 //
 // Creates one record of `objectId`, with its values and (optionally) its links, in ONE transaction.
 // Needs `custom-objects:create`. `values` = `[{ customFieldId, value }]` keyed by the field ID (from
-// `custom_fields_list` with `entityType: "objects"` + `objectId`), never by name. The TITLE field is
-// the only one the server requires (400 "Preencha …" without it); other `required` flags are
-// enforced only on screen, so fill them when the user gave the data. Unique fields reject a repeated
-// value (409). Value per field type: text/textarea/link/file → string;
+// [CustomFieldsService.List] with `entityType: "objects"` + `objectId`), never by name. The TITLE
+// field is the only one the server requires (400 "Preencha …" without it); other `required` flags
+// are enforced only on screen, so fill them when the user gave the data. Unique fields reject a
+// repeated value (409). Value per field type: text/textarea/link/file → string;
 // number/currency/percentage/rating → number; date → ISO string; boolean → true/false;
 // select/radio → the option value (= its label); multi_select → array of option values; image
 // ("Foto") → one http(s) URL or an array of 1-20 URLs. `responsibleAttendantId`: users without the
 // `:all` access are always the responsible (asking for someone else is 403); with `:all` it defaults
 // to the caller, `null` = nobody. `links` (≤50) = `[{ relationId, targetId }]` to link the new
-// record right away (relation ids from `custom_object_relations_list`; the record's side is resolved
-// for you); cardinality "one" sides REPLACE/MOVE as in `custom_object_links_create`. Archived objects
-// refuse new records. Returns the bare record (no values) — read it back with
-// `custom_object_records_get`.
+// record right away (relation ids from [CustomObjectRelationsService.List]; the record's side is
+// resolved for you); cardinality "one" sides REPLACE/MOVE as in [CustomObjectLinksService.Create].
+// Archived objects refuse new records. Returns the bare record (no values) — read it back with
+// [CustomObjectRecordsService.Get].
 //
 // Calls POST /custom-object-records/create.
 func (s *CustomObjectRecordsService) Create(ctx context.Context, body CustomObjectRecordsCreateInput, opts ...Option) (*CustomObjectRecordsCreateOutput, error) {
@@ -198,8 +198,9 @@ func (s *CustomObjectRecordsService) NotesDelete(ctx context.Context, body Custo
 // Edit a note of a custom-object record.
 //
 // Replaces the text (`description`, 1-5000) of one note (`activityId` from
-// `custom_object_records_history`). Only notes can be edited — the rest of the history is system
-// trail. Only the note author or someone with `custom-objects:manage` can edit it; anyone else gets 404.
+// [CustomObjectRecordsService.History]). Only notes can be edited — the rest of the history is
+// system trail. Only the note author or someone with `custom-objects:manage` can edit it; anyone else
+// gets 404.
 //
 // Calls POST /custom-object-records/notes-update.
 func (s *CustomObjectRecordsService) NotesUpdate(ctx context.Context, body CustomObjectRecordsNotesUpdateInput, opts ...Option) (*CustomObjectRelationsDeleteOutput, error) {
@@ -212,19 +213,19 @@ func (s *CustomObjectRecordsService) NotesUpdate(ctx context.Context, body Custo
 
 // Query records of a custom object.
 //
-// Paginated records of one custom object (`objectId` from `custom_objects_list`), with filters, title
-// search and sorting — the same engine as the object page. `search` matches the record TITLE only
-// (substring, case-insensitive), never other fields; use `filters` for field conditions.
+// Paginated records of one custom object (`objectId` from [CustomObjectsService.List]), with filters,
+// title search and sorting — the same engine as the object page. `search` matches the record TITLE
+// only (substring, case-insensitive), never other fields; use `filters` for field conditions.
 // `page`/`perPage` (1-100, default 25) — read `meta` (`countItens`, `countPages`) and page on when
 // the user wants everything; never conclude from one page. Sort: `sortFieldId` (a field of the object,
 // wins) or `sortBy` (`createdAt` default, `updatedAt`, `title`, `responsible`) + `sortDir`; empty
 // values sort last. Each row: `id`, `title`, `responsible`, `createdAt`/`updatedAt`, `values` (ONLY
-// the fields marked to show in the list, plus the first image — use `custom_object_records_get` for
-// all values) and `relations` (per relation: `relationId`, `side`, `count`, up to 3 `preview` labels).
-// Users without the `:all` access only see the records they are responsible for. FILTERS = flat array
-// linked by `id`/`parentId` (labels like "g1" are fine; they become UUIDs). Each item: `field`,
-// `operator`, `negation` (true = NOT), `order`, `parentId` (null at top level) and ONE value slot.
-// Fields/operators: `children` (group; `childrenAnd` | `childrenOr`), `title`
+// the fields marked to show in the list, plus the first image — use [CustomObjectRecordsService.Get]
+// for all values) and `relations` (per relation: `relationId`, `side`, `count`, up to 3 `preview`
+// labels). Users without the `:all` access only see the records they are responsible for. FILTERS =
+// flat array linked by `id`/`parentId` (labels like "g1" are fine; they become UUIDs). Each item:
+// `field`, `operator`, `negation` (true = NOT), `order`, `parentId` (null at top level) and ONE value
+// slot. Fields/operators: `children` (group; `childrenAnd` | `childrenOr`), `title`
 // (`equals`/`contains`/`startsWith`/`endsWith` + `valueString`), `responsibleAttendantId`
 // (`equals`/`in`/`isNotEmpty`, attendant id in `valueUuid`), `createdAt`/`updatedAt`
 // (`equals`/`gt`/`gte`/`lt`/`lte` + `valueDate` ISO), and the object fields with `customFieldId` = the
@@ -269,8 +270,8 @@ func (s *CustomObjectRecordsService) Search(ctx context.Context, params CustomOb
 // Set the responsible of a custom-object record.
 //
 // Changes who is responsible for one record: `responsibleAttendantId` = an attendant id
-// (`attendants_list`), or `null` for nobody. That is ALL this call changes (values go through
-// `custom_object_records_set_values`). Without the `:all` access a user can only assign THEMSELVES
+// ([AttendantsService.List]), or `null` for nobody. That is ALL this call changes (values go through
+// [CustomObjectRecordsService.SetValues]). Without the `:all` access a user can only assign THEMSELVES
 // (403 otherwise), and a record they hand to someone else leaves their scope. Writes a history line.
 // Needs `custom-objects:update`.
 //
@@ -293,9 +294,9 @@ func (s *CustomObjectRecordsService) SetResponsible(ctx context.Context, body Cu
 // label); multi_select → array of option values; image ("Foto") → one http(s) URL or an array of
 // 1-20 URLs. Each value is saved separately, IN ORDER, and each one writes a "field changed" line in
 // the record history: if one fails (unknown field, wrong format, duplicate on a unique field → 409)
-// the ones before it ARE saved and the rest are not — re-read with `custom_object_records_get` and
-// report precisely. To empty a field use `custom_object_records_clear_value`. Returns how many were
-// written.
+// the ones before it ARE saved and the rest are not — re-read with [CustomObjectRecordsService.Get]
+// and report precisely. To empty a field use [CustomObjectRecordsService.ClearValue]. Returns how many
+// were written.
 //
 // Calls POST /custom-object-records/set-values.
 func (s *CustomObjectRecordsService) SetValues(ctx context.Context, body CustomObjectRecordsSetValuesInput, opts ...Option) (*CustomObjectRecordsSetValuesOutput, error) {

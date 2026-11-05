@@ -17,7 +17,7 @@ type CustomObjectsService struct {
 //
 // Archives one custom object: it leaves the menu, filters, relation pickers and the opportunity card
 // chips, and it refuses new records and new links (400). Records, values and links are KEPT and come
-// back with `custom_objects_unarchive`. There is no way to delete an object. Needs
+// back with [CustomObjectsService.Unarchive]. There is no way to delete an object. Needs
 // `custom-objects:manage`.
 //
 // Calls POST /custom-objects/archive.
@@ -43,9 +43,9 @@ func (s *CustomObjectsService) Archive(ctx context.Context, body CustomObjectsAr
 // `text` — it names every record (e.g. "Endereço", "Placa") and becomes required. The `apiName` is
 // derived from `pluralName` (lowercase, no accents, `_` separators; a clash gets `_2`) and NEVER
 // changes, even if the object is renamed. Field keys are derived too (`<apiName>__<slug>`); you do not
-// choose them. Add more fields later with `custom_fields_create` (`entityType: "objects"`,
+// choose them. Add more fields later with [CustomFieldsService.Create] (`entityType: "objects"`,
 // `objectId`), and connect the object to contacts/opportunities/other objects with
-// `custom_object_relations_create`.
+// [CustomObjectRelationsService.Create].
 //
 // Calls POST /custom-objects/create.
 func (s *CustomObjectsService) Create(ctx context.Context, body CustomObjectsCreateInput, opts ...Option) (*CustomObjectsGetOutput, error) {
@@ -58,9 +58,9 @@ func (s *CustomObjectsService) Create(ctx context.Context, body CustomObjectsCre
 
 // Get one custom object.
 //
-// Returns one custom object definition by `objectId` (same shape as a `custom_objects_list` item,
-// archived included). Its FIELDS are not here: list them with `custom_fields_list` (`entityType:
-// "objects"`, `objectId`) — the field ids are what records, filters and values use.
+// Returns one custom object definition by `objectId` (same shape as a [CustomObjectsService.List]
+// item, archived included). Its FIELDS are not here: list them with [CustomFieldsService.List]
+// (`entityType: "objects"`, `objectId`) — the field ids are what records, filters and values use.
 //
 // Calls GET /custom-objects/get.
 func (s *CustomObjectsService) Get(ctx context.Context, params CustomObjectsGetParams, opts ...Option) (*CustomObjectsGetOutput, error) {
@@ -95,9 +95,9 @@ func (s *CustomObjectsService) List(ctx context.Context, params CustomObjectsLis
 //
 // One-call map of the CRM data model: `system` = contacts/opportunities/companies with their record
 // and custom-field counts, `objects` = every custom object INCLUDING archived ones (same item as
-// `custom_objects_list`), `relations` = every relation between them (same item as
-// `custom_object_relations_list`). Use it to explain "how my CRM is organised" or before designing a
-// new object/relation, to avoid duplicates.
+// [CustomObjectsService.List]), `relations` = every relation between them (same item as
+// [CustomObjectRelationsService.List]). Use it to explain "how my CRM is organised" or before
+// designing a new object/relation, to avoid duplicates.
 //
 // Calls GET /custom-objects/overview.
 func (s *CustomObjectsService) Overview(ctx context.Context, opts ...Option) (*CustomObjectsOverviewOutput, error) {
@@ -126,10 +126,10 @@ func (s *CustomObjectsService) Unarchive(ctx context.Context, body CustomObjects
 //
 // Renames or restyles one custom object: any of `singularName`, `pluralName`, `gender`, `icon`,
 // `color`, `description`, and `titleFieldId`. Needs `custom-objects:manage`. It CANNOT change the
-// `apiName` (fixed at creation) nor the fields — fields are edited with `custom_fields_update` /
-// `custom_fields_create`. `titleFieldId` must be an active TEXT field of the same object (else 400);
+// `apiName` (fixed at creation) nor the fields — fields are edited with [CustomFieldsService.Update]
+// / [CustomFieldsService.Create]. `titleFieldId` must be an active TEXT field of the same object (else 400);
 // switching it re-computes the title of EVERY record from that field, and records with no value in it
-// get an empty title — check the fill first (`custom_fields_insights`).
+// get an empty title — check the fill first ([CustomFieldsService.Insights]).
 //
 // Calls POST /custom-objects/update.
 func (s *CustomObjectsService) Update(ctx context.Context, body CustomObjectsUpdateInput, opts ...Option) (*CustomObjectsGetOutput, error) {

@@ -16,9 +16,9 @@ type ScheduledCallsService struct {
 // Cancel a scheduled call.
 //
 // Cancels an appointment with an optional `reason` (max 500 chars), persisted as the cancellation
-// reason. The record is KEPT with status `cancelled` — it stays in `scheduled_calls_list` and in the
-// history — and the Google Calendar event is removed best-effort. This is the right way to undo a
-// booking; there is no hard-delete exposed over MCP.
+// reason. The record is KEPT with status `cancelled` — it stays in [ScheduledCallsService.List] and
+// in the history — and the Google Calendar event is removed best-effort. This is the right way to
+// undo a booking; there is no hard-delete exposed over MCP.
 //
 // Calls POST /scheduled-calls/cancel.
 func (s *ScheduledCallsService) Cancel(ctx context.Context, body ScheduledCallsCancelInput, opts ...Option) (*ScheduledCallsCancelOutput, error) {
@@ -31,30 +31,31 @@ func (s *ScheduledCallsService) Cancel(ctx context.Context, body ScheduledCallsC
 
 // Book a scheduled call.
 //
-// Books an appointment. Requires `leadId` (from `leads_search`) and the window `startAt`/`endAt`
-// (date-times). Who attends: pass `attendantId` (from `attendants_list`), or `appointmentScheduleId`
-// to let the server resolve the attendant from that agenda (400 when the agenda has neither attendant
-// nor team), or `memberId` to provision an attendant record on demand for a member that has none yet
-// (ignored when `attendantId` is also sent). Name one of the three — without any the appointment is
-// created with NO attendant and skips every check below. Optionally links it to an opportunity with
-// `opportunityCardId` and sets `subject`, `meetingLink` (omitted = the link of the agenda; an empty
-// string = no link), `notes`, `bufferMinutes` and an already-hosted `attachmentUrl` (https) +
-// `attachmentName`. `playbookId` picks the playbook the meeting follows — any playbook of the
-// workspace (`playbooks_list`), `null` = none; omitted = the default playbook of the linked card
-// pipeline, or none without a card. With an attendant the window is VALIDATED, in this order: their
-// seat role must be schedulable (400 `ROLE_NOT_SCHEDULABLE`); the window must be a free slot of their
-// agenda or of the chosen `appointmentScheduleId` (400 `SLOT_NOT_AVAILABLE`) —
-// `allowOutsideAvailability: true` books a deliberate off-hours time; and it must not overlap another
-// non-cancelled appointment of the same attendant (409 `SCHEDULING_TIME_CONFLICT`) — `allowConflict:
-// true` books over it on purpose. Attendants without an active seat (AI agents, former members) skip
-// the role and slot checks but not the overlap check. Use the overrides only when the user asked for
-// that time; the lead-facing availability grid is not exposed over MCP. When the pipeline of the
-// linked card has "assign responsible on scheduling" on, the attendant becomes the card responsible
-// — if they are not linked to that pipeline this is silently skipped unless
-// `linkAttendantToPipeline: true`, which also links them (it changes what they see, so use it only on
-// the user confirmation). The booker (`createdByAttendantName`) is taken from the attendant record of
-// the authenticated user, when they have one. Booking emits `crm.scheduling.booked.v1`, syncs the
-// attendant Google Calendar when connected, and sends the confirmation e-mails.
+// Books an appointment. Requires `leadId` (from [LeadsService.Search]) and the window
+// `startAt`/`endAt` (date-times). Who attends: pass `attendantId` (from [AttendantsService.List]), or
+// `appointmentScheduleId` to let the server resolve the attendant from that agenda (400 when the
+// agenda has neither attendant nor team), or `memberId` to provision an attendant record on demand for
+// a member that has none yet (ignored when `attendantId` is also sent). Name one of the three —
+// without any the appointment is created with NO attendant and skips every check below. Optionally
+// links it to an opportunity with `opportunityCardId` and sets `subject`, `meetingLink` (omitted = the
+// link of the agenda; an empty string = no link), `notes`, `bufferMinutes` and an already-hosted
+// `attachmentUrl` (https) + `attachmentName`. `playbookId` picks the playbook the meeting follows —
+// any playbook of the workspace ([PlaybooksService.List]), `null` = none; omitted = the default
+// playbook of the linked card pipeline, or none without a card. With an attendant the window is
+// VALIDATED, in this order: their seat role must be schedulable (400 `ROLE_NOT_SCHEDULABLE`); the
+// window must be a free slot of their agenda or of the chosen `appointmentScheduleId` (400
+// `SLOT_NOT_AVAILABLE`) — `allowOutsideAvailability: true` books a deliberate off-hours time; and it
+// must not overlap another non-cancelled appointment of the same attendant (409
+// `SCHEDULING_TIME_CONFLICT`) — `allowConflict: true` books over it on purpose. Attendants without
+// an active seat (AI agents, former members) skip the role and slot checks but not the overlap check.
+// Use the overrides only when the user asked for that time; the lead-facing availability grid is not
+// exposed over MCP. When the pipeline of the linked card has "assign responsible on scheduling" on,
+// the attendant becomes the card responsible — if they are not linked to that pipeline this is
+// silently skipped unless `linkAttendantToPipeline: true`, which also links them (it changes what they
+// see, so use it only on the user confirmation). The booker (`createdByAttendantName`) is taken from
+// the attendant record of the authenticated user, when they have one. Booking emits
+// `crm.scheduling.booked.v1`, syncs the attendant Google Calendar when connected, and sends the
+// confirmation e-mails.
 //
 // Calls POST /scheduled-calls/create.
 func (s *ScheduledCallsService) Create(ctx context.Context, body ScheduledCallsCreateInput, opts ...Option) (*ScheduledCallsCreateOutput, error) {
@@ -97,9 +98,9 @@ func (s *ScheduledCallsService) Get(ctx context.Context, params ScheduledCallsGe
 // `completed` | `cancelled` | `no_show`) and a `startDate`/`endDate` range over the appointment start;
 // the two attendant filters combine with AND. Meetings of a lost or deleted card are hidden unless
 // `includeInactiveCards: true`. Returns the calls with their lead, conductor, booker, playbook, agenda
-// and card/pipeline relations (see `scheduled_calls_get`). A plain `atendente`/`vendedor` session only
-// sees its own appointments plus those of its pipeline peers, and cannot point `attendantId` outside
-// that circle.
+// and card/pipeline relations (see [ScheduledCallsService.Get]). A plain `atendente`/`vendedor`
+// session only sees its own appointments plus those of its pipeline peers, and cannot point
+// `attendantId` outside that circle.
 //
 // Calls GET /scheduled-calls/list.
 func (s *ScheduledCallsService) List(ctx context.Context, params ScheduledCallsListParams, opts ...Option) (*ScheduledCallsListOutput, error) {
@@ -143,7 +144,7 @@ func (s *ScheduledCallsService) ManageLink(ctx context.Context, params Scheduled
 // its host; the calendar sync is best-effort — a failure is logged and does NOT fail the call, so
 // Clickmax can be updated while the calendar copy lags. Changing the time or the status publishes the
 // matching lifecycle event (rescheduled, confirmed, completed, no-show) that flow triggers listen to.
-// To CANCEL, use `scheduled_calls_cancel` rather than setting `status` here, so the cancellation
+// To CANCEL, use [ScheduledCallsService.Cancel] rather than setting `status` here, so the cancellation
 // reason and the calendar removal are handled. A plain attendant session can only edit its own
 // meetings and those of its pipeline peers.
 //

@@ -16,7 +16,7 @@ type LeadIndicatorsService struct {
 //
 // Returns the "base health" of a set of contacts in one call: how many are cold/warm/hot by
 // Temperature, low/medium/high by Score, and the cross-tab of both. `filters` selects the contacts
-// (same segment-style filter tree as `segments_preview_count`); pass `[]` for the whole base.
+// (same segment-style filter tree as [SegmentsService.PreviewCount]); pass `[]` for the whole base.
 // Response: `totalContacts`; `customers` (contacts with the Customer badge — informative, not a band
 // of either indicator); `priority` = contacts that are hot AND high Score (the cell to work first);
 // `temperature` = `{ thresholds: { morno, quente }, bands: { cold, warm, hot, none }, average }`;

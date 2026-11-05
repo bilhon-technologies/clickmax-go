@@ -45,7 +45,7 @@ type AccountSnapshotOutput struct {
 	Brand          *AccountSnapshotOutputBrand          `json:"brand"`
 	// Every brand of the workspace, filled only when there is more than one (empty otherwise). With
 	// more than one, `brand` is just the default — ask the user which brand to use, then reread it
-	// with `brand_get` and its `id`.
+	// with [BrandService.Get] and its `id`.
 	BrandChoices []AccountSnapshotOutputBrandChoicesItem `json:"brandChoices"`
 	Unavailable  []AccountSnapshotOutputUnavailableItem  `json:"unavailable"`
 }

@@ -17,8 +17,8 @@ type SubscriptionsService struct {
 //
 // Returns only the subscription KPI object (revenue, net revenue, subscriber count,
 // active/cancelled/trial counts, MRR, churn rate, defaulters) for a filter slice. The body takes no
-// pagination or sort — the numbers cover the whole slice, so never page `subscriptions_list` to add
-// them up.
+// pagination or sort — the numbers cover the whole slice, so never page [SubscriptionsService.List]
+// to add them up.
 //
 // Calls POST /subscriptions/aggregations.
 func (s *SubscriptionsService) Aggregations(ctx context.Context, body SubscriptionsAggregationsInput, opts ...Option) (*SubscriptionsAggregationsOutput, error) {
@@ -76,8 +76,8 @@ func (s *SubscriptionsService) Get(ctx context.Context, params SubscriptionsGetP
 // Returns paginated subscriptions for the workspace, accepting the full subscriptions filter body
 // (status, range, project/product/client, pagination, sort). Pass `includeAggregations: false`
 // whenever you only need the ROWS: the 16 KPI fields cost 2 full scans of the workspace and are
-// skipped entirely. If you only need the KPIs, call `subscriptions_aggregations` instead of paging
-// rows.
+// skipped entirely. If you only need the KPIs, call [SubscriptionsService.Aggregations] instead of
+// paging rows.
 //
 // Calls POST /subscriptions/list.
 func (s *SubscriptionsService) List(ctx context.Context, body SubscriptionsListInput, opts ...Option) (*SubscriptionsListOutput, error) {

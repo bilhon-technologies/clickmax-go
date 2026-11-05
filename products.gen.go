@@ -16,7 +16,7 @@ type ProductsService struct {
 // Archive a product.
 //
 // Archives a product to hide it from the active catalog while preserving its history. Reversible via
-// `products_unarchive`. Prefer this over deletion when the product was already used.
+// [ProductsService.Unarchive]. Prefer this over deletion when the product was already used.
 //
 // Calls POST /products/archive.
 func (s *ProductsService) Archive(ctx context.Context, body ProductsArchiveInput, opts ...Option) (*ProductsArchiveOutput, error) {
@@ -48,7 +48,7 @@ func (s *ProductsService) Create(ctx context.Context, body ProductsCreateInput, 
 // Delete a product.
 //
 // Permanently deletes one product and its offers. Fails when any offer has transactions. Prefer
-// `products_archive` for products that were already in use.
+// [ProductsService.Archive] for products that were already in use.
 //
 // Calls DELETE /products/delete.
 func (s *ProductsService) Delete(ctx context.Context, body ProductsDeleteInput, opts ...Option) (*ProductsDeleteOutput, error) {

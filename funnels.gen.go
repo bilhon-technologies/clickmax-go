@@ -18,7 +18,7 @@ type FunnelsService struct {
 // Replaces the variants of an `ab_test` node. Each variant carries `label`, `percentage`, and an
 // optional `connectedTo` target — connecting a variant means filling `connectedTo`. The server
 // assigns ids to new variants and returns the full list. This is the A/B-node analog of
-// `funnels_nodes_triggers_update`.
+// [FunnelsService.NodesTriggersUpdate].
 //
 // Calls POST /funnels/abtest-variants-update.
 func (s *FunnelsService) AbtestVariantsUpdate(ctx context.Context, body FunnelsAbtestVariantsUpdateInput, opts ...Option) (*FunnelsAbtestVariantsUpdateOutput, error) {
@@ -48,7 +48,7 @@ func (s *FunnelsService) Analytics(ctx context.Context, params FunnelsAnalyticsP
 // Replaces the branches of a `conditional` node. Each `outcome:'true'` branch carries its `rules`
 // (field/operator/value) + `matchType` (AND/OR) and a `connectedTo` target; exactly one
 // `outcome:'false'` branch is the fallback/else (no rules). Branch order is evaluation order. The
-// server assigns ids to new branches and rules. Analog of `funnels_abtest_variants_update` for
+// server assigns ids to new branches and rules. Analog of [FunnelsService.AbtestVariantsUpdate] for
 // conditionals.
 //
 // Calls POST /funnels/conditional-branches-update.
@@ -136,17 +136,18 @@ func (s *FunnelsService) List(ctx context.Context, params FunnelsListParams, opt
 //
 // Links an existing editor3 page (`pageId`) to a funnel node, marking it editor3-backed. If the linked
 // page is an EXTERNAL page, this also wires `node.config.externalUrl` so the funnel 302-redirects
-// visitors to that URL (get the install snippets with `pages_get_external_script`). TARGET RULES: the
-// node must be a `page`, `draft` or `external_checkout` node — those are the only types a page
-// serves (for `external_checkout`, build the page with `pages_import_html_draft` + `externalCheckout`
-// of the SAME provider first), so an `ab_test`/`conditional`/`workflow`/`traffic_source`/`quiz` node
-// is REJECTED (create a page node and connect the split/branch to it instead); and the page must live
-// in the SAME project as the funnel, or the call is REJECTED (create the page with the funnel's
-// `projectId`). ONE PAGE PER NODE: calling this twice on the same node REPLACES the first page instead
-// of adding a second — the response returns `replacedPageId` (the page that was swapped out, `null`
-// when the node was empty), so give each page its own node and check that field before reporting two
-// pages as linked. Returns the node plus `triggersNeedingElement`: element-bound triggers
-// (button/link/form) that still need an element id wired in the page editor.
+// visitors to that URL (get the install snippets with [PagesService.GetExternalScript]). TARGET RULES:
+// the node must be a `page`, `draft` or `external_checkout` node — those are the only types a page
+// serves (for `external_checkout`, build the page with [PagesService.ImportHTMLDraft] +
+// `externalCheckout` of the SAME provider first), so an
+// `ab_test`/`conditional`/`workflow`/`traffic_source`/`quiz` node is REJECTED (create a page node and
+// connect the split/branch to it instead); and the page must live in the SAME project as the funnel,
+// or the call is REJECTED (create the page with the funnel's `projectId`). ONE PAGE PER NODE: calling
+// this twice on the same node REPLACES the first page instead of adding a second — the response
+// returns `replacedPageId` (the page that was swapped out, `null` when the node was empty), so give
+// each page its own node and check that field before reporting two pages as linked. Returns the node
+// plus `triggersNeedingElement`: element-bound triggers (button/link/form) that still need an element
+// id wired in the page editor.
 //
 // Calls POST /funnels/nodes-connect-page.
 func (s *FunnelsService) NodesConnectPage(ctx context.Context, body FunnelsNodesConnectPageInput, opts ...Option) (*FunnelsNodesConnectPageOutput, error) {
@@ -162,28 +163,28 @@ func (s *FunnelsService) NodesConnectPage(ctx context.Context, body FunnelsNodes
 // Adds one draft node (page, external_checkout, ab_test, traffic_source, conditional, workflow,
 // external_link) to a funnel. `external_checkout` is an editor3 page that hosts a third-party checkout
 // (`config.provider`: `whop` | `hotmart` | `stripe` | `pagarme` | `pagbank`; pass it explicitly —
-// omitted means `whop`; check `external_checkout_accounts_list` first and stop on its `setup`
+// omitted means `whop`; check [ExternalCheckoutAccountsService.List] first and stop on its `setup`
 // guidance): it is created with the provider's triggers (`purchase_approved`, plus the accept
 // fallbacks and page-level triggers) — Whop/Hotmart/Stripe never emit
 // `cart_abandoned`/`purchase_declined`/pix/boleto (only the native checkout does); Pagar.me and
 // PagBank also accept `card_declined`/`pix_generated`/`boleto_generated` (add them with
-// `funnels_nodes_triggers_update`) — and its triggers cannot be connected to a `workflow` node yet.
-// Pass `title`, `slug`, `pageType` and, optionally, a list of `triggers` (type + label, no id); the
-// server assigns ids and returns them. For an `ab_test` node OMIT `slug`: that slug is the live URL
-// the test serves, shared with every page and test in the PROJECT, so the server draws a free one
+// [FunnelsService.NodesTriggersUpdate]) — and its triggers cannot be connected to a `workflow` node
+// yet. Pass `title`, `slug`, `pageType` and, optionally, a list of `triggers` (type + label, no id);
+// the server assigns ids and returns them. For an `ab_test` node OMIT `slug`: that slug is the live
+// URL the test serves, shared with every page and test in the PROJECT, so the server draws a free one
 // (`teste-ab-k3m9x2`) and returns it — pass a slug only when the user asked for a specific address,
 // and expect the call to fail when it is already taken. For a `page` node, OMIT `triggers` to get the
 // same full default set the manual page builder creates for that `pageType` (e.g. `checkout` gets
 // `purchase_approved`/`purchase_declined`/`boleto_generated`/`cart_abandoned`, `capture` gets
 // `contact_captured`) — only pass `triggers` explicitly when you need to customize that set, and in
-// that case call `funnels_page_triggers_catalog` FIRST to keep every type valid for the node's
+// that case call [FunnelsService.PageTriggersCatalog] FIRST to keep every type valid for the node's
 // `pageType`; a `checkout` node never emits `button_click`, a `capture` node never emits
 // `purchase_approved`. Optional `userHelpMessage` creates a linked annotation note. For a
-// `page`/`quiz` node, triggers are defined here but connected later with `funnels_triggers_connect`.
-// `traffic_source`/`ab_test`/`conditional` nodes do NOT route through `triggers` at all —
-// `funnels_triggers_connect` silently no-ops on them; connect their single output with the
-// type-specific tool instead
-// (`funnels_traffic_source_update`/`funnels_abtest_variants_update`/`funnels_conditional_branches_update`).
+// `page`/`quiz` node, triggers are defined here but connected later with
+// [FunnelsService.TriggersConnect]. `traffic_source`/`ab_test`/`conditional` nodes do NOT route
+// through `triggers` at all — [FunnelsService.TriggersConnect] silently no-ops on them; connect
+// their single output with the type-specific tool instead
+// ([FunnelsService.TrafficSourceUpdate]/[FunnelsService.AbtestVariantsUpdate]/[FunnelsService.ConditionalBranchesUpdate]).
 //
 // Calls POST /funnels/nodes-create.
 func (s *FunnelsService) NodesCreate(ctx context.Context, body FunnelsNodesCreateInput, opts ...Option) (*FunnelsNodesCreateOutput, error) {
@@ -226,10 +227,10 @@ func (s *FunnelsService) NodesTriggersUpdate(ctx context.Context, body FunnelsNo
 // Rename or move a funnel node.
 //
 // Renames a node (`title` = the name its card shows) and/or moves it on the edit canvas (`position` =
-// top-left in canvas pixels, same space as `funnels_structure_get` positions; cards are 320 wide; the
-// canvas auto-layout puts columns 440 px apart and stacks nodes in a column ~560 px apart). Does not
-// change routing, triggers, the linked page or the slug: a page node's public address comes from its
-// linked page. Returns the updated node; an open canvas shows the change live.
+// top-left in canvas pixels, same space as [FunnelsService.StructureGet] positions; cards are 320
+// wide; the canvas auto-layout puts columns 440 px apart and stacks nodes in a column ~560 px apart).
+// Does not change routing, triggers, the linked page or the slug: a page node's public address comes
+// from its linked page. Returns the updated node; an open canvas shows the change live.
 //
 // Calls POST /funnels/nodes-update.
 func (s *FunnelsService) NodesUpdate(ctx context.Context, body FunnelsNodesUpdateInput, opts ...Option) (*FunnelsNodesUpdateOutput, error) {
@@ -244,8 +245,8 @@ func (s *FunnelsService) NodesUpdate(ctx context.Context, body FunnelsNodesUpdat
 //
 // The catalog of valid outbound trigger `type`s per funnel node `pageType` (`capture`, `sales`,
 // `checkout`, `upsell`, `downsell`, `thankyou`, `advertorial`, `terms`, `custom`), each with a
-// friendly `label`. Call this BEFORE `funnels_nodes_create`/`funnels_nodes_triggers_update` to pick
-// triggers that actually match the node's `pageType` — e.g. only `checkout` pages emit
+// friendly `label`. Call this BEFORE [FunnelsService.NodesCreate]/[FunnelsService.NodesTriggersUpdate]
+// to pick triggers that actually match the node's `pageType` — e.g. only `checkout` pages emit
 // `purchase_approved`/`boleto_generated`; only `capture`/`sales` emit `contact_captured`. Use the
 // `label` when talking to the user; the tool call itself only accepts `type`. `custom` has no fixed
 // contract and returns an empty list.
@@ -280,7 +281,7 @@ func (s *FunnelsService) Publish(ctx context.Context, body FunnelsPublishInput, 
 // hand, that orphans them). Pass the choice in the `template` field (NOT `type`): `sales` |
 // `lead-magnet` | `webinar` | `tripwire` | `vsl-auto` | `upsell-downsell`. The funnel `objective` and
 // its analytics metrics are auto-configured from the template (no need to set them); override later
-// with `funnels_update` if the goal differs. Returns the created nodes with their trigger ids.
+// with [FunnelsService.Update] if the goal differs. Returns the created nodes with their trigger ids.
 //
 // Calls POST /funnels/sequences-create.
 func (s *FunnelsService) SequencesCreate(ctx context.Context, body FunnelsSequencesCreateInput, opts ...Option) (*FunnelsSequencesCreateOutput, error) {
@@ -328,8 +329,9 @@ func (s *FunnelsService) TrafficSourceUpdate(ctx context.Context, body FunnelsTr
 // Connect node triggers to targets.
 //
 // Connects (or disconnects) triggers to destination nodes in batch. Each connection is `{ nodeId,
-// triggerId, target }`; set `target` to null to disconnect. Use the ids from `funnels_structure_get`
-// or a create call. Connections whose target node does not exist are kept on the node but not routed.
+// triggerId, target }`; set `target` to null to disconnect. Use the ids from
+// [FunnelsService.StructureGet] or a create call. Connections whose target node does not exist are
+// kept on the node but not routed.
 //
 // Calls POST /funnels/triggers-connect.
 func (s *FunnelsService) TriggersConnect(ctx context.Context, body FunnelsTriggersConnectInput, opts ...Option) (*FunnelsTriggersConnectOutput, error) {
@@ -380,9 +382,9 @@ func (s *FunnelsService) Validate(ctx context.Context, params FunnelsValidatePar
 // workflow is terminal: no outgoing edge, never give it an exit. Idempotent per capture trigger (does
 // not stack duplicates). Pass `funnelId`, `projectId`, `capturePageNodeId`, `title` (no next-page
 // param); returns `flowId`/`workflowNodeId`/`entryStepId` — then add the message AFTER the entry
-// with `flows_graph_apply` `{op: "add", type: "send_message", …, after: {step: entryStepId}}` (the
-// entry is the source; never pass `entryStepId` as the message `target`). Full build flow + gotchas:
-// clickmax-funnels skill.
+// with [FlowsService.GraphApply] `{op: "add", type: "send_message", …, after: {step: entryStepId}}`
+// (the entry is the source; never pass `entryStepId` as the message `target`). Full build flow +
+// gotchas: clickmax-funnels skill.
 //
 // Calls POST /funnels/workflow-automation-create.
 func (s *FunnelsService) WorkflowAutomationCreate(ctx context.Context, body FunnelsWorkflowAutomationCreateInput, opts ...Option) (*FunnelsWorkflowAutomationCreateOutput, error) {
@@ -396,8 +398,8 @@ func (s *FunnelsService) WorkflowAutomationCreate(ctx context.Context, body Funn
 // Link a Flow to a workflow node.
 //
 // Links, changes, or unlinks (`flowId: null`) the automation Flow of a `workflow` node. Resolve
-// `flowId` with `flows_list` or create one with `flows_create`. Changing the flow re-syncs the
-// workflow's triggers onto the new flow.
+// `flowId` with [FlowsService.List] or create one with [FlowsService.Create]. Changing the flow
+// re-syncs the workflow's triggers onto the new flow.
 //
 // Calls POST /funnels/workflow-flow-set.
 func (s *FunnelsService) WorkflowFlowSet(ctx context.Context, body FunnelsWorkflowFlowSetInput, opts ...Option) (*FunnelsWorkflowFlowSetOutput, error) {

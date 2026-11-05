@@ -17,9 +17,9 @@ type InstagramPostsService struct {
 // Paginated list of the workspace's connected Instagram account posts (id, caption, permalink,
 // thumbnail, counts), newest first. Use the returned `id` as the `mediaId` value when narrowing an
 // `hermes.instagram.comment.received.v1` trigger to specific post(s) (the `mediaId` scope from
-// `flows_triggers_catalog`). Pass the previous call's `meta.next` as `after` to page forward. Show the
-// user enough (caption/thumbnail/permalink) to recognize the post before committing to a `mediaId` —
-// never guess or fabricate one.
+// [FlowsService.TriggersCatalog]). Pass the previous call's `meta.next` as `after` to page forward.
+// Show the user enough (caption/thumbnail/permalink) to recognize the post before committing to a
+// `mediaId` — never guess or fabricate one.
 //
 // Calls GET /instagram-posts/list.
 func (s *InstagramPostsService) List(ctx context.Context, params InstagramPostsListParams, opts ...Option) (*InstagramPostsListOutput, error) {

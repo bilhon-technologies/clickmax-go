@@ -17,7 +17,7 @@ type ExternalProductsService struct {
 //
 // Fetches a single external product by `id` (the Clickmax `ExternalProducts.id`, not the platform's
 // own `externalId`). Returns its platform, name, price, currency, and `externalId`. Resolve the `id`
-// from `external_products_list`. Read-only.
+// from [ExternalProductsService.List]. Read-only.
 //
 // Calls GET /external-products/get.
 func (s *ExternalProductsService) Get(ctx context.Context, params ExternalProductsGetParams, opts ...Option) (*ExternalProductsGetOutput, error) {
@@ -32,8 +32,8 @@ func (s *ExternalProductsService) Get(ctx context.Context, params ExternalProduc
 //
 // Returns paginated products imported from an external checkout platform (Hotmart, Hubla, Kiwify,
 // Eduzz, Ticto, …) — the simplified sale records Clickmax mirrors for trigger matching and
-// reporting, NOT the workspace's own Clickmax products (use `products_list` for those). Filter by
-// `platform` and/or a `search` term over the name. Read-only.
+// reporting, NOT the workspace's own Clickmax products (use [ProductsService.List] for those). Filter
+// by `platform` and/or a `search` term over the name. Read-only.
 //
 // Calls GET /external-products/list.
 func (s *ExternalProductsService) List(ctx context.Context, params ExternalProductsListParams, opts ...Option) (*ExternalProductsListOutput, error) {

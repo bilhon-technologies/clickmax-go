@@ -45,7 +45,7 @@ func (s *DashboardService) ExternalSalesChart(ctx context.Context, body Dashboar
 // Returns the my-sales table using the full filter body (supports complex filters and array-valued
 // fields). Pass `includeAggregations: false` whenever you only need the ROWS: the `aggregations`
 // object costs ~15 full scans and is skipped entirely. If you only need the KPIs, call
-// `dashboard_my_sales_aggregations` instead of paging rows.
+// [DashboardService.MySalesAggregations] instead of paging rows.
 //
 // Calls POST /dashboard/my-sales.
 func (s *DashboardService) MySales(ctx context.Context, body DashboardMySalesInput, opts ...Option) (*DashboardMySalesOutput, error) {
@@ -62,7 +62,7 @@ func (s *DashboardService) MySales(ctx context.Context, body DashboardMySalesInp
 // (paid/failed/refunded/canceled), distinct buyers, average ticket, pending PIX/boleto, cart
 // abandonment, deduplicated recovery buckets, and reason/UTM breakdowns. Seller-scoped, matching what
 // the sales screen shows. Use this for any "how many / how much" question instead of paging
-// `dashboard_my_sales`. Accepts no pagination or sorting: the answer does not depend on them.
+// [DashboardService.MySales]. Accepts no pagination or sorting: the answer does not depend on them.
 //
 // Calls POST /dashboard/my-sales-aggregations.
 func (s *DashboardService) MySalesAggregations(ctx context.Context, body DashboardMySalesAggregationsInput, opts ...Option) (*DashboardMySalesAggregationsOutput, error) {

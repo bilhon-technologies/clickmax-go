@@ -16,7 +16,7 @@ type PortalsService struct {
 // Check if a subdomain is available.
 //
 // Returns whether the given `subdomain` is free for portal creation/rename. Always call before
-// `portals_create` or `portals_update` on `subdomain` to avoid conflicts.
+// [PortalsService.Create] or [PortalsService.Update] on `subdomain` to avoid conflicts.
 //
 // Calls GET /portals/check-subdomain.
 func (s *PortalsService) CheckSubdomain(ctx context.Context, params PortalsCheckSubdomainParams, opts ...Option) (*PortalsCheckSubdomainOutput, error) {
@@ -30,7 +30,7 @@ func (s *PortalsService) CheckSubdomain(ctx context.Context, params PortalsCheck
 // Create a member-area portal.
 //
 // Creates a new portal with the given name, subdomain, and theme. Subdomain must be unique across the
-// workspace — pre-flight with `portals_check_subdomain`.
+// workspace — pre-flight with [PortalsService.CheckSubdomain].
 //
 // Calls POST /portals/create.
 func (s *PortalsService) Create(ctx context.Context, body PortalsCreateInput, opts ...Option) (*PortalsGetOutput, error) {
@@ -84,7 +84,7 @@ func (s *PortalsService) List(ctx context.Context, body PortalsListInput, opts .
 // Update a portal.
 //
 // Updates editable fields of a portal (name, subdomain, theme, status). Changing `subdomain` requires
-// pre-flight with `portals_check_subdomain`.
+// pre-flight with [PortalsService.CheckSubdomain].
 //
 // Calls POST /portals/update.
 func (s *PortalsService) Update(ctx context.Context, body PortalsUpdateInput, opts ...Option) (*PortalsGetOutput, error) {

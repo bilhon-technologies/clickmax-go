@@ -17,23 +17,23 @@ type PlaybooksService struct {
 //
 // Creates a playbook (sales method) for meetings. Restricted to owner/admin/editor. It does not change
 // any pipeline or scheduled meeting: to make it the default of a pipeline follow up with
-// `playbooks_pipelines_attach`, and to use it in one meeting pass its id as `playbookId` when booking.
-// Before saving, you can rehearse the draft with `playbooks_simulate`. The document is saved whole:
-// `name`, `description`, `scopes` (1 to 4) and the five collections `stages` (max 20), `tones` (max 12),
-// `keywords` (max 40), `attachments` (max 30) and `guardrails` (max 20 strings of up to 300 chars) are
-// ALL required — send `[]` for an empty one. `scopes` accepts `meeting` and `livechat` today
-// (`["meeting"]`, `["livechat"]` or both): `whatsapp` and `flows` exist in the enum for the editor but
-// the backend rejects them (error code `PLAYBOOK_SCOPE_NOT_AVAILABLE`). Every `id` is a string you
-// invent (1-40 chars, e.g. `stage-1`, `q-1-1`) and must be unique: stage ids among stages, tone ids
-// among tones, keyword ids among keywords, and question ids across ALL stages together, not per stage
-// — otherwise `PLAYBOOK_DUPLICATE_ID`. A stage has `title` (required), `objective` (600),
-// `talkTrack` (6000 — but the meeting panel shows only the first 2000 chars), `watchOut` (600) and
-// `questions` (max 30, `text` up to 300); the optional `key` is only a framework nickname such as
-// `situation` (lowercase, digits, `_`, `-`). A tone has `name`, `when` and `delivery`. A keyword
-// (trigger) has `terms` (1-12 words, each at least 2 chars), `title` (optional label), `text` (what
-// the seller should see, up to 500) and `tone` (`info`, `warning` or `urgent`). Attachments need an
-// `http(s)` `url` plus `name`, `mimeType` and `size`; this API cannot upload files, so only attach a
-// URL that already exists.
+// [PlaybooksService.PipelinesAttach], and to use it in one meeting pass its id as `playbookId` when
+// booking. Before saving, you can rehearse the draft with [PlaybooksService.Simulate]. The document is
+// saved whole: `name`, `description`, `scopes` (1 to 4) and the five collections `stages` (max 20),
+// `tones` (max 12), `keywords` (max 40), `attachments` (max 30) and `guardrails` (max 20 strings of up
+// to 300 chars) are ALL required — send `[]` for an empty one. `scopes` accepts `meeting` and
+// `livechat` today (`["meeting"]`, `["livechat"]` or both): `whatsapp` and `flows` exist in the enum
+// for the editor but the backend rejects them (error code `PLAYBOOK_SCOPE_NOT_AVAILABLE`). Every `id`
+// is a string you invent (1-40 chars, e.g. `stage-1`, `q-1-1`) and must be unique: stage ids among
+// stages, tone ids among tones, keyword ids among keywords, and question ids across ALL stages
+// together, not per stage — otherwise `PLAYBOOK_DUPLICATE_ID`. A stage has `title` (required),
+// `objective` (600), `talkTrack` (6000 — but the meeting panel shows only the first 2000 chars),
+// `watchOut` (600) and `questions` (max 30, `text` up to 300); the optional `key` is only a framework
+// nickname such as `situation` (lowercase, digits, `_`, `-`). A tone has `name`, `when` and
+// `delivery`. A keyword (trigger) has `terms` (1-12 words, each at least 2 chars), `title` (optional
+// label), `text` (what the seller should see, up to 500) and `tone` (`info`, `warning` or `urgent`).
+// Attachments need an `http(s)` `url` plus `name`, `mimeType` and `size`; this API cannot upload
+// files, so only attach a URL that already exists.
 //
 // Calls POST /playbooks/create.
 func (s *PlaybooksService) Create(ctx context.Context, body PlaybooksCreateInput, opts ...Option) (*PlaybooksGetOutput, error) {
@@ -48,9 +48,9 @@ func (s *PlaybooksService) Create(ctx context.Context, body PlaybooksCreateInput
 //
 // Permanently deletes a playbook (hard delete, no trash). Restricted to owner/admin/editor. Every
 // pipeline that suggested it is left WITHOUT a suggested playbook (their AI copilot agent is
-// untouched), so check `pipelinesCount` in `playbooks_list` or `playbooks_pipelines_list` and tell the
-// user how many pipelines are affected first. Meetings already booked stop showing the playbook in the
-// agenda panel, but their room keeps the script it received. Returns `{ success }`.
+// untouched), so check `pipelinesCount` in [PlaybooksService.List] or [PlaybooksService.PipelinesList]
+// and tell the user how many pipelines are affected first. Meetings already booked stop showing the
+// playbook in the agenda panel, but their room keeps the script it received. Returns `{ success }`.
 //
 // Calls DELETE /playbooks/delete.
 func (s *PlaybooksService) Delete(ctx context.Context, body PlaybooksDeleteInput, opts ...Option) (*PlaybooksDeleteOutput, error) {
@@ -65,9 +65,9 @@ func (s *PlaybooksService) Delete(ctx context.Context, body PlaybooksDeleteInput
 //
 // Fetches one playbook by `id` with its full body: `stages` (each with `questions`), `tones`,
 // `keywords` (trigger terms and cue text), `attachments` and `guardrails`. Always call this before
-// `playbooks_update`, because the update replaces the whole document and you must resend everything
-// you are not changing (ids of stages, questions, tones and keywords included). 404 when the id is not
-// from this workspace.
+// [PlaybooksService.Update], because the update replaces the whole document and you must resend
+// everything you are not changing (ids of stages, questions, tones and keywords included). 404 when
+// the id is not from this workspace.
 //
 // Calls GET /playbooks/get.
 func (s *PlaybooksService) Get(ctx context.Context, params PlaybooksGetParams, opts ...Option) (*PlaybooksGetOutput, error) {
@@ -90,7 +90,7 @@ func (s *PlaybooksService) Get(ctx context.Context, params PlaybooksGetParams, o
 // (the Click Meeting room panel and AI copilot, and the voice-call window) and `livechat` (the
 // playbook block of the LiveChat lead cockpit, whose progress is kept per conversation). It is
 // independent from pipelines: a pipeline merely SUGGESTS one when a meeting is booked. Start here to
-// find the `id` before `playbooks_get`, `playbooks_update` or `playbooks_delete`.
+// find the `id` before [PlaybooksService.Get], [PlaybooksService.Update] or [PlaybooksService.Delete].
 //
 // Calls GET /playbooks/list.
 func (s *PlaybooksService) List(ctx context.Context, params PlaybooksListParams, opts ...Option) (*PlaybooksListOutput, error) {
@@ -108,8 +108,8 @@ func (s *PlaybooksService) List(ctx context.Context, params PlaybooksListParams,
 // keyword cues, guardrails and links; null when the playbook has nothing to conduct), `script` (the
 // narrated method the AI copilot reads, up to 12000 chars) and `guardrails`. Texts are truncated to
 // the room limits (e.g. talk track at 2000 chars), so this shows what the seller will really see. Also
-// the source for `playbooks_simulate` (`script` + `guardrails` go into its `briefing`). 404 when the
-// playbook does not exist or does not have the `meeting` scope.
+// the source for [PlaybooksService.Simulate] (`script` + `guardrails` go into its `briefing`). 404
+// when the playbook does not exist or does not have the `meeting` scope.
 //
 // Calls GET /playbooks/meeting-guides-get.
 func (s *PlaybooksService) MeetingGuidesGet(ctx context.Context, params PlaybooksMeetingGuidesGetParams, opts ...Option) (*PlaybooksMeetingGuidesGetOutput, error) {
@@ -126,7 +126,7 @@ func (s *PlaybooksService) MeetingGuidesGet(ctx context.Context, params Playbook
 // recently edited first, WITHOUT a body: `{ items: [{ ref, title, description, stageCount }] }`. `ref`
 // is the playbook id (use it as `playbookId` when booking or in the other playbook tools); `title` is
 // cut at 120 chars and `description` at 400. Not paginated. Use it to offer the choices for a meeting;
-// use `playbooks_list` for the full catalog including playbooks of other scopes.
+// use [PlaybooksService.List] for the full catalog including playbooks of other scopes.
 //
 // Calls GET /playbooks/meeting-guides-list.
 func (s *PlaybooksService) MeetingGuidesList(ctx context.Context, opts ...Option) (*PlaybooksMeetingGuidesListOutput, error) {
@@ -140,11 +140,11 @@ func (s *PlaybooksService) MeetingGuidesList(ctx context.Context, opts ...Option
 // Make a pipeline suggest a playbook.
 //
 // Makes one pipeline SUGGEST this playbook for the meetings booked from its opportunities (same link
-// as `pipelines_playbook_set`, written from the playbook side). It does not force it: the person
+// as [PipelinesService.PlaybookSet], written from the playbook side). It does not force it: the person
 // booking can still choose another playbook or none, and the suggestion is only used when the booking
 // does not choose (public booking pages, automations and AI bookings always fall back to it). Meetings
 // already booked are NOT changed. It REPLACES any playbook the pipeline suggested before (see
-// `currentPlaybookName` in `playbooks_pipelines_list`) and leaves the pipeline default AI agent
+// `currentPlaybookName` in [PlaybooksService.PipelinesList]) and leaves the pipeline default AI agent
 // untouched. The playbook must have the `meeting` scope, otherwise the call fails with
 // `PLAYBOOK_SCOPE_NOT_AVAILABLE`. Restricted to owner/admin/editor. Returns `{ success }`.
 //
@@ -179,9 +179,9 @@ func (s *PlaybooksService) PipelinesDetach(ctx context.Context, body PlaybooksPi
 // Lists ALL live pipelines of the workspace (not only the ones linked), ordered by name, each marked
 // from the point of view of this playbook: `linked` = the pipeline suggests THIS playbook;
 // `currentPlaybookName` = the name of ANOTHER playbook the pipeline suggests today (null when it has
-// none or already follows this one). Returns `{ items }`. Read it before `playbooks_pipelines_attach`,
-// because attaching REPLACES whatever the pipeline suggested — `currentPlaybookName` is the warning
-// to relay to the user.
+// none or already follows this one). Returns `{ items }`. Read it before
+// [PlaybooksService.PipelinesAttach], because attaching REPLACES whatever the pipeline suggested —
+// `currentPlaybookName` is the warning to relay to the user.
 //
 // Calls GET /playbooks/pipelines-list.
 func (s *PlaybooksService) PipelinesList(ctx context.Context, params PlaybooksPipelinesListParams, opts ...Option) (*PlaybooksPipelinesListOutput, error) {
@@ -199,11 +199,11 @@ func (s *PlaybooksService) PipelinesList(ctx context.Context, params PlaybooksPi
 // lead, but every call is a real AI model call (on the agent own model key when `agentId` is set) and
 // the answer is not deterministic — so do not loop it. Restricted to owner/admin/editor. It takes NO
 // playbook id on purpose: it tests a DRAFT, so YOU must put the method into `briefing`. To rehearse a
-// saved playbook, call `playbooks_meeting_guides_get` and pass its `script` as `briefing.script` and
-// its `guardrails` as `briefing.guardrails`; add `briefing.goal` (what the meeting must achieve) and
-// `briefing.persona` (who is on the other side) to make the suggestion specific. `turns` (1-40) is the
-// whole conversation so far, each `{ role: "host" | "guest", name, text }` — send it whole on every
-// call. `reason` (default `on_demand`) says why the copilot was woken: `question`, `objection`,
+// saved playbook, call [PlaybooksService.MeetingGuidesGet] and pass its `script` as `briefing.script`
+// and its `guardrails` as `briefing.guardrails`; add `briefing.goal` (what the meeting must achieve)
+// and `briefing.persona` (who is on the other side) to make the suggestion specific. `turns` (1-40) is
+// the whole conversation so far, each `{ role: "host" | "guest", name, text }` — send it whole on
+// every call. `reason` (default `on_demand`) says why the copilot was woken: `question`, `objection`,
 // `signal`, `silence` or `on_demand`; `alreadySuggested` avoids repeating earlier cards. `agentId`
 // must be an active (published) AI agent of this workspace (404 otherwise); omit it for the platform
 // default model. Result: `{ suggest, title?, text?, tone?, reason? }`. `suggest: false` is a
@@ -224,8 +224,8 @@ func (s *PlaybooksService) Simulate(ctx context.Context, body PlaybooksSimulateI
 // Update a sales playbook.
 //
 // REPLACES the whole playbook (PUT — there is no partial patch): anything you omit is not kept, so
-// every collection you are not changing must be resent exactly as returned by `playbooks_get`, or it
-// is wiped (`attachments` included — they cannot be re-uploaded from here). Restricted to
+// every collection you are not changing must be resent exactly as returned by [PlaybooksService.Get],
+// or it is wiped (`attachments` included — they cannot be re-uploaded from here). Restricted to
 // owner/admin/editor. Editing affects meetings booked AFTER the save and future calls; a meeting
 // already booked keeps the script it received when it was created (to refresh it, pick the same
 // playbook again from the meeting room). Pipelines that suggest this playbook keep suggesting it. The

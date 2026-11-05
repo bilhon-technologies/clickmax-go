@@ -29,7 +29,7 @@ func (s *LessonsService) Create(ctx context.Context, body LessonsCreateInput, op
 // Delete a lesson.
 //
 // Permanently deletes one lesson. Removes related member progress records. Prefer
-// `lessons_toggle_enabled` to hide a lesson that may be re-enabled later.
+// [LessonsService.ToggleEnabled] to hide a lesson that may be re-enabled later.
 //
 // Calls DELETE /lessons/delete.
 func (s *LessonsService) Delete(ctx context.Context, body LessonsDeleteInput, opts ...Option) (*LessonsDeleteOutput, error) {

@@ -16,9 +16,9 @@ type StagesService struct {
 //
 // Adds a stage (column) to a pipeline, taking `name` plus optional `color` (hex) and `metaPixelEvent`.
 // Stages define the ordered steps of the board; win/loss is tracked on the card status, not on stages
-// — there is no "won"/"lost" stage type. The stage is appended last; use `stages_reorder` to place
-// it. Passage rules and automations are configured separately (`stage_rules_upsert`,
-// `managed_flows_upsert`).
+// — there is no "won"/"lost" stage type. The stage is appended last; use [StagesService.Reorder] to
+// place it. Passage rules and automations are configured separately ([StageRulesService.Upsert],
+// [ManagedFlowsService.Upsert]).
 //
 // Calls POST /stages/create.
 func (s *StagesService) Create(ctx context.Context, body StagesCreateInput, opts ...Option) (*StagesCreateOutput, error) {
@@ -46,10 +46,10 @@ func (s *StagesService) Delete(ctx context.Context, body StagesDeleteInput, opts
 // List pipeline stages.
 //
 // Returns the ordered stages of a pipeline with per-stage card count and total value. Accepts the same
-// kanban filters as `cards_list` — including the additive advanced `conditions` — and applies them
-// to BOTH the aggregate and the rows, so the stage totals always match the cards `cards_list` returns
-// for the same filters. Note the counts follow those filters; for the raw open-card count the WIP rule
-// uses, call `stage_rules_open_count`.
+// kanban filters as [CardsService.List] — including the additive advanced `conditions` — and
+// applies them to BOTH the aggregate and the rows, so the stage totals always match the cards
+// [CardsService.List] returns for the same filters. Note the counts follow those filters; for the raw
+// open-card count the WIP rule uses, call [StageRulesService.OpenCount].
 //
 // Calls POST /stages/list.
 func (s *StagesService) List(ctx context.Context, body StagesListInput, opts ...Option) (*StagesListOutput, error) {
@@ -78,7 +78,7 @@ func (s *StagesService) Reorder(ctx context.Context, body StagesReorderInput, op
 // Updates a stage `name`, `color` or `metaPixelEvent`. A stage has NO type/kind field — it cannot be
 // marked as a won/lost column, and sending one is silently discarded. Send `null` to clear `color` or
 // `metaPixelEvent`. Automatic lead entry into a stage (checkout paid / funnel capture → card) is NOT
-// set here — use `managed_flows_upsert` to create a managed "Entrada externa" flow.
+// set here — use [ManagedFlowsService.Upsert] to create a managed "Entrada externa" flow.
 //
 // Calls POST /stages/update.
 func (s *StagesService) Update(ctx context.Context, body StagesUpdateInput, opts ...Option) (*StagesUpdateOutput, error) {

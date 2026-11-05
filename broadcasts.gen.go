@@ -16,8 +16,8 @@ type BroadcastsService struct {
 // Cancel a sending campaign.
 //
 // Stops a queued/sending campaign for good: pending recipients are dropped and it can never be resumed
-// (what was sent stays sent). To stop temporarily use `broadcasts_pause`; to unschedule use
-// `broadcasts_update`.
+// (what was sent stays sent). To stop temporarily use [BroadcastsService.Pause]; to unschedule use
+// [BroadcastsService.Update].
 //
 // Calls DELETE /broadcasts/cancel.
 func (s *BroadcastsService) Cancel(ctx context.Context, body BroadcastsSendNowInput, opts ...Option) (*BroadcastsCancelOutput, error) {
@@ -32,8 +32,8 @@ func (s *BroadcastsService) Cancel(ctx context.Context, body BroadcastsSendNowIn
 //
 // Creates an email or WhatsApp-template campaign as a DRAFT — nothing is sent. Pass exactly one of
 // `email`/`whatsapp`. `audience` is frozen now (lists/segment snapshot); the returned `recipientCount`
-// is the exact unique audience. Review it with the user (`broadcasts_get`), then `broadcasts_schedule`
-// or `broadcasts_send_now`.
+// is the exact unique audience. Review it with the user ([BroadcastsService.Get]), then
+// [BroadcastsService.Schedule] or [BroadcastsService.SendNow].
 //
 // Calls POST /broadcasts/create-draft.
 func (s *BroadcastsService) CreateDraft(ctx context.Context, body BroadcastsCreateDraftInput, opts ...Option) (*BroadcastsCreateDraftOutput, error) {
@@ -47,7 +47,7 @@ func (s *BroadcastsService) CreateDraft(ctx context.Context, body BroadcastsCrea
 // Duplicate a campaign.
 //
 // Copies any campaign (content, audience snapshot, pacing) into a new DRAFT. Use it to resend or reuse
-// a past campaign; edit the copy with `broadcasts_update`.
+// a past campaign; edit the copy with [BroadcastsService.Update].
 //
 // Calls POST /broadcasts/duplicate.
 func (s *BroadcastsService) Duplicate(ctx context.Context, body BroadcastsSendNowInput, opts ...Option) (*BroadcastsCreateDraftOutput, error) {
@@ -77,7 +77,7 @@ func (s *BroadcastsService) Get(ctx context.Context, params BroadcastsGetParams,
 //
 // Deep read of ONE campaign: lifecycle timestamps, opens by hour of day (0–23, use it to pick send
 // times), most-clicked links, devices, email clients, geography, open/click rate with the delta versus
-// the previous campaign, and credit cost. Resolve `broadcastId` with `broadcasts_list`.
+// the previous campaign, and credit cost. Resolve `broadcastId` with [BroadcastsService.List].
 //
 // Calls GET /broadcasts/insights.
 func (s *BroadcastsService) Insights(ctx context.Context, params BroadcastsInsightsParams, opts ...Option) (*BroadcastsInsightsOutput, error) {
@@ -94,9 +94,9 @@ func (s *BroadcastsService) Insights(ctx context.Context, params BroadcastsInsig
 // recipients sent, delivered, opened, clicked, bounced, failed) and `rates` (open/click/bounce over
 // `sent`, the same figure the campaign screen shows). Use it to browse or inspect individual
 // campaigns, paging with `page`/`perPage` and searching with `name`. For the account's historical
-// baseline use `account_snapshot` — it is summed server-side over EVERY sent campaign; one page of
-// this list is not the history. Automation (flow) emails are NOT here — use `flows_get` with
-// analytics for those, or `messages_metrics` for everything combined.
+// baseline use [AccountService.Snapshot] — it is summed server-side over EVERY sent campaign; one
+// page of this list is not the history. Automation (flow) emails are NOT here — use
+// [FlowsService.Get] with analytics for those, or [MessagesService.Metrics] for everything combined.
 //
 // Calls GET /broadcasts/list.
 func (s *BroadcastsService) List(ctx context.Context, params BroadcastsListParams, opts ...Option) (*BroadcastsListOutput, error) {
@@ -109,8 +109,9 @@ func (s *BroadcastsService) List(ctx context.Context, params BroadcastsListParam
 
 // Pause a sending campaign.
 //
-// Pauses a campaign that is sending; pending recipients wait until `broadcasts_resume`. Only campaigns
-// on the new send engine can pause (409 otherwise — then the only stop is `broadcasts_cancel`).
+// Pauses a campaign that is sending; pending recipients wait until [BroadcastsService.Resume]. Only
+// campaigns on the new send engine can pause (409 otherwise — then the only stop is
+// [BroadcastsService.Cancel]).
 //
 // Calls POST /broadcasts/pause.
 func (s *BroadcastsService) Pause(ctx context.Context, body BroadcastsSendNowInput, opts ...Option) (*BroadcastsPauseOutput, error) {
@@ -126,7 +127,7 @@ func (s *BroadcastsService) Pause(ctx context.Context, body BroadcastsSendNowInp
 // Reachable contacts per list for a channel BEFORE creating a campaign: email = valid emails;
 // sms/voice = valid opted-in phones; gupshup = valid phones (+ `withWindow`, inside the 24h WhatsApp
 // window). Counts are per list: overlapping lists make `sumOfLists` an upper bound. The exact unique
-// audience is the `recipientCount` returned by `broadcasts_create_draft`.
+// audience is the `recipientCount` returned by [BroadcastsService.CreateDraft].
 //
 // Calls POST /broadcasts/reach-estimate.
 func (s *BroadcastsService) ReachEstimate(ctx context.Context, body BroadcastsReachEstimateInput, opts ...Option) (*BroadcastsReachEstimateOutput, error) {
@@ -156,7 +157,7 @@ func (s *BroadcastsService) Resume(ctx context.Context, body BroadcastsSendNowIn
 // Schedules a draft to SEND automatically at `scheduledAt` to its frozen audience, as saved. Only
 // after the user reviewed and confirmed content, audience and time. Needs audience, content (email:
 // sender signature; WhatsApp: approved template) and credits. Undo before the time with
-// `broadcasts_update` (back to draft).
+// [BroadcastsService.Update] (back to draft).
 //
 // Calls POST /broadcasts/schedule.
 func (s *BroadcastsService) Schedule(ctx context.Context, body BroadcastsScheduleInput, opts ...Option) (*BroadcastsCreateDraftOutput, error) {
@@ -171,7 +172,7 @@ func (s *BroadcastsService) Schedule(ctx context.Context, body BroadcastsSchedul
 //
 // Starts sending a draft or scheduled campaign NOW to its frozen audience — real messages, real
 // credits, cannot be undone (only paused/cancelled midway). Only after the user explicitly confirmed.
-// Same requirements as `broadcasts_schedule`.
+// Same requirements as [BroadcastsService.Schedule].
 //
 // Calls POST /broadcasts/send-now.
 func (s *BroadcastsService) SendNow(ctx context.Context, body BroadcastsSendNowInput, opts ...Option) (*BroadcastsCreateDraftOutput, error) {
@@ -188,8 +189,8 @@ func (s *BroadcastsService) SendNow(ctx context.Context, body BroadcastsSendNowI
 // replaces only the HTML body, attachments and plain-text part stay. `whatsapp` replaces the template
 // and its mappings; media saved with the campaign (header image/video/file) is kept as is — if the
 // new template needs different media, the user changes it in the app. New `audience` re-freezes the
-// snapshot. Always saves as DRAFT: a scheduled campaign is unscheduled until `broadcasts_schedule`
-// runs again — say so. The channel cannot change.
+// snapshot. Always saves as DRAFT: a scheduled campaign is unscheduled until
+// [BroadcastsService.Schedule] runs again — say so. The channel cannot change.
 //
 // Calls POST /broadcasts/update.
 func (s *BroadcastsService) Update(ctx context.Context, body BroadcastsUpdateInput, opts ...Option) (*BroadcastsCreateDraftOutput, error) {
@@ -220,7 +221,7 @@ type BroadcastsCreateDraftInput struct {
 // BroadcastsCreateDraftInputAudience is the type of [BroadcastsCreateDraftInput.Audience].
 type BroadcastsCreateDraftInputAudience struct {
 	// Lists to send to (union). A segment is sent through its synced list: `listId` from
-	// `segments_get`.
+	// [SegmentsService.Get].
 	ListIDs []string `json:"listIds,omitzero"`
 	// Individual contacts. For more than this, use a list or segment.
 	LeadIDs []string `json:"leadIds,omitzero"`
@@ -242,9 +243,10 @@ const (
 // BroadcastsCreateDraftInputEmail is the type of [BroadcastsCreateDraftInput.Email].
 type BroadcastsCreateDraftInputEmail struct {
 	Subject string `json:"subject"`
-	// Email-safe HTML (table layout, inline styles); e.g. the `html` of `email_templates_get`.
+	// Email-safe HTML (table layout, inline styles); e.g. the `html` of [EmailTemplatesService.Get].
 	HTML string `json:"html"`
-	// Confirmed signature from `email_sender_signatures_list`. Optional in a draft, required to send.
+	// Confirmed signature from [EmailSenderSignaturesService.List]. Optional in a draft, required to
+	// send.
 	SenderSignatureID *string `json:"senderSignatureId,omitzero"`
 }
 
@@ -258,7 +260,7 @@ type BroadcastsCreateDraftInputThrottle struct {
 
 // BroadcastsCreateDraftInputWhatsapp is the type of [BroadcastsCreateDraftInput.Whatsapp].
 type BroadcastsCreateDraftInputWhatsapp struct {
-	// WhatsApp template id (`gupshup_templates_list`); must be approved to send.
+	// WhatsApp template id ([GupshupTemplatesService.List]); must be approved to send.
 	TemplateID string `json:"templateId"`
 	// Sending number; defaults to the template's own number.
 	GupshupAppID *string `json:"gupshupAppId,omitzero"`
@@ -582,7 +584,7 @@ type BroadcastsUpdateInput struct {
 // BroadcastsUpdateInputAudience is the type of [BroadcastsUpdateInput.Audience].
 type BroadcastsUpdateInputAudience struct {
 	// Lists to send to (union). A segment is sent through its synced list: `listId` from
-	// `segments_get`.
+	// [SegmentsService.Get].
 	ListIDs []string `json:"listIds,omitzero"`
 	// Individual contacts. For more than this, use a list or segment.
 	LeadIDs []string `json:"leadIds,omitzero"`
@@ -604,9 +606,10 @@ const (
 // BroadcastsUpdateInputEmail is the type of [BroadcastsUpdateInput.Email].
 type BroadcastsUpdateInputEmail struct {
 	Subject *string `json:"subject,omitzero"`
-	// Email-safe HTML (table layout, inline styles); e.g. the `html` of `email_templates_get`.
+	// Email-safe HTML (table layout, inline styles); e.g. the `html` of [EmailTemplatesService.Get].
 	HTML *string `json:"html,omitzero"`
-	// Confirmed signature from `email_sender_signatures_list`. Optional in a draft, required to send.
+	// Confirmed signature from [EmailSenderSignaturesService.List]. Optional in a draft, required to
+	// send.
 	SenderSignatureID *string `json:"senderSignatureId,omitzero"`
 }
 
@@ -620,7 +623,7 @@ type BroadcastsUpdateInputThrottle struct {
 
 // BroadcastsUpdateInputWhatsapp is the type of [BroadcastsUpdateInput.Whatsapp].
 type BroadcastsUpdateInputWhatsapp struct {
-	// WhatsApp template id (`gupshup_templates_list`); must be approved to send.
+	// WhatsApp template id ([GupshupTemplatesService.List]); must be approved to send.
 	TemplateID string `json:"templateId"`
 	// Sending number; defaults to the template's own number.
 	GupshupAppID *string `json:"gupshupAppId,omitzero"`

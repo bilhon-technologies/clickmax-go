@@ -17,8 +17,8 @@ type CustomObjectRelationsService struct {
 //
 // Lists every relation whose OTHER side is `targetType` (`leads` = contacts, `opportunities` or
 // `companies`) — i.e. which custom objects can be linked to a contact/opportunity/company and under
-// which label. Archived objects are left out. Same item as `custom_object_relations_list`. Use it to
-// find the `relationId` before linking a record to a contact or card.
+// which label. Archived objects are left out. Same item as [CustomObjectRelationsService.List]. Use it
+// to find the `relationId` before linking a record to a contact or card.
 //
 // Calls GET /custom-object-relations/by-target.
 func (s *CustomObjectRelationsService) ByTarget(ctx context.Context, params CustomObjectRelationsByTargetParams, opts ...Option) (*CustomObjectRelationsByTargetOutput, error) {
@@ -55,8 +55,8 @@ func (s *CustomObjectRelationsService) Create(ctx context.Context, body CustomOb
 // Delete a custom-object relation.
 //
 // PERMANENTLY deletes one relation AND every link made through it (`linkCount` in
-// `custom_object_relations_list` says how many) — records on both sides stay, but they stop being
-// connected and filters/views that use this relation stop matching. Cannot be undone. Needs
+// [CustomObjectRelationsService.List] says how many) — records on both sides stay, but they stop
+// being connected and filters/views that use this relation stop matching. Cannot be undone. Needs
 // `custom-objects:manage`.
 //
 // Calls DELETE /custom-object-relations/delete.

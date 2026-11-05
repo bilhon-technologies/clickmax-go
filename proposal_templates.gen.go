@@ -18,9 +18,9 @@ type ProposalTemplatesService struct {
 // Creates a proposal template. Requires `name`. Defaults to `kind: "slide_deck"`. Optional `title`,
 // `description`, `config` (reveal transition + theme colors/font), and `status` (`active` publishes;
 // defaults to `draft`). This creates an EMPTY template with no slides — add slides afterwards with
-// `proposal_templates_pages_upsert`, then generate a client-ready proposal with
-// `proposals_consolidate`. `kind: "document"` creates an empty Word template: its content is written
-// (or a .docx imported) by the user in Propostas → Templates, not through these tools.
+// [ProposalTemplatesService.PagesUpsert], then generate a client-ready proposal with
+// [ProposalsService.Consolidate]. `kind: "document"` creates an empty Word template: its content is
+// written (or a .docx imported) by the user in Propostas → Templates, not through these tools.
 //
 // Calls POST /proposal-templates/create.
 func (s *ProposalTemplatesService) Create(ctx context.Context, body ProposalTemplatesCreateInput, opts ...Option) (*ProposalTemplatesCreateOutput, error) {
@@ -50,7 +50,7 @@ func (s *ProposalTemplatesService) Delete(ctx context.Context, body ProposalTemp
 // Version history of a `document` proposal template (every save of its Word file is an immutable
 // version), newest first: `version` number, `documentKey` (public .docx URL), detected `variables`,
 // `size` in bytes, who saved it (`authorName`/`authorEmail`) and when. Use it to find a `versionId`
-// before `proposal_templates_document_versions_restore`.
+// before [ProposalTemplatesService.DocumentVersionsRestore].
 //
 // Calls GET /proposal-templates/document-versions-list.
 func (s *ProposalTemplatesService) DocumentVersionsList(ctx context.Context, params ProposalTemplatesDocumentVersionsListParams, opts ...Option) (*ProposalTemplatesDocumentVersionsListOutput, error) {
@@ -64,7 +64,7 @@ func (s *ProposalTemplatesService) DocumentVersionsList(ctx context.Context, par
 // Restore a document template version.
 //
 // Makes an older version of a `document` proposal template current again (`id` = template, `versionId`
-// from `proposal_templates_document_versions_list`). History is never rewritten: the restore is
+// from [ProposalTemplatesService.DocumentVersionsList]). History is never rewritten: the restore is
 // appended as a NEW version pointing at the old file. Proposals already consolidated are not affected.
 //
 // Calls POST /proposal-templates/document-versions-restore.
@@ -132,8 +132,8 @@ func (s *ProposalTemplatesService) PagesUpsert(ctx context.Context, body Proposa
 //
 // Updates a template’s metadata/config by `id` — `name`, `title`, `description`, `kind`, `status`
 // (`active` publishes, `archived` hides it), `config`, `thumbnailUrl`. Does NOT touch slides; use
-// `proposal_templates_pages_upsert` for slide content. Pass `expectedUpdatedAt` (from
-// `proposal_templates_get`) to reject stale overwrites with a conflict.
+// [ProposalTemplatesService.PagesUpsert] for slide content. Pass `expectedUpdatedAt` (from
+// [ProposalTemplatesService.Get]) to reject stale overwrites with a conflict.
 //
 // Calls POST /proposal-templates/update.
 func (s *ProposalTemplatesService) Update(ctx context.Context, body ProposalTemplatesUpdateInput, opts ...Option) (*ProposalTemplatesUpdateOutput, error) {

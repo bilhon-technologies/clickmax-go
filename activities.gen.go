@@ -20,12 +20,13 @@ type ActivitiesService struct {
 // date) and `perDay` (1-200, items kept per day) are all REQUIRED. Returns `{ days: [{ date:
 // "YYYY-MM-DD", total, items }] }` — only days that HAVE activity; `total` is the real number of the
 // day and `items` holds the first `perDay` in list order, so `total > items.length` means the day was
-// truncated (use `activities_list` with a one-day range to read the rest). Tasks without a deadline
-// never appear here (there is no day to put them on) — find them with `activities_list` +
-// `withoutDeadline: true`. Items have the same `{ kind, task | appointment }` shape as
-// `activities_list`, and `buckets` is accepted here too. Every other filter (including `overdue` with
-// `overdueBefore`/`allDayStart`), the scoping (a plain attendant only sees its OWN items) and the
-// lost/deleted-card rule are exactly those of `activities_list` — read the filter guide there.
+// truncated (use [ActivitiesService.List] with a one-day range to read the rest). Tasks without a
+// deadline never appear here (there is no day to put them on) — find them with
+// [ActivitiesService.List] + `withoutDeadline: true`. Items have the same `{ kind, task | appointment
+// }` shape as [ActivitiesService.List], and `buckets` is accepted here too. Every other filter
+// (including `overdue` with `overdueBefore`/`allDayStart`), the scoping (a plain attendant only sees
+// its OWN items) and the lost/deleted-card rule are exactly those of [ActivitiesService.List] — read
+// the filter guide there.
 //
 // Calls POST /activities/calendar.
 func (s *ActivitiesService) Calendar(ctx context.Context, body ActivitiesCalendarInput, opts ...Option) (*ActivitiesCalendarOutput, error) {
@@ -41,9 +42,9 @@ func (s *ActivitiesService) Calendar(ctx context.Context, body ActivitiesCalenda
 // The unified ACTIVITIES queue — follow-up TASKS (`tasks_*`, hung on an opportunity card) and booked
 // APPOINTMENTS (`scheduled_calls_*`) merged into one paginated list, the same data as the Activities
 // screen. Each `data` item is `{ kind: "task", task }` or `{ kind: "appointment", appointment }`
-// carrying the FULL row of that side (same shape as `tasks_get` / `scheduled_calls_get`), including
-// the contact e-mail/phone (`contactEmail`/`contactPhone` on tasks, `leadEmail`/`leadPhone` on
-// appointments) and the pipeline (`pipelineId`/`pipelineName` on tasks,
+// carrying the FULL row of that side (same shape as [TasksService.Get] / [ScheduledCallsService.Get]),
+// including the contact e-mail/phone (`contactEmail`/`contactPhone` on tasks, `leadEmail`/`leadPhone`
+// on appointments) and the pipeline (`pipelineId`/`pipelineName` on tasks,
 // `opportunityPipelineId`/`opportunityPipelineName` on appointments). `buckets` narrows by situation:
 // `ongoing` = task open/scheduled or appointment scheduled/confirmed; `done` = task resolved/cancelled
 // or appointment completed/cancelled/no_show. Filters (all optional, ANDed): `search` (free text over
@@ -64,11 +65,11 @@ func (s *ActivitiesService) Calendar(ctx context.Context, body ActivitiesCalenda
 // sees its OWN items whatever `attendantIds` says; owner/admin see the team. Order is queue order:
 // earliest due/start first, tasks without a deadline last. `perPage` 1-2000 (default 10) — keep
 // pages small, appointment rows are heavy. READ-ONLY, and the API has NO bulk action: to close a
-// selection, call per item — task: `tasks_update` `{ status: "resolved", outcome: true }` (done) or
-// `{ status: "resolved", outcome: false, outcomeNote: <reason> }` (not done); appointment:
-// `scheduled_calls_update` `{ status: "completed" }` or `scheduled_calls_cancel` `{ reason }` (which
-// also e-mails the participants). For headline numbers use `activities_summary`; for a day grid use
-// `activities_calendar`.
+// selection, call per item — task: [TasksService.Update] `{ status: "resolved", outcome: true }`
+// (done) or `{ status: "resolved", outcome: false, outcomeNote: <reason> }` (not done); appointment:
+// [ScheduledCallsService.Update] `{ status: "completed" }` or [ScheduledCallsService.Cancel] `{ reason
+// }` (which also e-mails the participants). For headline numbers use [ActivitiesService.Summary]; for
+// a day grid use [ActivitiesService.Calendar].
 //
 // Calls POST /activities/list.
 func (s *ActivitiesService) List(ctx context.Context, body ActivitiesListInput, opts ...Option) (*ActivitiesListOutput, error) {
@@ -81,15 +82,16 @@ func (s *ActivitiesService) List(ctx context.Context, body ActivitiesListInput, 
 
 // Get activity counters.
 //
-// Returns `{ total, ongoing, done, overdue }` for the SAME filter set as `activities_list`, minus
-// `buckets` (the counters ARE the ongoing/done breakdown of one selection). `overdue` is a subset of
-// `ongoing` and follows the same "END already passed" rule as the `overdue` filter (a task with a
-// duration is late only after deadline + duration, so this can be lower than `tasks_summary.overdue`,
-// which compares the bare deadline), so send `overdueBefore` and `allDayStart` for the caller clock.
-// Do NOT pass `overdue: true` here unless you want the whole selection restricted to late items — it
-// then narrows `total` too. Use it for headline numbers instead of paging through `activities_list`.
-// Every filter, the scoping (a plain attendant only counts its OWN items) and the lost/deleted-card
-// rule are exactly those of `activities_list` — read the filter guide there.
+// Returns `{ total, ongoing, done, overdue }` for the SAME filter set as [ActivitiesService.List],
+// minus `buckets` (the counters ARE the ongoing/done breakdown of one selection). `overdue` is a
+// subset of `ongoing` and follows the same "END already passed" rule as the `overdue` filter (a task
+// with a duration is late only after deadline + duration, so this can be lower than
+// `[TasksService.Summary].overdue`, which compares the bare deadline), so send `overdueBefore` and
+// `allDayStart` for the caller clock. Do NOT pass `overdue: true` here unless you want the whole
+// selection restricted to late items — it then narrows `total` too. Use it for headline numbers
+// instead of paging through [ActivitiesService.List]. Every filter, the scoping (a plain attendant
+// only counts its OWN items) and the lost/deleted-card rule are exactly those of
+// [ActivitiesService.List] — read the filter guide there.
 //
 // Calls POST /activities/summary.
 func (s *ActivitiesService) Summary(ctx context.Context, body ActivitiesSummaryInput, opts ...Option) (*ActivitiesSummaryOutput, error) {

@@ -19,7 +19,7 @@ type LeadScoreService struct {
 // average }`. Exact counts of the stored numbers (one grouped query), not an estimate; `average` is
 // over calculated contacts only (null if none). `notScored` = contacts with no number: all of them
 // while the Score is off, plus contacts not calculated yet. For the Temperature × Score cross-tab,
-// coverage and "hot AND high Score" priority, use `lead_indicators_metrics`.
+// coverage and "hot AND high Score" priority, use [LeadIndicatorsService.Metrics].
 //
 // Calls GET /lead-score/distribution.
 func (s *LeadScoreService) Distribution(ctx context.Context, opts ...Option) (*LeadScoreDistributionOutput, error) {
@@ -58,19 +58,20 @@ func (s *LeadScoreService) LeadExplain(ctx context.Context, params LeadScoreLead
 // the list on screen, does not change the score) and the criteria `filters`. Needs admin/editor or a
 // coordinator attendant. Limit of 40 rules per workspace; the criteria is compiled before saving and
 // an invalid one is 400. EFFECT: all contacts are re-scored in the background (only visible once the
-// Score is enabled — check `lead_score_settings_get`, it is off by default). No "Score changed"
-// automation fires from this bulk re-score. Preview the size first with `lead_score_rules_preview`.
-// `filters` is the rule CRITERIA: the same flat filter tree as a segment (fields such as `tagId`,
-// `origin`, `profession`, `city`, `state`, `customFieldText|Number|Date|Boolean|Select` with
-// `customFieldId`, purchase fields like `lifeTimeValue`, quiz answers). Top-level items are ANDed;
-// OR/nesting = a group item `{ id: "g", order: 1, field: "children", operator: "childrenOr", negation:
-// false }` with its children pointing at it via `parentId: "g"`. Example "has tag A": `[{ id: "a",
-// order: 0, field: "tagId", operator: "equals", negation: false, valueUuid: "<tag id>" }]`.
-// `id`/`parentId` are short labels you choose (not UUIDs), fill exactly one `value*` slot per leaf,
-// `order` is the position; ids of tags/custom fields must be real ids from their list tools. Max 50
-// nodes. A criterion describes WHO the contact is (registration data, tags, origin, purchases);
-// engagement/behaviour ("opened 3 e-mails") is the Temperature job, not the Score. An EMPTY `filters`
-// never scores anyone (it does not mean "everyone").
+// Score is enabled — check [LeadScoreService.SettingsGet], it is off by default). No "Score changed"
+// automation fires from this bulk re-score. Preview the size first with
+// [LeadScoreService.RulesPreview]. `filters` is the rule CRITERIA: the same flat filter tree as a
+// segment (fields such as `tagId`, `origin`, `profession`, `city`, `state`,
+// `customFieldText|Number|Date|Boolean|Select` with `customFieldId`, purchase fields like
+// `lifeTimeValue`, quiz answers). Top-level items are ANDed; OR/nesting = a group item `{ id: "g",
+// order: 1, field: "children", operator: "childrenOr", negation: false }` with its children pointing
+// at it via `parentId: "g"`. Example "has tag A": `[{ id: "a", order: 0, field: "tagId", operator:
+// "equals", negation: false, valueUuid: "<tag id>" }]`. `id`/`parentId` are short labels you choose
+// (not UUIDs), fill exactly one `value*` slot per leaf, `order` is the position; ids of tags/custom
+// fields must be real ids from their list tools. Max 50 nodes. A criterion describes WHO the contact
+// is (registration data, tags, origin, purchases); engagement/behaviour ("opened 3 e-mails") is the
+// Temperature job, not the Score. An EMPTY `filters` never scores anyone (it does not mean
+// "everyone").
 //
 // Calls POST /lead-score/rules-create.
 func (s *LeadScoreService) RulesCreate(ctx context.Context, body LeadScoreRulesCreateInput, opts ...Option) (*LeadScoreRulesCreateOutput, error) {
@@ -84,10 +85,10 @@ func (s *LeadScoreService) RulesCreate(ctx context.Context, body LeadScoreRulesC
 // Delete a Score rule.
 //
 // Permanently deletes one Score rule (`ruleId`) together with its criteria tree — it cannot be
-// recovered; to keep it but stop it scoring, use `lead_score_rules_set_enabled` with `enabled: false`
-// instead. Needs admin/editor or a coordinator attendant; 404 if it does not exist. All contacts are
-// re-scored in the background without this rule, so many Scores can drop at once (visible while the
-// Score is enabled).
+// recovered; to keep it but stop it scoring, use [LeadScoreService.RulesSetEnabled] with `enabled:
+// false` instead. Needs admin/editor or a coordinator attendant; 404 if it does not exist. All
+// contacts are re-scored in the background without this rule, so many Scores can drop at once (visible
+// while the Score is enabled).
 //
 // Calls DELETE /lead-score/rules-delete.
 func (s *LeadScoreService) RulesDelete(ctx context.Context, body LeadScoreRulesDeleteInput, opts ...Option) (*LeadScoreRulesDeleteOutput, error) {
@@ -101,11 +102,11 @@ func (s *LeadScoreService) RulesDelete(ctx context.Context, body LeadScoreRulesD
 // Preview how many contacts a Score rule matches.
 //
 // Counts, WITHOUT saving anything, how many contacts a Score criterion would match: `{
-// matchingContacts, totalContacts }`. Use it before `lead_score_rules_create`/`_update` to size a rule
-// and to catch a criterion that matches nobody or everybody. An empty `filters` counts 0 (an empty
-// criterion never scores). A criterion the compiler rejects fails the call (not a clean 400 here —
-// fix the filters and retry). Optional `points` (−1000..1000) adds the BAND SHIFT of saving the rule
-// with those points: `bandShift` = NET change per tier `{ low, medium, high }` (e.g. `{ low: -40,
+// matchingContacts, totalContacts }`. Use it before [LeadScoreService.RulesCreate]/`_update` to size a
+// rule and to catch a criterion that matches nobody or everybody. An empty `filters` counts 0 (an
+// empty criterion never scores). A criterion the compiler rejects fails the call (not a clean 400 here
+// — fix the filters and retry). Optional `points` (−1000..1000) adds the BAND SHIFT of saving the
+// rule with those points: `bandShift` = NET change per tier `{ low, medium, high }` (e.g. `{ low: -40,
 // medium: 25, high: 15 }` = 40 leave Low, 25 more in Medium, 15 more in High — deltas, not totals)
 // and up to 3 `samples` (`name`, `email`, `fromScore` → `toScore`; named contacts first, biggest
 // moves first). Without `points`, `bandShift` is null and `samples` empty. When editing an existing
@@ -139,15 +140,15 @@ func (s *LeadScoreService) RulesPreview(ctx context.Context, body LeadScoreRules
 
 // Switch a Score rule on or off.
 //
-// Turns ONE Score rule on or off (`ruleId` from `lead_score_settings_get` → `rules[].id`, `enabled`)
-// without touching its name, points, criteria or order — the safe way to pause a rule (unlike
-// `lead_score_rules_update`, which is a full replace). Needs admin/editor or a coordinator attendant;
-// 404 if the rule does not exist in this workspace. Returns the rule row (without its criteria).
-// EFFECT: like any rule change it re-scores every contact in the background (visible only while the
-// Score is enabled): switching off removes that rule points from everyone it matched, switching on
-// adds them. No "Score changed" automation fires from this bulk re-score. To see the effect BEFORE
-// switching on, run `lead_score_rules_preview` with the rule `filters` and `points`. Sending the
-// current value again changes no number.
+// Turns ONE Score rule on or off (`ruleId` from [LeadScoreService.SettingsGet] → `rules[].id`,
+// `enabled`) without touching its name, points, criteria or order — the safe way to pause a rule
+// (unlike [LeadScoreService.RulesUpdate], which is a full replace). Needs admin/editor or a
+// coordinator attendant; 404 if the rule does not exist in this workspace. Returns the rule row
+// (without its criteria). EFFECT: like any rule change it re-scores every contact in the background
+// (visible only while the Score is enabled): switching off removes that rule points from everyone it
+// matched, switching on adds them. No "Score changed" automation fires from this bulk re-score. To see
+// the effect BEFORE switching on, run [LeadScoreService.RulesPreview] with the rule `filters` and
+// `points`. Sending the current value again changes no number.
 //
 // Calls POST /lead-score/rules-set-enabled.
 func (s *LeadScoreService) RulesSetEnabled(ctx context.Context, body LeadScoreRulesSetEnabledInput, opts ...Option) (*LeadScoreRulesSetEnabledOutput, error) {
@@ -160,25 +161,26 @@ func (s *LeadScoreService) RulesSetEnabled(ctx context.Context, body LeadScoreRu
 
 // Update a Score rule.
 //
-// Rewrites one rule (`ruleId` from `lead_score_settings_get` → `rules[].id`). It is a FULL REPLACE,
-// not a patch: `name`, `points` and `filters` are required, and anything you leave out is RESET —
-// `description` to null, `enabled` to true (so a disabled rule becomes enabled again), `sortOrder` to
-// 0, and the criteria tree is replaced entirely by `filters`. So read the rule first and resend its
-// current values for what should stay. To only switch a rule on/off use `lead_score_rules_set_enabled`
-// instead — it touches nothing else. Needs admin/editor or a coordinator attendant; 404 if the rule
-// does not exist; an invalid criteria is 400. EFFECT: all contacts are re-scored in the background
-// (visible only while the Score is enabled); no "Score changed" automation fires from the bulk
-// re-score. `filters` is the rule CRITERIA: the same flat filter tree as a segment (fields such as
-// `tagId`, `origin`, `profession`, `city`, `state`, `customFieldText|Number|Date|Boolean|Select` with
-// `customFieldId`, purchase fields like `lifeTimeValue`, quiz answers). Top-level items are ANDed;
-// OR/nesting = a group item `{ id: "g", order: 1, field: "children", operator: "childrenOr", negation:
-// false }` with its children pointing at it via `parentId: "g"`. Example "has tag A": `[{ id: "a",
-// order: 0, field: "tagId", operator: "equals", negation: false, valueUuid: "<tag id>" }]`.
-// `id`/`parentId` are short labels you choose (not UUIDs), fill exactly one `value*` slot per leaf,
-// `order` is the position; ids of tags/custom fields must be real ids from their list tools. Max 50
-// nodes. A criterion describes WHO the contact is (registration data, tags, origin, purchases);
-// engagement/behaviour ("opened 3 e-mails") is the Temperature job, not the Score. An EMPTY `filters`
-// never scores anyone (it does not mean "everyone").
+// Rewrites one rule (`ruleId` from [LeadScoreService.SettingsGet] → `rules[].id`). It is a FULL
+// REPLACE, not a patch: `name`, `points` and `filters` are required, and anything you leave out is
+// RESET — `description` to null, `enabled` to true (so a disabled rule becomes enabled again),
+// `sortOrder` to 0, and the criteria tree is replaced entirely by `filters`. So read the rule first
+// and resend its current values for what should stay. To only switch a rule on/off use
+// [LeadScoreService.RulesSetEnabled] instead — it touches nothing else. Needs admin/editor or a
+// coordinator attendant; 404 if the rule does not exist; an invalid criteria is 400. EFFECT: all
+// contacts are re-scored in the background (visible only while the Score is enabled); no "Score
+// changed" automation fires from the bulk re-score. `filters` is the rule CRITERIA: the same flat
+// filter tree as a segment (fields such as `tagId`, `origin`, `profession`, `city`, `state`,
+// `customFieldText|Number|Date|Boolean|Select` with `customFieldId`, purchase fields like
+// `lifeTimeValue`, quiz answers). Top-level items are ANDed; OR/nesting = a group item `{ id: "g",
+// order: 1, field: "children", operator: "childrenOr", negation: false }` with its children pointing
+// at it via `parentId: "g"`. Example "has tag A": `[{ id: "a", order: 0, field: "tagId", operator:
+// "equals", negation: false, valueUuid: "<tag id>" }]`. `id`/`parentId` are short labels you choose
+// (not UUIDs), fill exactly one `value*` slot per leaf, `order` is the position; ids of tags/custom
+// fields must be real ids from their list tools. Max 50 nodes. A criterion describes WHO the contact
+// is (registration data, tags, origin, purchases); engagement/behaviour ("opened 3 e-mails") is the
+// Temperature job, not the Score. An EMPTY `filters` never scores anyone (it does not mean
+// "everyone").
 //
 // Calls POST /lead-score/rules-update.
 func (s *LeadScoreService) RulesUpdate(ctx context.Context, body LeadScoreRulesUpdateInput, opts ...Option) (*LeadScoreRulesUpdateOutput, error) {
@@ -193,7 +195,7 @@ func (s *LeadScoreService) RulesUpdate(ctx context.Context, body LeadScoreRulesU
 //
 // Returns the contact SCORE configuration: a criteria-based number that says how well a contact FITS
 // (who they are), as opposed to Temperature, which measures what they DID (see
-// `temperature_settings_get`). A contact Score = the sum of `points` of every ENABLED rule whose
+// [TemperatureService.SettingsGet]). A contact Score = the sum of `points` of every ENABLED rule whose
 // criteria the contact currently satisfies, floored at 0 and capped at `maxScore`; the tier is low
 // below `thresholdMedium`, medium from it, high from `thresholdHigh`. Points may be negative
 // ("intern", "throwaway e-mail"). Response: `settings` = `{ enabled, maxScore, thresholdMedium,
@@ -201,7 +203,7 @@ func (s *LeadScoreService) RulesUpdate(ctx context.Context, body LeadScoreRulesU
 // `description`, `points`, `enabled`, the criteria tree in `filters`, and `matchingContacts` = how
 // many contacts satisfy it right now (live count; null = the criteria no longer compiles, e.g. a
 // deleted custom field). The Score is OFF by default (`enabled: false`): rules can be created but no
-// contact gets a number until it is switched on with `lead_score_settings_update`. The first read
+// contact gets a number until it is switched on with [LeadScoreService.SettingsUpdate]. The first read
 // creates the default (disabled) settings row. Up to 40 rules per workspace. Cost: one count query per
 // rule, so it is heavier than the other reads.
 //
@@ -219,7 +221,7 @@ func (s *LeadScoreService) SettingsGet(ctx context.Context, opts ...Option) (*Le
 // Turns the contact Score on/off and sets its ceiling and tier cut-offs. Needs a workspace
 // admin/editor or an attendant with the coordinator role (otherwise 403). FULL REPLACE of the four
 // fields: send `enabled`, `maxScore` (1-1000), `thresholdMedium` (0-1000) and `thresholdHigh` (0-1000)
-// — read the current ones with `lead_score_settings_get` first. Rules: `thresholdHigh` must be
+// — read the current ones with [LeadScoreService.SettingsGet] first. Rules: `thresholdHigh` must be
 // greater than `thresholdMedium` and not exceed `maxScore` (400 otherwise). It does not validate rule
 // points against `maxScore`: a total above the ceiling is simply capped. Rules are not touched here
 // (see `lead_score_rules_*`). EFFECT (asynchronous, seconds to minutes; the response returns the saved

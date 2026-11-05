@@ -22,11 +22,11 @@ type DriveFilesService struct {
 // files whose link broke as `status: 'orphaned'`. Every row has `owner`, `location` (space + folder
 // path) and `isFavorite`. `spaceId` is required and must be the folder's own space (404 otherwise).
 // Someone who only received a folder through a share can browse it even without being a member of the
-// space — pass the `location.spaceId` of the shared row. To find an item by name use `drive_search`;
-// to see where a folder sits use `drive_folders_path`. Files with `origin` other than `upload` and
-// folders with a `systemOrigin` were filed by the platform from other Clickmax areas (page assets,
-// meeting recordings, CRM attachments…): they are read-only in the Drive. This tool never returns
-// file bytes.
+// space — pass the `location.spaceId` of the shared row. To find an item by name use
+// [DriveService.Search]; to see where a folder sits use [DriveFoldersService.Path]. Files with
+// `origin` other than `upload` and folders with a `systemOrigin` were filed by the platform from other
+// Clickmax areas (page assets, meeting recordings, CRM attachments…): they are read-only in the
+// Drive. This tool never returns file bytes.
 //
 // Calls GET /drive-files/browse.
 func (s *DriveFilesService) Browse(ctx context.Context, params DriveFilesBrowseParams, opts ...Option) (*DriveFilesBrowseOutput, error) {
@@ -45,9 +45,9 @@ func (s *DriveFilesService) Browse(ctx context.Context, params DriveFilesBrowseP
 // access. Give the link to the user who asked and nobody else — for those 5 minutes it works as a
 // credential, so do not store it or paste it elsewhere; call again for a fresh one. This tool never
 // returns file content, and the Drive has no public link: the link is not a way to share the file with
-// others (use `drive_shares_create`). Needs view access. Side effects: adds a 'downloaded' entry to
-// the caller's recents and, if the storage provider reports the file gone or inaccessible, marks the
-// file `orphaned`. Errors: 409 `DRIVE_FILE_NOT_READY` (upload still pending), 410
+// others (use [DriveService.SharesCreate]). Needs view access. Side effects: adds a 'downloaded' entry
+// to the caller's recents and, if the storage provider reports the file gone or inaccessible, marks
+// the file `orphaned`. Errors: 409 `DRIVE_FILE_NOT_READY` (upload still pending), 410
 // `DRIVE_FILE_ORPHANED` (broken storage link — the row stays listed).
 //
 // Calls POST /drive-files/download-url.
@@ -84,12 +84,12 @@ func (s *DriveFilesService) Get(ctx context.Context, params DriveFilesGetParams,
 // Renames (`name`) and/or moves (`folderId`) a file in ONE atomic update; an omitted field is left
 // alone. `folderId` = destination folder id, `null` = root of the same space. Moves stay inside the
 // same space (422 `DRIVE_MOVE_ACROSS_SPACES`). Needs editor or owner on the file AND on the
-// destination. Same name rules as `drive_folders_create`. Only files uploaded through the Drive can be
-// changed: files filed by the platform from other areas (`origin` other than `upload`) are refused
-// (422 `DRIVE_FILE_MANAGED_BY_ORIGIN`). In a Google-backed space the rename/move is applied to the
-// customer's Google Drive first and the change fails if Google refuses it. Moving changes who inherits
-// access (see `drive_folders_update`). Records an 'edited' entry in the caller's recents. Re-running
-// with the same values changes nothing. It never changes the file's content.
+// destination. Same name rules as [DriveFoldersService.Create]. Only files uploaded through the Drive
+// can be changed: files filed by the platform from other areas (`origin` other than `upload`) are
+// refused (422 `DRIVE_FILE_MANAGED_BY_ORIGIN`). In a Google-backed space the rename/move is applied to
+// the customer's Google Drive first and the change fails if Google refuses it. Moving changes who
+// inherits access (see [DriveFoldersService.Update]). Records an 'edited' entry in the caller's
+// recents. Re-running with the same values changes nothing. It never changes the file's content.
 //
 // Calls POST /drive-files/update.
 func (s *DriveFilesService) Update(ctx context.Context, body DriveFilesUpdateInput, opts ...Option) (*DriveFilesUpdateOutput, error) {
@@ -411,7 +411,7 @@ const (
 
 // DriveFilesDownloadURLInput is the request body of [DriveFilesService.DownloadURL].
 type DriveFilesDownloadURLInput struct {
-	// File id, from `drive_files_browse` or `drive_search`.
+	// File id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FileID string `json:"fileId"`
 }
 
@@ -567,7 +567,7 @@ const (
 
 // DriveFilesGetParams holds the query parameters of [DriveFilesService.Get].
 type DriveFilesGetParams struct {
-	// File id, from `drive_files_browse` or `drive_search`.
+	// File id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FileID string
 }
 
@@ -579,7 +579,7 @@ func (p DriveFilesGetParams) values() url.Values {
 
 // DriveFilesUpdateInput is the request body of [DriveFilesService.Update].
 type DriveFilesUpdateInput struct {
-	// File id, from `drive_files_browse` or `drive_search`.
+	// File id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FileID   string           `json:"fileId"`
 	Name     *string          `json:"name,omitzero"`
 	FolderID Nullable[string] `json:"folderId,omitzero"`

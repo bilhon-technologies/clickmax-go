@@ -17,8 +17,9 @@ type StripeService struct {
 // Lists the active prices (`price_…`) of a Stripe integration, live from Stripe, each with its
 // product (`productName`). `type: 'recurring'` + `interval` = subscription; `one_time` = single
 // payment. `price` is in currency units. Use `id` as `externalCheckout.priceId` in
-// `pages_import_html`; order bumps (`optionalItems`, max 10) must share the main price's currency and
-// recurrence. Fails with 400 when the integration lacks its secret key. Cursor-paginated, no search.
+// [PagesService.ImportHTML]; order bumps (`optionalItems`, max 10) must share the main price's
+// currency and recurrence. Fails with 400 when the integration lacks its secret key. Cursor-paginated,
+// no search.
 //
 // Calls GET /stripe/prices-list.
 func (s *StripeService) PricesList(ctx context.Context, params StripePricesListParams, opts ...Option) (*StripePricesListOutput, error) {
@@ -76,7 +77,7 @@ type StripePricesListOutputMeta struct {
 
 // StripePricesListParams holds the query parameters of [StripeService.PricesList].
 type StripePricesListParams struct {
-	// Integration id from `external_checkout_accounts_list` (`data[].id`).
+	// Integration id from [ExternalCheckoutAccountsService.List] (`data[].id`).
 	IncomingID string
 	// Opaque `meta.nextCursor` from the previous page; omit for the first page.
 	Cursor  *string

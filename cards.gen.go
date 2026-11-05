@@ -17,7 +17,7 @@ type CardsService struct {
 //
 // Turns a selection of CONTACTS into opportunity cards of a pipeline (the "Adicionar a um pipeline"
 // action of the contacts screen). Contacts: `leadIds` (max 10 000) OR `allMatching: true` + `filters`
-// — the segment filter tree of `segments_preview_count`, ids may be short labels. Destination:
+// — the segment filter tree of [SegmentsService.PreviewCount], ids may be short labels. Destination:
 // `mode: "existing"` + `pipelineId` + `stageId`, or `mode: "new"` + `pipelineName`, which first
 // creates a pipeline with 4 stages (Novo Lead, Em contato, Negociação, Fechamento) and drops
 // everyone in the first (`assignment` with `mode: "new"` is a 400, and the move options are moot
@@ -31,7 +31,7 @@ type CardsService struct {
 // rule in `block` mode is enforced and counts created plus moved cards — a 409 with
 // `violations[0].type === "wip"`. Answers `{ mode: "sync", created, skipped, moved, pipelineId,
 // stageId, pipelineName, pipelineCreated }` up to 200 contacts, or `{ mode: "async", jobId,
-// totalLeads, ... }` above that — poll `cards_import_jobs_status`; nothing is applied until it
+// totalLeads, ... }` above that — poll [CardsService.ImportJobsStatus]; nothing is applied until it
 // finishes. Management/coordinator only.
 //
 // Calls POST /cards/add-leads-to-pipeline.
@@ -45,8 +45,8 @@ func (s *CardsService) AddLeadsToPipeline(ctx context.Context, body CardsAddLead
 
 // Apply tags to an opportunity card.
 //
-// Adds `tagIds` (from `tags_list`) to one card and returns how many were `applied` — tags the card
-// already had are not counted and not duplicated. Tags already on the card are kept; this never
+// Adds `tagIds` (from [TagsService.List]) to one card and returns how many were `applied` — tags the
+// card already had are not counted and not duplicated. Tags already on the card are kept; this never
 // replaces the set. Applying at least one tag also writes an `opportunityTagApplied` entry on the card
 // activity timeline.
 //
@@ -94,8 +94,8 @@ func (s *CardsService) AtRisk(ctx context.Context, params CardsAtRiskParams, opt
 // Set the commission of one attendant on a card.
 //
 // Overrides the commission of ONE attendant already assigned to a card, without touching the rest of
-// the assignment set (which is what `cards_assign_attendants` would replace). All three fields are
-// required: `commissionType` (`percentage` | `fixed` | `null` to clear), `commissionPercentBp` in
+// the assignment set (which is what [CardsService.AssignAttendants] would replace). All three fields
+// are required: `commissionType` (`percentage` | `fixed` | `null` to clear), `commissionPercentBp` in
 // BASIS POINTS (525 = 5.25%) and `commissionFixedCents` in CENTS — send `null` for the one that does
 // not apply.
 //
@@ -116,7 +116,7 @@ func (s *CardsService) AttendantCommissionUpdate(ctx context.Context, body Cards
 // hot/warm/cold/frozen label of the card — NOT the computed 0–100 Temperature or Score of the
 // contact), `expectedClosingDate`, `origin`, `referredBy`, `productIds`, `offerIds`, `companyIds`,
 // `funnelId`, `isRecurring` and `customFieldValues` (`[{ customFieldId, value }]`, ids from
-// `custom_fields_list`). The FIRST entry of `attendantIds` is the responsible attendant and MUST
+// [CustomFieldsService.List]). The FIRST entry of `attendantIds` is the responsible attendant and MUST
 // already belong to the pipeline — otherwise the call fails with 400. When `attendantIds` is omitted
 // entirely and the pipeline has auto-assign on with a strategy other than `manual`, the attendant is
 // picked automatically.
@@ -175,15 +175,15 @@ func (s *CardsService) History(ctx context.Context, params CardsHistoryParams, o
 // Creates cards in a pipeline stage from the contacts of manual lists (`listIds`) and/or dynamic
 // segments (`segmentIds`) — at least one of the two. One card per contact per pipeline: a contact
 // who already has a card in the destination pipeline is skipped, this tool never moves an existing
-// card (that is `cards_add_leads_to_pipeline` with `moveExistingCards`). Optional `assignment` sets
-// the responsible of the created cards — `{ mode: "fixed", attendantId }`, `{ mode: "multiple",
+// card (that is [CardsService.AddLeadsToPipeline] with `moveExistingCards`). Optional `assignment`
+// sets the responsible of the created cards — `{ mode: "fixed", attendantId }`, `{ mode: "multiple",
 // attendantIds }` or `{ mode: "round_robin", teamId }`, same shape as
-// `opportunities_bulk_set_responsible`; without it the cards start with no responsible. Dispatches
-// sync (≤200 contacts, lists only) or async — a selection with any segment is ALWAYS async,
-// because the segment is reloaded first — returning `jobId` to poll with `cards_import_jobs_status`.
-// The destination stage WIP rule is enforced server-side — a 409 with `violations[0].type === "wip"`
-// is returned when block mode is exceeded (for segments the check is repeated by the worker once the
-// real total is known). Management/coordinator only.
+// [OpportunitiesService.BulkSetResponsible]; without it the cards start with no responsible.
+// Dispatches sync (≤200 contacts, lists only) or async — a selection with any segment is ALWAYS
+// async, because the segment is reloaded first — returning `jobId` to poll with
+// [CardsService.ImportJobsStatus]. The destination stage WIP rule is enforced server-side — a 409
+// with `violations[0].type === "wip"` is returned when block mode is exceeded (for segments the check
+// is repeated by the worker once the real total is known). Management/coordinator only.
 //
 // Calls POST /cards/import-from-lists.
 func (s *CardsService) ImportFromLists(ctx context.Context, body CardsImportFromListsInput, opts ...Option) (*CardsImportFromListsOutput, error) {
@@ -196,8 +196,8 @@ func (s *CardsService) ImportFromLists(ctx context.Context, body CardsImportFrom
 
 // Get the status of a card import job.
 //
-// Polls the background job returned as `jobId` by `cards_import_from_lists` or
-// `cards_add_leads_to_pipeline` when they dispatched asynchronously (over 200 contacts, or any
+// Polls the background job returned as `jobId` by [CardsService.ImportFromLists] or
+// [CardsService.AddLeadsToPipeline] when they dispatched asynchronously (over 200 contacts, or any
 // segment). A job from another workspace, or one already expired, returns not-found.
 //
 // Calls GET /cards/import-jobs-status.
@@ -225,8 +225,8 @@ func (s *CardsService) ImportJobsStatus(ctx context.Context, params CardsImportJ
 // the last 8 timeline entries of the card (`name`, `category`, `eventName`, `createdAt`, `actorName`,
 // `actorType` `user` | `system` | `automation`, `meta` with what changed) and `recentActivitiesTotal`
 // = the full count, so you know how much was left out. It no longer carries purchases lists, funnels,
-// messaging counters or members-area data: for those use `leads_context` (or `leads_xray`) on a
-// contact `leadId`.
+// messaging counters or members-area data: for those use [LeadsService.Context] (or
+// [LeadsService.Xray]) on a contact `leadId`.
 //
 // Calls GET /cards/insights.
 func (s *CardsService) Insights(ctx context.Context, params CardsInsightsParams, opts ...Option) (*CardsInsightsOutput, error) {
@@ -245,12 +245,12 @@ func (s *CardsService) Insights(ctx context.Context, params CardsInsightsParams,
 // `expectedClosingDateFrom`/`To`, `status` (`open` | `won` | `lost`; omit for all), and the forecast
 // cut (`forecastEligible`, `forecastIncludeWon`). What the flat filters cannot express — nested
 // AND/OR, custom fields, task/activity conditions — goes in `conditions`, the same advanced filter
-// DTO documented on `opportunities_query`; it is ADDITIVE (intersected with the flat filters above).
-// Contact-level fields (name, e-mail, phone, city, Temperature, Score, custom fields of the
+// DTO documented on [OpportunitiesService.Query]; it is ADDITIVE (intersected with the flat filters
+// above). Contact-level fields (name, e-mail, phone, city, Temperature, Score, custom fields of the
 // CONTACT…) are filtered through the `lead` node of `conditions`, not through the flat filters. Each
 // card carries the indicators of its PRIMARY contact — `leadTemperatureScore` (0–100),
 // `leadTemperatureTrend7d` and `leadScore` (`null` = never calculated) — only on this paginated
-// list, not on `cards_get`. A plain attendant session only ever sees its own cards.
+// list, not on [CardsService.Get]. A plain attendant session only ever sees its own cards.
 //
 // Calls POST /cards/list.
 func (s *CardsService) List(ctx context.Context, body CardsListInput, opts ...Option) (*CardsListOutput, error) {
@@ -311,11 +311,11 @@ func (s *CardsService) RemoveTags(ctx context.Context, body CardsRemoveTagsInput
 // weight), `priority`, `temperature`, `expectedClosingDate`, `origin`, `referredBy`, `isRecurring`,
 // `funnelId`, and the linked `leadIds`/`companyIds`/`productIds`/`offerIds` (each a full replace).
 // `responsibleAttendantId` sets who owes the NEXT ACTION — it is a different thing from
-// `cards_assign_attendants`, which sets the commission roles on the card. Closing the deal goes
+// [CardsService.AssignAttendants], which sets the commission roles on the card. Closing the deal goes
 // through `status`: `won` clears any loss reason; `lost` REQUIRES a `lossReason` (max 500 chars, and
 // if the pipeline has `restrictLossReasons` on it must be one of the pipeline preset reasons —
 // otherwise a free-text reason is accepted and auto-registered into that list), with `lossObservation`
-// as the optional note; reopening to `open` clears both. To read a card back use `cards_get`.
+// as the optional note; reopening to `open` clears both. To read a card back use [CardsService.Get].
 //
 // Calls POST /cards/update.
 func (s *CardsService) Update(ctx context.Context, body CardsUpdateInput, opts ...Option) (*CardsUpdateOutput, error) {

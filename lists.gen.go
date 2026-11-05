@@ -16,8 +16,8 @@ type ListsService struct {
 // Create a manual list.
 //
 // Creates an EMPTY manual list in the newer lists model with a name and nullable emoji; fill it with
-// `lists_update_leads`. To build a list straight from the contacts of opportunity cards use
-// `opportunities_bulk_create_list`.
+// [ListsService.UpdateLeads]. To build a list straight from the contacts of opportunity cards use
+// [OpportunitiesService.BulkCreateList].
 //
 // Calls POST /lists/create.
 func (s *ListsService) Create(ctx context.Context, body ListsCreateInput, opts ...Option) (*ListsCreateOutput, error) {
@@ -74,14 +74,14 @@ func (s *ListsService) GetLeads(ctx context.Context, params ListsGetLeadsParams,
 //
 // Returns paginated manual lists from the newer lists model, including list source, lead count, and
 // update time. This is the picker for resolving a list name into a `listId` — e.g. before setting
-// the `manual` trigger's `list` scope with `flows_steps_triggers_set`, or any other tool that needs a
-// real list. Call it with `search` set to the name the user gave. Check `match` in the response.
-// `contains`: confirm the hit — only use an entry whose `name` the user would recognize as the list
-// they meant; a substring hit is not proof of intent. `similar`: the name the user gave was NOT found,
-// and `data` holds the closest names ranked by similarity (typos, accents, a word inside a longer
-// name) over EVERY list of the account — offer them to the user instead of guessing, and page with
-// `page` for more. If `data` is empty with `match: similar`, say plainly that no matching list exists
-// rather than inventing a `listId`.
+// the `manual` trigger's `list` scope with [FlowsService.StepsTriggersSet], or any other tool that
+// needs a real list. Call it with `search` set to the name the user gave. Check `match` in the
+// response. `contains`: confirm the hit — only use an entry whose `name` the user would recognize as
+// the list they meant; a substring hit is not proof of intent. `similar`: the name the user gave was
+// NOT found, and `data` holds the closest names ranked by similarity (typos, accents, a word inside a
+// longer name) over EVERY list of the account — offer them to the user instead of guessing, and page
+// with `page` for more. If `data` is empty with `match: similar`, say plainly that no matching list
+// exists rather than inventing a `listId`.
 //
 // Calls GET /lists/list.
 func (s *ListsService) List(ctx context.Context, params ListsListParams, opts ...Option) (*ListsListOutput, error) {

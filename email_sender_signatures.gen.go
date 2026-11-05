@@ -15,10 +15,10 @@ type EmailSenderSignaturesService struct {
 //
 // Paginated list of the workspace's verified email sender identities (Postmark sender signatures) —
 // `id`, `domain`, `name`, `emailAddress`, and `confirmed` (Postmark domain/signature verification
-// status). THIS IS THE TOOL that resolves `emailSenderSignatureId` for `flows_send_email` — pick a
-// row with `confirmed: true` (an unconfirmed signature cannot send) and use its `id`. Never guess or
-// fabricate a signature id — call this first. Filter with `confirmed`/`domainNames`/`search` when
-// the workspace has many.
+// status). THIS IS THE TOOL that resolves `emailSenderSignatureId` for [FlowsService.SendEmail] —
+// pick a row with `confirmed: true` (an unconfirmed signature cannot send) and use its `id`. Never
+// guess or fabricate a signature id — call this first. Filter with
+// `confirmed`/`domainNames`/`search` when the workspace has many.
 //
 // Calls POST /email-sender-signatures/list.
 func (s *EmailSenderSignaturesService) List(ctx context.Context, body EmailSenderSignaturesListInput, opts ...Option) (*EmailSenderSignaturesListOutput, error) {

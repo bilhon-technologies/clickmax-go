@@ -95,11 +95,11 @@ func (s *FormsService) List(ctx context.Context, params FormsListParams, opts ..
 //
 // Overwrites the ENTIRE `schema` (the server re-derives `kind`). Use only for wholesale rewrites or
 // theme/settings/qualification edits — to add/edit/remove individual quiz steps prefer
-// `forms_steps_upsert`/`forms_steps_delete`, which never require resending the whole document. Pass
-// `expectedUpdatedAt` (from `forms_get`) to reject stale overwrites with a conflict. BLOCK ID FORMAT:
-// every block, option, step, and condition `field` id MUST be identifier-safe —
-// letters/digits/underscores only, no hyphens (regex: `^[a-zA-Z_][a-zA-Z0-9_]*$`). Recommended:
-// `<prefix>_<rand>` (e.g. `b_a1z9`). Hyphens break the runtime expression evaluator. In
+// [FormsService.StepsUpsert]/[FormsService.StepsDelete], which never require resending the whole
+// document. Pass `expectedUpdatedAt` (from [FormsService.Get]) to reject stale overwrites with a
+// conflict. BLOCK ID FORMAT: every block, option, step, and condition `field` id MUST be
+// identifier-safe — letters/digits/underscores only, no hyphens (regex: `^[a-zA-Z_][a-zA-Z0-9_]*$`).
+// Recommended: `<prefix>_<rand>` (e.g. `b_a1z9`). Hyphens break the runtime expression evaluator. In
 // `displayRule.when[].field`, reference the BLOCK id (e.g. `b_renal`), not the CRM custom-field
 // mapping key.
 //
@@ -115,7 +115,7 @@ func (s *FormsService) ReplaceSchema(ctx context.Context, body FormsReplaceSchem
 // Delete one quiz step.
 //
 // Removes one step from a quiz by `stepId` and reindexes the remaining steps. Pass `expectedUpdatedAt`
-// (from `forms_get`) for lost-update protection (conflict on stale). Quizzes only.
+// (from [FormsService.Get]) for lost-update protection (conflict on stale). Quizzes only.
 //
 // Calls DELETE /forms/steps-delete.
 func (s *FormsService) StepsDelete(ctx context.Context, body FormsStepsDeleteInput, opts ...Option) (*FormsGetOutput, error) {
@@ -131,11 +131,11 @@ func (s *FormsService) StepsDelete(ctx context.Context, body FormsStepsDeleteInp
 // Adds a quiz step (omit `stepId`) or edits one (`stepId` + any of `name`, `next`, `blocks`). `blocks`
 // replaces that step’s block list — send the full list for that one step, not the whole quiz.
 // `index` sets insert position when creating. The server merges into the freshest saved quiz, so
-// untouched steps are never dropped. Pass `expectedUpdatedAt` (from `forms_get`) for lost-update
-// protection (conflict on stale). Quizzes only. BLOCK ID FORMAT: every block, option, step, and
-// condition `field` id MUST be identifier-safe — letters/digits/underscores only, no hyphens (regex:
-// `^[a-zA-Z_][a-zA-Z0-9_]*$`). Recommended: `<prefix>_<rand>` (e.g. `b_a1z9`). Hyphens break the
-// runtime expression evaluator. In `displayRule.when[].field`, reference the BLOCK id (e.g.
+// untouched steps are never dropped. Pass `expectedUpdatedAt` (from [FormsService.Get]) for
+// lost-update protection (conflict on stale). Quizzes only. BLOCK ID FORMAT: every block, option,
+// step, and condition `field` id MUST be identifier-safe — letters/digits/underscores only, no
+// hyphens (regex: `^[a-zA-Z_][a-zA-Z0-9_]*$`). Recommended: `<prefix>_<rand>` (e.g. `b_a1z9`). Hyphens
+// break the runtime expression evaluator. In `displayRule.when[].field`, reference the BLOCK id (e.g.
 // `b_renal`), not the CRM custom-field mapping key.
 //
 // Calls POST /forms/steps-upsert.
@@ -165,8 +165,8 @@ func (s *FormsService) SubmissionsList(ctx context.Context, params FormsSubmissi
 //
 // Updates metadata only — `name`, `title`, `description`, `status` (`active` publishes, `paused`
 // takes offline), `slug`, `funnelId`, `pageId`. CANNOT change the `schema`, so it can never clobber
-// quiz content. Use `forms_steps_upsert`/`forms_steps_delete` to edit quiz structure, or
-// `forms_replace_schema` for a wholesale rewrite.
+// quiz content. Use [FormsService.StepsUpsert]/[FormsService.StepsDelete] to edit quiz structure, or
+// [FormsService.ReplaceSchema] for a wholesale rewrite.
 //
 // Calls POST /forms/update.
 func (s *FormsService) Update(ctx context.Context, body FormsUpdateInput, opts ...Option) (*FormsGetOutput, error) {

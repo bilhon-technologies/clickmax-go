@@ -56,7 +56,7 @@ func (s *EmailTemplatesService) Duplicate(ctx context.Context, body EmailTemplat
 // Get one email template.
 //
 // One email template (own or gallery) with its full HTML. Its `html` is what goes into a broadcast
-// email (`broadcasts_create_draft`) or a custom flow email.
+// email ([BroadcastsService.CreateDraft]) or a custom flow email.
 //
 // Calls GET /email-templates/get.
 func (s *EmailTemplatesService) Get(ctx context.Context, params EmailTemplatesGetParams, opts ...Option) (*EmailTemplatesGetOutput, error) {
@@ -70,8 +70,8 @@ func (s *EmailTemplatesService) Get(ctx context.Context, params EmailTemplatesGe
 // List email templates.
 //
 // Lists the workspace's own email templates (`isOwn: true`, editable) and the Clickmax gallery
-// (`isOwn: false`, read-only — copy one with `email_templates_duplicate`). HTML is left out; read it
-// with `email_templates_get`.
+// (`isOwn: false`, read-only — copy one with [EmailTemplatesService.Duplicate]). HTML is left out;
+// read it with [EmailTemplatesService.Get].
 //
 // Calls GET /email-templates/list.
 func (s *EmailTemplatesService) List(ctx context.Context, params EmailTemplatesListParams, opts ...Option) (*EmailTemplatesListOutput, error) {

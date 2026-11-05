@@ -47,10 +47,10 @@ func (s *AnalyticsDashboardsService) Compose(ctx context.Context, body Analytics
 //
 // Creates a dashboard from an explicit config of widgets and shared filters. This full `config` is the
 // ONLY path that carries the meeting/lead-time options the widget-level tools
-// (`analytics_dashboards_compose`, `analytics_dashboards_widgets_add`,
-// `analytics_dashboards_widgets_update`) do not accept — `meetingAttendantField` (`attendant` = who
-// conducts, `scheduler` = who booked), `distinctByOpportunity`, `leadTimeDateFrom`/`leadTimeDateTo`
-// and `businessDaysOnly`.
+// ([AnalyticsDashboardsService.Compose], [AnalyticsDashboardsService.WidgetsAdd],
+// [AnalyticsDashboardsService.WidgetsUpdate]) do not accept — `meetingAttendantField` (`attendant` =
+// who conducts, `scheduler` = who booked), `distinctByOpportunity`,
+// `leadTimeDateFrom`/`leadTimeDateTo` and `businessDaysOnly`.
 //
 // Calls POST /analytics-dashboards/create.
 func (s *AnalyticsDashboardsService) Create(ctx context.Context, body AnalyticsDashboardsCreateInput, opts ...Option) (*AnalyticsDashboardsCreateFromTemplateOutput, error) {
@@ -106,11 +106,11 @@ func (s *AnalyticsDashboardsService) List(ctx context.Context, opts ...Option) (
 //
 // Runs a dashboard config against the workspace data and returns one result per widget. Stateless: the
 // config does not need to be saved — pass a candidate `config` to preview a board, including the
-// meeting/lead-time widget options listed on `analytics_dashboards_create`. A widget whose entity
-// needs a module read permission the user lacks (sales, affiliates, visitors, flows,
+// meeting/lead-time widget options listed on [AnalyticsDashboardsService.Create]. A widget whose
+// entity needs a module read permission the user lacks (sales, affiliates, visitors, flows,
 // broadcasts/messages, live chat) comes back with `status: "forbidden"` and an empty result — its
 // zeros mean "no access", not "no data"; `status: "error"` = that widget failed to compute. To list
-// the records behind a number use `analytics_records_drilldown`.
+// the records behind a number use [AnalyticsService.RecordsDrilldown].
 //
 // Calls POST /analytics-dashboards/run.
 func (s *AnalyticsDashboardsService) Run(ctx context.Context, body AnalyticsDashboardsRunInput, opts ...Option) (*AnalyticsDashboardsRunOutput, error) {

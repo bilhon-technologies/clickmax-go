@@ -15,8 +15,8 @@ type HotmartService struct {
 // List Hotmart offers of a product.
 //
 // Lists the offers of a Hotmart product. `code` (the Hotmart `off`) is what the Hotmart checkout block
-// sells — use it as `externalCheckout.offerCode` in `pages_import_html`. `isMainOffer` marks the
-// default offer; `price` is in currency units.
+// sells — use it as `externalCheckout.offerCode` in [PagesService.ImportHTML]. `isMainOffer` marks
+// the default offer; `price` is in currency units.
 //
 // Calls GET /hotmart/offers-list.
 func (s *HotmartService) OffersList(ctx context.Context, params HotmartOffersListParams, opts ...Option) (*HotmartOffersListOutput, error) {
@@ -30,8 +30,8 @@ func (s *HotmartService) OffersList(ctx context.Context, params HotmartOffersLis
 // List Hotmart products.
 //
 // Lists products of a Hotmart integration, live from Hotmart; `id` is the product `ucode`. Next step:
-// `hotmart_offers_list`. Fails with 400 when the integration has no Client ID/Client Secret — then
-// the user must add them in Integrations, or paste the offer payment link
+// [HotmartService.OffersList]. Fails with 400 when the integration has no Client ID/Client Secret —
+// then the user must add them in Integrations, or paste the offer payment link
 // (`pay.hotmart.com/…?off=…`; the `off=` value is the offer code). Cursor-paginated, no name
 // search.
 //
@@ -68,9 +68,9 @@ type HotmartOffersListOutputMeta struct {
 
 // HotmartOffersListParams holds the query parameters of [HotmartService.OffersList].
 type HotmartOffersListParams struct {
-	// Integration id from `external_checkout_accounts_list` (`data[].id`).
+	// Integration id from [ExternalCheckoutAccountsService.List] (`data[].id`).
 	IncomingID string
-	// Product `ucode` from `hotmart_products_list`.
+	// Product `ucode` from [HotmartService.ProductsList].
 	ProductID string
 	// Opaque `meta.nextCursor` from the previous page; omit for the first page.
 	Cursor  *string
@@ -108,7 +108,7 @@ type HotmartProductsListOutputMeta struct {
 
 // HotmartProductsListParams holds the query parameters of [HotmartService.ProductsList].
 type HotmartProductsListParams struct {
-	// Integration id from `external_checkout_accounts_list` (`data[].id`).
+	// Integration id from [ExternalCheckoutAccountsService.List] (`data[].id`).
 	IncomingID string
 	// Opaque `meta.nextCursor` from the previous page; omit for the first page.
 	Cursor  *string

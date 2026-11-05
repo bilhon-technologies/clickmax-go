@@ -16,8 +16,8 @@ type HelpdeskService struct {
 // Read a help article by id.
 //
 // Fetches one PUBLISHED help article by id, including its full markdown `body`. Use after
-// `helpdesk_search` or `helpdesk_tree` to read the article you picked. Unpublished articles are not
-// served here and return a 404.
+// [HelpdeskService.Search] or [HelpdeskService.Tree] to read the article you picked. Unpublished
+// articles are not served here and return a 404.
 //
 // Calls GET /helpdesk/articles-get.
 func (s *HelpdeskService) ArticlesGet(ctx context.Context, params HelpdeskArticlesGetParams, opts ...Option) (*HelpdeskArticlesGetOutput, error) {
@@ -30,10 +30,10 @@ func (s *HelpdeskService) ArticlesGet(ctx context.Context, params HelpdeskArticl
 
 // Read a help article by slug.
 //
-// Same as `helpdesk_articles_get` but keyed by the slug (e.g. `features/contacts/import-contacts`)
-// instead of the id. Use it when resolving a help deep-link the user pasted. The same slug exists once
-// per language: pass `locale` to get that translation — without it, or when it does not exist, the
-// `pt` article is served.
+// Same as [HelpdeskService.ArticlesGet] but keyed by the slug (e.g.
+// `features/contacts/import-contacts`) instead of the id. Use it when resolving a help deep-link the
+// user pasted. The same slug exists once per language: pass `locale` to get that translation —
+// without it, or when it does not exist, the `pt` article is served.
 //
 // Calls GET /helpdesk/articles-get-by-slug.
 func (s *HelpdeskService) ArticlesGetBySlug(ctx context.Context, params HelpdeskArticlesGetBySlugParams, opts ...Option) (*HelpdeskArticlesGetBySlugOutput, error) {
@@ -47,7 +47,7 @@ func (s *HelpdeskService) ArticlesGetBySlug(ctx context.Context, params Helpdesk
 // Get the latest published release.
 //
 // Returns only the most recent published release note, or null when none is published yet. Cheaper
-// than `helpdesk_releases_list` when the user just asks what the newest version brought.
+// than [HelpdeskService.ReleasesList] when the user just asks what the newest version brought.
 //
 // Calls GET /helpdesk/releases-latest.
 func (s *HelpdeskService) ReleasesLatest(ctx context.Context, opts ...Option) (*HelpdeskReleasesLatestOutput, error) {
@@ -80,7 +80,7 @@ func (s *HelpdeskService) ReleasesList(ctx context.Context, opts ...Option) (*He
 // pra" is ignored) and their language in `locale` (`pt`/`en`/`es`; a language without published
 // articles falls back to `pt`). Results are ranked by relevance: articles matching more of the words
 // come first, and words found in the title count double. Only PUBLISHED articles under published
-// features and modules are returned; read the chosen one with `helpdesk_articles_get`.
+// features and modules are returned; read the chosen one with [HelpdeskService.ArticlesGet].
 //
 // Calls GET /helpdesk/search.
 func (s *HelpdeskService) Search(ctx context.Context, params HelpdeskSearchParams, opts ...Option) (*HelpdeskSearchOutput, error) {
@@ -96,7 +96,7 @@ func (s *HelpdeskService) Search(ctx context.Context, params HelpdeskSearchParam
 // Returns the published help hierarchy in one language — modules (e.g. "Recursos", "Perguntas"),
 // each with its features and their articles (ids, slugs and titles, without the article bodies). Use
 // it to see what documentation exists or to navigate by topic when search terms are unclear; use
-// `helpdesk_search` when you already have a concrete question. `locale` picks the language; one
+// [HelpdeskService.Search] when you already have a concrete question. `locale` picks the language; one
 // without published modules falls back to `pt`.
 //
 // Calls GET /helpdesk/tree.

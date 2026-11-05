@@ -20,11 +20,11 @@ type ChannelInstancesService struct {
 // `email_mailboxes_*` tools take) — with `id`, `status`, and channel-specific identity
 // (`phone`/`wabaDisplayName`/`numberStatus`/`qualityRating` for WhatsApp;
 // `telegramBotName`/`telegramUsername` for Telegram; `instagramName`/`instagramUsername` for
-// Instagram). THIS IS THE TOOL that resolves `gupshupAppId` for `flows_send_whatsapp`
-// (`numberStrategy: 'fixed'`) and `telegramBotId` for `flows_send_telegram` — pick a row with the
-// right `channel` and `status: 'live'` and use its `id`. Never guess or fabricate a channel instance
-// id — call this first. Archived instances are excluded by default; pass `includeArchived: true` to
-// include them (they cannot send).
+// Instagram). THIS IS THE TOOL that resolves `gupshupAppId` for [FlowsService.SendWhatsapp]
+// (`numberStrategy: 'fixed'`) and `telegramBotId` for [FlowsService.SendTelegram] — pick a row with
+// the right `channel` and `status: 'live'` and use its `id`. Never guess or fabricate a channel
+// instance id — call this first. Archived instances are excluded by default; pass `includeArchived:
+// true` to include them (they cannot send).
 //
 // Calls GET /channel-instances/list.
 func (s *ChannelInstancesService) List(ctx context.Context, params ChannelInstancesListParams, opts ...Option) (*ChannelInstancesListOutput, error) {

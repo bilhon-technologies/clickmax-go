@@ -37,10 +37,11 @@ func (s *CustomObjectLinksService) Create(ctx context.Context, body CustomObject
 
 // Unlink custom-object records.
 //
-// Removes ONE link (`linkId`, from `custom_object_records_get` → `relations[].items[].linkId` or
-// `custom_object_links_list`). Both records stay; only the connection goes (re-linking is another
-// `custom_object_links_create`). Both sides get a history line. Needs `custom-objects:update`; without
-// `:all` the user must be responsible for one of the two records (404 otherwise).
+// Removes ONE link (`linkId`, from [CustomObjectRecordsService.Get] → `relations[].items[].linkId`
+// or [CustomObjectLinksService.List]). Both records stay; only the connection goes (re-linking is
+// another [CustomObjectLinksService.Create]). Both sides get a history line. Needs
+// `custom-objects:update`; without `:all` the user must be responsible for one of the two records (404
+// otherwise).
 //
 // Calls POST /custom-object-links/delete.
 func (s *CustomObjectLinksService) Delete(ctx context.Context, body CustomObjectLinksDeleteInput, opts ...Option) (*CustomObjectRelationsDeleteOutput, error) {
@@ -58,8 +59,8 @@ func (s *CustomObjectLinksService) Delete(ctx context.Context, body CustomObject
 // the `relation`, the `label` seen from this entity (e.g. "Imóveis de interesse"), and `items`
 // (`linkId`, record `id`, `label`). Empty groups are included, so it also tells WHICH objects could be
 // linked here. For `targetType: "objects"` it lists only the links where that record is the TARGET of
-// an object↔object relation; the links where it is the source are in `custom_object_records_get` →
-// `relations`.
+// an object↔object relation; the links where it is the source are in
+// [CustomObjectRecordsService.Get] → `relations`.
 //
 // Calls GET /custom-object-links/list.
 func (s *CustomObjectLinksService) List(ctx context.Context, params CustomObjectLinksListParams, opts ...Option) (*CustomObjectLinksListOutput, error) {

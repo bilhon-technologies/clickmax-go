@@ -16,10 +16,10 @@ type RedirectLinksService struct {
 // Create many redirect links at once.
 //
 // Creates a batch of shortened/custom links in one call (max 200) — resolve `domainId` with
-// `redirect_domains_list` first (a domainId is required on every item, links across different domains
-// can be mixed in one call). Each item that fails (most commonly a duplicate `path` on its domain) is
-// reported in `failed` instead of aborting the whole batch — always check `failed` and surface it to
-// the user, do not assume every link was created.
+// [RedirectDomainsService.List] first (a domainId is required on every item, links across different
+// domains can be mixed in one call). Each item that fails (most commonly a duplicate `path` on its
+// domain) is reported in `failed` instead of aborting the whole batch — always check `failed` and
+// surface it to the user, do not assume every link was created.
 //
 // Calls POST /redirect-links/bulk-create.
 func (s *RedirectLinksService) BulkCreate(ctx context.Context, body RedirectLinksBulkCreateInput, opts ...Option) (*RedirectLinksBulkCreateOutput, error) {
@@ -34,8 +34,8 @@ func (s *RedirectLinksService) BulkCreate(ctx context.Context, body RedirectLink
 //
 // Creates one shortened/custom link: visiting `https://<domain>{path}` 301/302-redirects to
 // `targetUrl`. `domainId` must be one of the workspace's connected domains (resolve with
-// `redirect_domains_list`); `path` must start with `/` and be unique on that domain. Use
-// `redirect_links_bulk_create` instead when creating more than a couple of links at once.
+// [RedirectDomainsService.List]); `path` must start with `/` and be unique on that domain. Use
+// [RedirectLinksService.BulkCreate] instead when creating more than a couple of links at once.
 //
 // Calls POST /redirect-links/create.
 func (s *RedirectLinksService) Create(ctx context.Context, body RedirectLinksCreateInput, opts ...Option) (*RedirectLinksCreateOutput, error) {

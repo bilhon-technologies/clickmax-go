@@ -19,8 +19,8 @@ type CustomObjectViewsService struct {
 // `custom-objects:update`. `filters` is required (`[]` = all records). `layout: "kanban"` needs
 // `kanbanFieldId` = an active select/radio field of the object (400 otherwise). Optional
 // `display.tableFields` (≤100 field ids) / `display.cardFields` (≤12). Test the filters first with
-// `custom_object_records_query`. FILTERS = flat array linked by `id`/`parentId` (labels like "g1" are
-// fine; they become UUIDs). Each item: `field`, `operator`, `negation` (true = NOT), `order`,
+// [CustomObjectRecordsService.Query]. FILTERS = flat array linked by `id`/`parentId` (labels like "g1"
+// are fine; they become UUIDs). Each item: `field`, `operator`, `negation` (true = NOT), `order`,
 // `parentId` (null at top level) and ONE value slot. Fields/operators: `children` (group;
 // `childrenAnd` | `childrenOr`), `title` (`equals`/`contains`/`startsWith`/`endsWith` +
 // `valueString`), `responsibleAttendantId` (`equals`/`in`/`isNotEmpty`, attendant id in `valueUuid`),
@@ -66,7 +66,7 @@ func (s *CustomObjectViewsService) Delete(ctx context.Context, body CustomObject
 // filter tree), `layout` (`list` | `kanban`), `kanbanFieldId` (select/radio field that makes the
 // columns), `display` (`tableFields`/`cardFields` = field ids shown, `columnOrder`). Views are shared
 // by the whole workspace. To get the records of a view, pass its `filters` to
-// `custom_object_records_query`.
+// [CustomObjectRecordsService.Query].
 //
 // Calls GET /custom-object-views/list.
 func (s *CustomObjectViewsService) List(ctx context.Context, params CustomObjectViewsListParams, opts ...Option) (*CustomObjectViewsListOutput, error) {
@@ -81,7 +81,7 @@ func (s *CustomObjectViewsService) List(ctx context.Context, params CustomObject
 //
 // Changes a saved view (`viewId`): any of `name`, `filters` (FULL replace of the tree), `layout`,
 // `kanbanFieldId`, `display`. Fields left out stay. Needs `custom-objects:update`. Same filter grammar
-// and kanban rule as `custom_object_views_create`.
+// and kanban rule as [CustomObjectViewsService.Create].
 //
 // Calls POST /custom-object-views/update.
 func (s *CustomObjectViewsService) Update(ctx context.Context, body CustomObjectViewsUpdateInput, opts ...Option) (*CustomObjectViewsCreateOutput, error) {

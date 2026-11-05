@@ -29,8 +29,8 @@ func (s *ReportsService) Subscriptions(ctx context.Context, body ReportsSubscrip
 // Get transactions report.
 //
 // Returns per-transaction rows for a workspace, filterable by transaction `ids` and/or a
-// `startDate`/`endDate` window. For aggregated time-series, prefer `transactions_chart` from the
-// transactions module.
+// `startDate`/`endDate` window. For aggregated time-series, prefer [TransactionsService.Chart] from
+// the transactions module.
 //
 // Calls POST /reports/transactions.
 func (s *ReportsService) Transactions(ctx context.Context, body ReportsTransactionsInput, opts ...Option) (*ReportsTransactionsOutput, error) {

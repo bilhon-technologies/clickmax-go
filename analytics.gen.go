@@ -107,7 +107,7 @@ func (s *AnalyticsService) RecentActivities(ctx context.Context, body AnalyticsR
 // `broadcast`, `message`, `livechat`, `call`, `social`, `customObject` (needs `objectId`). CRM
 // entities (`deal`, `lead`, `activity`, `meeting`) and unsupported metrics answer 422
 // `DRILLDOWN_NOT_SUPPORTED` (also the "Outros"/other slice, which is not a set). `config` = the widget
-// EFFECTIVE config, the same one `analytics_dashboards_run` used: the widget fields (`entity`,
+// EFFECTIVE config, the same one [AnalyticsDashboardsService.Run] used: the widget fields (`entity`,
 // `reportType`, `measure`, `viewBy`, `interval`, `segmentBy`, `chartType` and its scope fields) with
 // `filters` = the dashboard shared `filters` (the widget own scope wins: `scopeAttendantIds` replace
 // `attendantIds`, a stage widget `pipelineId` replaces `pipelineIds`) and the dashboard `conditions`

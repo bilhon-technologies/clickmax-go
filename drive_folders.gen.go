@@ -26,9 +26,10 @@ type DriveFoldersService struct {
 // 409 `DRIVE_GOOGLE_CONNECTION_REVOKED` (connection deleted or authorization revoked —
 // `disconnected`), 422 `DRIVE_PROVIDER_UNAVAILABLE`. Reconnecting Google happens in the web app; do
 // not retry in a loop. Folder names are NOT unique and this call is not idempotent — calling twice
-// creates two folders. Browse first (`drive_files_browse`) and reuse an existing folder. To build a
-// tree, create the parent first and pass its `id` as `parentId` of the next one. Returns the raw
-// folder row; its `id` is what `drive_files_update.folderId` and `drive_shares_create.folderId` take.
+// creates two folders. Browse first ([DriveFilesService.Browse]) and reuse an existing folder. To
+// build a tree, create the parent first and pass its `id` as `parentId` of the next one. Returns the
+// raw folder row; its `id` is what `[DriveFilesService.Update].folderId` and
+// `[DriveService.SharesCreate].folderId` take.
 //
 // Calls POST /drive-folders/create.
 func (s *DriveFoldersService) Create(ctx context.Context, body DriveFoldersCreateInput, opts ...Option) (*DriveFoldersCreateOutput, error) {
@@ -75,11 +76,11 @@ func (s *DriveFoldersService) Path(ctx context.Context, params DriveFoldersPathP
 // alone. `parentId` = destination folder id, `null` = root of the same space. Moves stay inside the
 // same space (422 `DRIVE_MOVE_ACROSS_SPACES` — there is no copy or cross-space move) and can never
 // go into the folder itself or one of its descendants (422 `DRIVE_FOLDER_MOVE_INTO_ITSELF`). Needs
-// editor or owner on the folder AND on the destination. Same name rules as `drive_folders_create`.
-// Moving changes who inherits access: people with access to the new parent gain it, and shares on the
-// old parent no longer reach the folder. Platform folders ('Plataforma' subfolders, `systemOrigin`
-// set) cannot be renamed or moved (422 `DRIVE_FOLDER_MANAGED_BY_ORIGIN`). Re-running with the same
-// values changes nothing.
+// editor or owner on the folder AND on the destination. Same name rules as
+// [DriveFoldersService.Create]. Moving changes who inherits access: people with access to the new
+// parent gain it, and shares on the old parent no longer reach the folder. Platform folders
+// ('Plataforma' subfolders, `systemOrigin` set) cannot be renamed or moved (422
+// `DRIVE_FOLDER_MANAGED_BY_ORIGIN`). Re-running with the same values changes nothing.
 //
 // Calls POST /drive-folders/update.
 func (s *DriveFoldersService) Update(ctx context.Context, body DriveFoldersUpdateInput, opts ...Option) (*DriveFoldersCreateOutput, error) {
@@ -244,7 +245,7 @@ const (
 
 // DriveFoldersGetParams holds the query parameters of [DriveFoldersService.Get].
 type DriveFoldersGetParams struct {
-	// Folder id, from `drive_files_browse` or `drive_search`.
+	// Folder id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FolderID string
 }
 
@@ -355,7 +356,7 @@ const (
 
 // DriveFoldersPathParams holds the query parameters of [DriveFoldersService.Path].
 type DriveFoldersPathParams struct {
-	// Folder id, from `drive_files_browse` or `drive_search`.
+	// Folder id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FolderID string
 }
 
@@ -367,7 +368,7 @@ func (p DriveFoldersPathParams) values() url.Values {
 
 // DriveFoldersUpdateInput is the request body of [DriveFoldersService.Update].
 type DriveFoldersUpdateInput struct {
-	// Folder id, from `drive_files_browse` or `drive_search`.
+	// Folder id, from [DriveFilesService.Browse] or [DriveService.Search].
 	FolderID string           `json:"folderId"`
 	Name     *string          `json:"name,omitzero"`
 	ParentID Nullable[string] `json:"parentId,omitzero"`

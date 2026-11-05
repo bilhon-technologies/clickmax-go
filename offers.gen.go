@@ -19,9 +19,9 @@ type OffersService struct {
 // that file as their deliverable. Pass the `offerId` (a product's main offer id) plus the file's
 // public `url` (from an upload) and a `title` (its display name); `description` is optional. Use this
 // for a file the user uploaded or already hosts as a direct download — as opposed to a plain
-// external link (`offers_add_link_delivery`) or a Clickmax members-area classroom
-// (`offers_add_membership_delivery`). `url` must be a valid http(s) URL. An offer can hold several
-// deliverables; this adds a `file` deliverable and does not remove existing ones.
+// external link ([OffersService.AddLinkDelivery]) or a Clickmax members-area classroom
+// ([OffersService.AddMembershipDelivery]). `url` must be a valid http(s) URL. An offer can hold
+// several deliverables; this adds a `file` deliverable and does not remove existing ones.
 //
 // Calls POST /offers/add-file-delivery.
 func (s *OffersService) AddFileDelivery(ctx context.Context, body OffersAddFileDeliveryInput, opts ...Option) (*OffersAddMembershipDeliveryOutput, error) {
@@ -39,7 +39,7 @@ func (s *OffersService) AddFileDelivery(ctx context.Context, body OffersAddFileD
 // id — resolve it via the product/offer tools) plus `links`. Use this when the deliverable the user
 // already has lives at an external URL (a hosted PDF, a Google Drive/Notion page, a third-party course
 // area) — as opposed to a Clickmax members-area classroom, which uses
-// `offers_add_membership_delivery`. `url` must be a valid http(s) URL. An offer can hold several
+// [OffersService.AddMembershipDelivery]. `url` must be a valid http(s) URL. An offer can hold several
 // deliverables; this adds a `link` deliverable and does not remove existing ones.
 //
 // Calls POST /offers/add-link-delivery.
@@ -70,8 +70,8 @@ func (s *OffersService) AddMembershipDelivery(ctx context.Context, body OffersAd
 
 // Archive an offer.
 //
-// Archives an offer so it is hidden from active checkout flows. Reversible via `offers_unarchive`.
-// Prefer this over deletion when the offer was already used.
+// Archives an offer so it is hidden from active checkout flows. Reversible via
+// [OffersService.Unarchive]. Prefer this over deletion when the offer was already used.
 //
 // Calls POST /offers/archive.
 func (s *OffersService) Archive(ctx context.Context, body OffersArchiveInput, opts ...Option) (*OffersCreateOutput, error) {
@@ -115,10 +115,10 @@ func (s *OffersService) Create(ctx context.Context, body OffersCreateInput, opts
 //
 // Registers a custom support email for the workspace and sends a verification link to that address.
 // The email is NOT usable until the user opens their inbox and clicks the link (out-of-band). After
-// they confirm, call `offers_list_support_emails` to get its id once `verifiedAt` is set, then attach
-// it to an offer via `offers_update` (`offerSupportEmailId`). Offers without a custom support email
-// fall back to the account owner's email, so only do this when the user wants a different support
-// address.
+// they confirm, call [OffersService.ListSupportEmails] to get its id once `verifiedAt` is set, then
+// attach it to an offer via [OffersService.Update] (`offerSupportEmailId`). Offers without a custom
+// support email fall back to the account owner's email, so only do this when the user wants a
+// different support address.
 //
 // Calls POST /offers/create-support-email.
 func (s *OffersService) CreateSupportEmail(ctx context.Context, body OffersCreateSupportEmailInput, opts ...Option) (*OffersCreateSupportEmailOutput, error) {
@@ -131,8 +131,8 @@ func (s *OffersService) CreateSupportEmail(ctx context.Context, body OffersCreat
 
 // Delete an offer.
 //
-// Permanently deletes one offer. Fails when the offer has transactions. Prefer `offers_archive` for
-// offers already linked to funnels or checkout flows.
+// Permanently deletes one offer. Fails when the offer has transactions. Prefer [OffersService.Archive]
+// for offers already linked to funnels or checkout flows.
 //
 // Calls DELETE /offers/delete.
 func (s *OffersService) Delete(ctx context.Context, body OffersDeleteInput, opts ...Option) (*OffersDeleteOutput, error) {
@@ -160,7 +160,7 @@ func (s *OffersService) Get(ctx context.Context, params OffersGetParams, opts ..
 // Diagnose why an offer is not active-ready.
 //
 // Returns the list of blockers preventing an offer from going to `active` (e.g. missing description,
-// support contact, deliverables, seller status). Use before `offers_send_to_approval` to predict
+// support contact, deliverables, seller status). Use before [OffersService.SendToApproval] to predict
 // rejection.
 //
 // Calls GET /offers/get-incomplete-reason.
@@ -176,8 +176,8 @@ func (s *OffersService) GetIncompleteReason(ctx context.Context, params OffersGe
 //
 // Lists the support emails registered in the workspace, each with its id and whether it is verified
 // (`verifiedAt`). Use this to find a verified support-email id to attach to an offer via
-// `offers_update` (`offerSupportEmailId`), or to check whether one the user just registered has been
-// verified yet.
+// [OffersService.Update] (`offerSupportEmailId`), or to check whether one the user just registered has
+// been verified yet.
 //
 // Calls GET /offers/list-support-emails.
 func (s *OffersService) ListSupportEmails(ctx context.Context, opts ...Option) (*OffersListSupportEmailsOutput, error) {
@@ -191,8 +191,8 @@ func (s *OffersService) ListSupportEmails(ctx context.Context, opts ...Option) (
 // Resend support-email verification.
 //
 // Resends the verification link for a previously registered support email (by `offerSupportEmailId`,
-// from `offers_list_support_emails`). Use when the user did not receive or lost the first verification
-// email.
+// from [OffersService.ListSupportEmails]). Use when the user did not receive or lost the first
+// verification email.
 //
 // Calls POST /offers/resend-support-email-validation.
 func (s *OffersService) ResendSupportEmailValidation(ctx context.Context, body OffersResendSupportEmailValidationInput, opts ...Option) (*OffersResendSupportEmailValidationOutput, error) {
@@ -205,8 +205,8 @@ func (s *OffersService) ResendSupportEmailValidation(ctx context.Context, body O
 
 // Send an offer to approval.
 //
-// Submits a `draft` offer for compliance review. Run `offers_get_incomplete_reason` first to verify
-// the offer meets the activation requirements.
+// Submits a `draft` offer for compliance review. Run [OffersService.GetIncompleteReason] first to
+// verify the offer meets the activation requirements.
 //
 // Calls POST /offers/send-to-approval.
 func (s *OffersService) SendToApproval(ctx context.Context, body OffersSendToApprovalInput, opts ...Option) (*OffersCreateOutput, error) {
@@ -222,9 +222,9 @@ func (s *OffersService) SendToApproval(ctx context.Context, body OffersSendToApp
 // Sets the MAIN IMAGE of a product — the offer's product image (thumbnail) shown on the checkout and
 // sales pages. Use this whenever the user wants to add or change 'the product image' / 'a imagem do
 // produto'. Pass the offer id and `imageUrl` = the public URL of an image the user just uploaded (e.g.
-// the answer of an `image` question). Do NOT use `offers_update` for this, and NEVER put a product
-// image into `bannerDesktop`/`bannerMobile` — those are separate promotional checkout-banner art.
-// Returns the final product-image URL.
+// the answer of an `image` question). Do NOT use [OffersService.Update] for this, and NEVER put a
+// product image into `bannerDesktop`/`bannerMobile` — those are separate promotional checkout-banner
+// art. Returns the final product-image URL.
 //
 // Calls POST /offers/set-product-image.
 func (s *OffersService) SetProductImage(ctx context.Context, body OffersSetProductImageInput, opts ...Option) (*OffersSetProductImageOutput, error) {

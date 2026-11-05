@@ -32,7 +32,7 @@ func (s *PipelinesService) Analytics(ctx context.Context, params PipelinesAnalyt
 // Tunes how the auto-assign engine distributes new cards to ONE attendant within ONE pipeline:
 // `weight` (0–10, the relative share in the rotation — 0 takes them out without unlinking them)
 // and `cap` (max concurrent cards, `null` for no cap). This only takes effect while the pipeline has
-// auto-assign on — see `pipelines_settings_update`. Restricted to owner/admin/editor.
+// auto-assign on — see [PipelinesService.SettingsUpdate]. Restricted to owner/admin/editor.
 //
 // Calls POST /pipelines/attendant-routing-update.
 func (s *PipelinesService) AttendantRoutingUpdate(ctx context.Context, body PipelinesAttendantRoutingUpdateInput, opts ...Option) (*PipelinesAttendantRoutingUpdateOutput, error) {
@@ -92,10 +92,10 @@ func (s *PipelinesService) CommissionsList(ctx context.Context, params Pipelines
 //
 // Creates a new pipeline. Only `name` is required; optionally seeds initial `stages` (each `{ name,
 // color?, metaPixelEvent? }`), assigns `attendantTypeIds`/`attendantIds`, and sets a `groupName` (the
-// board grouping label). `color` is NOT settable here — set it afterwards with `pipelines_update`.
-// Automatic lead entry (checkout paid / funnel capture → card) is NOT configured here — create a
-// managed "Entrada externa" flow with `managed_flows_upsert`. The pipeline starts active (not
-// archived).
+// board grouping label). `color` is NOT settable here — set it afterwards with
+// [PipelinesService.Update]. Automatic lead entry (checkout paid / funnel capture → card) is NOT
+// configured here — create a managed "Entrada externa" flow with [ManagedFlowsService.Upsert]. The
+// pipeline starts active (not archived).
 //
 // Calls POST /pipelines/create.
 func (s *PipelinesService) Create(ctx context.Context, body PipelinesCreateInput, opts ...Option) (*PipelinesCreateOutput, error) {
@@ -127,8 +127,8 @@ func (s *PipelinesService) Delete(ctx context.Context, body PipelinesDeleteInput
 // probability/100), `wonCount`/`wonValue` (full value — a won deal is not weighted) and
 // `forecastValue` = weighted open + won. An OPEN deal only appears once it has both an
 // `expectedClosingDate` and a `probability`; a won deal is anchored on its expected date, falling back
-// to `wonAt`. Accepts the same kanban filters (and additive `conditions`) as `cards_list`, so the
-// projection respects the board filters.
+// to `wonAt`. Accepts the same kanban filters (and additive `conditions`) as [CardsService.List], so
+// the projection respects the board filters.
 //
 // Calls POST /pipelines/forecast.
 func (s *PipelinesService) Forecast(ctx context.Context, body PipelinesForecastInput, opts ...Option) (*PipelinesForecastOutput, error) {
@@ -156,8 +156,8 @@ func (s *PipelinesService) HandoffsCreate(ctx context.Context, body PipelinesHan
 
 // Delete a handoff rule.
 //
-// Deletes a handoff rule. Destructive; prefer `pipelines_handoffs_update` with `isActive: false` when
-// it may be needed again. Restricted to owner/admin/editor.
+// Deletes a handoff rule. Destructive; prefer [PipelinesService.HandoffsUpdate] with `isActive: false`
+// when it may be needed again. Restricted to owner/admin/editor.
 //
 // Calls DELETE /pipelines/handoffs-delete.
 func (s *PipelinesService) HandoffsDelete(ctx context.Context, body PipelinesHandoffsDeleteInput, opts ...Option) (*PipelinesHandoffsDeleteOutput, error) {
@@ -218,7 +218,7 @@ func (s *PipelinesService) List(ctx context.Context, opts ...Option) (*Pipelines
 // null when the pipeline suggests none — a normal state, not an error) and `defaultCopilotAgentId`
 // (the AI agent that answers as copilot in those meetings, null = the platform default model). 404
 // only when the pipeline is not from this workspace or was deleted. To see the reverse view — which
-// pipelines follow one playbook — use `playbooks_pipelines_list`.
+// pipelines follow one playbook — use [PlaybooksService.PipelinesList].
 //
 // Calls GET /pipelines/playbook-get.
 func (s *PipelinesService) PlaybookGet(ctx context.Context, params PipelinesPlaybookGetParams, opts ...Option) (*PipelinesPlaybookGetOutput, error) {
@@ -239,7 +239,7 @@ func (s *PipelinesService) PlaybookGet(ctx context.Context, params PipelinesPlay
 // paused one leaves the copilot silent — and it answers on that agent own model key, so confirm the
 // choice with the user. Only future bookings are affected — meetings already booked keep their
 // playbook. Restricted to owner/admin/editor. Returns the resolved state, like
-// `pipelines_playbook_get`.
+// [PipelinesService.PlaybookGet].
 //
 // Calls POST /pipelines/playbook-set.
 func (s *PipelinesService) PlaybookSet(ctx context.Context, body PipelinesPlaybookSetInput, opts ...Option) (*PipelinesPlaybookGetOutput, error) {
@@ -267,17 +267,17 @@ func (s *PipelinesService) SettingsGet(ctx context.Context, params PipelinesSett
 // Update pipeline settings.
 //
 // Patches a pipeline configuration — only the keys sent change. Covers auto-assign (`autoAssign`,
-// `autoAssignStrategy`, `teamId` from `teams_list`), SLA (`slaEnabled`, `slaInactivityDays`,
+// `autoAssignStrategy`, `teamId` from [TeamsService.List]), SLA (`slaEnabled`, `slaInactivityDays`,
 // `slaTargetStageId`), notifications (`notifyOnCreated`/`Moved`/`Won`/`Lost`), win requirements
 // (`requireValueOnWon`, `requireExpectedDateOnWon`), the loss vocabulary (`lostReasons` plus
-// `restrictLossReasons`, which forbids free-text reasons on `cards_update`), card defaults
+// `restrictLossReasons`, which forbids free-text reasons on [CardsService.Update]), card defaults
 // (`defaultPriority`, `defaultTemperature`, `defaultCurrency`), commission (`commissionEarnOn`,
 // clawback, installments, splits, tiers, visibility), routing (`routingMode`, caps, reassign, sticky,
 // working hours/days, criteria), and the board presentation (`cardDisplay` — includes
 // `showLeadIndicators`, the Temperature + Score of the primary contact on the card face — and
 // `drawerLayout`). Pipeline identity (name, color, group, archived) is NOT here — that is
-// `pipelines_update`. Automatic lead entry (checkout paid / funnel capture → card) is NOT here
-// either — use `managed_flows_upsert` to create a managed "Entrada externa" flow.
+// [PipelinesService.Update]. Automatic lead entry (checkout paid / funnel capture → card) is NOT
+// here either — use [ManagedFlowsService.Upsert] to create a managed "Entrada externa" flow.
 //
 // Calls POST /pipelines/settings-update.
 func (s *PipelinesService) SettingsUpdate(ctx context.Context, body PipelinesSettingsUpdateInput, opts ...Option) (*PipelinesSettingsGetOutput, error) {
@@ -293,7 +293,8 @@ func (s *PipelinesService) SettingsUpdate(ctx context.Context, body PipelinesSet
 // Updates pipeline `name`, `description`, `color`, `groupName` (the board grouping label; `null`
 // ungroups it), `archived` state, or the assigned `attendantTypeIds`/`attendantIds` (each is a full
 // replace). Set `archived: true` to hide the board without deleting it. Behaviour settings
-// (auto-assign, SLA, commission, routing) are NOT here — they live in `pipelines_settings_update`.
+// (auto-assign, SLA, commission, routing) are NOT here — they live in
+// [PipelinesService.SettingsUpdate].
 //
 // Calls POST /pipelines/update.
 func (s *PipelinesService) Update(ctx context.Context, body PipelinesUpdateInput, opts ...Option) (*PipelinesUpdateOutput, error) {

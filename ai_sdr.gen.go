@@ -18,7 +18,7 @@ type AISdrService struct {
 // (what it did), `reasonCode` (why), `detail`, whether a message reached the contact (`delivered`),
 // how long the contact waited (`waitMs`), the tools it ran and where it happened (agent, deployment,
 // number). Use to answer "why did the SDR not answer <contact>": resolve the contact with
-// `leads_search` first and pass `leadId` — this tool never takes a name. Filter by `outcome`,
+// [LeadsService.Search] first and pass `leadId` — this tool never takes a name. Filter by `outcome`,
 // `reasonCode`, `trigger` (`inbound` = contact message, `follow_up`, `flow_opening`), `delivered`,
 // agent, deployment or number. Window = `days` (default 7, max 90); widen it before saying there is no
 // decision. Rows include the contact name: only repeat it to the user who asked.
@@ -41,8 +41,8 @@ func (s *AISdrService) DecisionsList(ctx context.Context, params AISdrDecisionsL
 // follow-ups (`followUps`). Use for "how did the SDR do this week", "why did it stop answering",
 // "which number fails most". Failures = `totals.errors` plus `byReason` rows with reasonCode
 // `provider_failure` or `ai_error`. `placements[]` also gives the
-// `agentId`/`deploymentId`/`channelInstanceId` to filter `ai_sdr_decisions_list`. `openPath` = the
-// same view in the app.
+// `agentId`/`deploymentId`/`channelInstanceId` to filter [AISdrService.DecisionsList]. `openPath` =
+// the same view in the app.
 //
 // Calls GET /ai-sdr/overview.
 func (s *AISdrService) Overview(ctx context.Context, params AISdrOverviewParams, opts ...Option) (*AISdrOverviewOutput, error) {
@@ -106,7 +106,7 @@ type AISdrDecisionsListOutputMeta struct {
 type AISdrDecisionsListParams struct {
 	// Window in whole days ending now (default 7, max 90).
 	Days *int64
-	// AI agent id — `placements[].agentId` from `ai_sdr_overview`.
+	// AI agent id — `placements[].agentId` from [AISdrService.Overview].
 	AgentID *string
 	// Deployment ("atendimento": the agent placed on a channel) — `placements[].deploymentId`.
 	DeploymentID *string
@@ -114,7 +114,7 @@ type AISdrDecisionsListParams struct {
 	ChannelInstanceID *string
 	// IANA zone used to cut whole days and the daily series (e.g. America/Sao_Paulo).
 	TimeZone *string
-	// Contact id from `leads_search` — the decisions of ONE contact.
+	// Contact id from [LeadsService.Search] — the decisions of ONE contact.
 	LeadID  *string
 	Outcome *AISdrDecisionsListParamsOutcome
 	// Exact reason code, e.g. `outside_business_hours`, `window_closed`.
@@ -343,7 +343,7 @@ type AISdrOverviewOutputTotals struct {
 type AISdrOverviewParams struct {
 	// Window in whole days ending now (default 7, max 90).
 	Days *int64
-	// AI agent id — `placements[].agentId` from `ai_sdr_overview`.
+	// AI agent id — `placements[].agentId` from [AISdrService.Overview].
 	AgentID *string
 	// Deployment ("atendimento": the agent placed on a channel) — `placements[].deploymentId`.
 	DeploymentID *string

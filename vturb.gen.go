@@ -18,8 +18,8 @@ type VturbService struct {
 // Read-only. Lists the A/B tests (Vturb calls them comparison groups) of the connected account: `id`,
 // `name`, `variants` (each with `playerId`, `trafficPercentage`, `locked`), `startedAt`, `finishedAt`
 // and `running`. Use it to answer "qual variante ganhou / meu teste A/B está rodando" and to get the
-// `abTestId` + `playerId`s required by `vturb_ab_tests_stats`. `running: true` means the test is STILL
-// SPLITTING TRAFFIC — report partial numbers as a trend, never as a final winner. Optional
+// `abTestId` + `playerId`s required by [VturbService.AbTestsStats]. `running: true` means the test is
+// STILL SPLITTING TRAFFIC — report partial numbers as a trend, never as a final winner. Optional
 // `startDate`/`endDate` filter by when the test was CREATED, not by the metric window.
 //
 // Calls GET /vturb/ab-tests-list.
@@ -34,7 +34,7 @@ func (s *VturbService) AbTestsList(ctx context.Context, params VturbAbTestsListP
 // Compare variants of a Vturb A/B test.
 //
 // Read-only. Side-by-side metrics for the variants of one A/B test — the tool that actually picks a
-// winner. Pass `abTestId` and up to 2 `playerIds` (both from `vturb_ab_tests_list`; the upstream
+// winner. Pass `abTestId` and up to 2 `playerIds` (both from [VturbService.AbTestsList]; the upstream
 // compares at most 2 per call). Returns per variant: `views`, `plays`, `finishes`, `clicks`,
 // `conversions`, the rates `playRate`/`conversionRate`/`engagementRate`/`pitchRetentionRate` (ALL
 // fractions 0..1 — multiply by 100), `revenue` and `revenuePerVisitor` in usd/brl/eur, plus
@@ -58,9 +58,10 @@ func (s *VturbService) AbTestsStats(ctx context.Context, body VturbAbTestsStatsI
 // Read-only. Lists the videos (players) of the connected Vturb account with `id`, `name`, `duration`
 // (seconds), `pitchTime` (the second where the offer is made) and `posterUrl`. Use it to resolve a
 // video the user names in prose ("minha VSL principal") into the `playerId` required by
-// `vturb_players_stats` and `vturb_players_live_users` — those tools only accept ids, so this is the
-// mandatory second step after `vturb_status`. `pitchTime` vs `duration` matters when judging metrics:
-// engagement is measured up to the pitch, so a pitch late in the video mechanically lowers it.
+// [VturbService.PlayersStats] and [VturbService.PlayersLiveUsers] — those tools only accept ids, so
+// this is the mandatory second step after [VturbService.Status]. `pitchTime` vs `duration` matters
+// when judging metrics: engagement is measured up to the pitch, so a pitch late in the video
+// mechanically lowers it.
 //
 // Calls GET /vturb/players-list.
 func (s *VturbService) PlayersList(ctx context.Context, opts ...Option) (*VturbPlayersListOutput, error) {
@@ -77,7 +78,7 @@ func (s *VturbService) PlayersList(ctx context.Context, opts ...Option) (*VturbP
 // counting people who ENTERED the page in the last `minutes` window (default 60) — it does not prove
 // they are still watching, so phrase it as "entraram nos últimos N minutos", never "estão assistindo
 // agora". Use for "quantas pessoas estão na minha VSL agora" or to confirm a launch/campaign is
-// receiving traffic. For performance analysis over a period use `vturb_players_stats` instead.
+// receiving traffic. For performance analysis over a period use [VturbService.PlayersStats] instead.
 //
 // Calls GET /vturb/players-live-users.
 func (s *VturbService) PlayersLiveUsers(ctx context.Context, params VturbPlayersLiveUsersParams, opts ...Option) (*VturbPlayersLiveUsersOutput, error) {
@@ -95,10 +96,10 @@ func (s *VturbService) PlayersLiveUsers(ctx context.Context, params VturbPlayers
 // `engagementRate`. Use for any "how is my VSL doing / is it converting / where am I losing people"
 // question. RATES ARE FRACTIONS (0.42 = 42%) — multiply by 100 before showing them. `playRate` = who
 // pressed play over who loaded the page; `engagementRate` = average watch time up to `pitchTime`, so
-// read it together with the `pitchTime`/`duration` from `vturb_players_list`. `conversionRate` here is
-// conversions over plays as tracked BY VTURB, so it can diverge from Clickmax sales data — never
-// present the two as the same number. Data is cached ~5 min upstream, so it is not real-time; for that
-// use `vturb_players_live_users`.
+// read it together with the `pitchTime`/`duration` from [VturbService.PlayersList]. `conversionRate`
+// here is conversions over plays as tracked BY VTURB, so it can diverge from Clickmax sales data —
+// never present the two as the same number. Data is cached ~5 min upstream, so it is not real-time;
+// for that use [VturbService.PlayersLiveUsers].
 //
 // Calls GET /vturb/players-stats.
 func (s *VturbService) PlayersStats(ctx context.Context, params VturbPlayersStatsParams, opts ...Option) (*VturbPlayersStatsOutput, error) {

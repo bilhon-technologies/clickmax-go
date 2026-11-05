@@ -73,9 +73,9 @@ func (s *TagsService) Create(ctx context.Context, body TagsCreateInput, opts ...
 // Deletes one manual tag by `tagId`. Also removes its lead and opportunity-card assignments and
 // related kanban links. Automations and segments that reference the tag are NOT cleaned up: the id
 // stays dangling in the trigger, step or filter, so the automation silently stops matching or applying
-// it and the segment changes its contacts. Read `references` in `tags_insights` (or the consumer
-// counts in `tags_manual_list`) and warn the user before deleting a tag that is in use. Fails for
-// system tags.
+// it and the segment changes its contacts. Read `references` in [TagsService.Insights] (or the
+// consumer counts in [TagsService.ManualList]) and warn the user before deleting a tag that is in use.
+// Fails for system tags.
 //
 // Calls DELETE /tags/delete.
 func (s *TagsService) Delete(ctx context.Context, body TagsDeleteInput, opts ...Option) (*TagsDeleteOutput, error) {
@@ -108,9 +108,9 @@ func (s *TagsService) Get(ctx context.Context, params TagsGetParams, opts ...Opt
 // applications in the month, so a removal shows as a drop), `dailyApplied` (applications per day over
 // the last 14 days, gaps as 0) and `references` — the NAMED consumers (`kind`: flow | segment | form |
 // board, with `id`, `name`, `meta`), capped at 100 per kind, with `referencesTotal` as the real total
-// when a kind hit the cap. Read `references` before `tags_delete`. Fails for an unknown `tagId` and
-// for system tags (use `tags_system_insights` for those). For who has the tag, use
-// `tags_manual_leads_timeline`.
+// when a kind hit the cap. Read `references` before [TagsService.Delete]. Fails for an unknown `tagId`
+// and for system tags (use [TagsService.SystemInsights] for those). For who has the tag, use
+// [TagsService.ManualLeadsTimeline].
 //
 // Calls GET /tags/insights.
 func (s *TagsService) Insights(ctx context.Context, params TagsInsightsParams, opts ...Option) (*TagsInsightsOutput, error) {
@@ -156,10 +156,10 @@ func (s *TagsService) ManualLeadsTimeline(ctx context.Context, params TagsManual
 // Filter by `name` (case-insensitive substring). Sort with `orderBy` (`name` | `leadsCount` |
 // `opportunitiesCount` | `flowsCount` | `segmentsCount` | `formsCount` | `boardsCount`) and `order`:
 // with no `orderBy` the list is A-Z by name; the count columns default to descending, with name as the
-// stable tie-break. This list carries no growth/trend series — use `tags_insights` for the trend of
-// one tag. Consumer counts at 0 mean no automation, segment, form or board depends on the tag
+// stable tie-break. This list carries no growth/trend series — use [TagsService.Insights] for the
+// trend of one tag. Consumer counts at 0 mean no automation, segment, form or board depends on the tag
 // (deleting it still removes it from the contacts and cards that carry it); otherwise inspect it with
-// `tags_insights` first.
+// [TagsService.Insights] first.
 //
 // Calls GET /tags/manual-list.
 func (s *TagsService) ManualList(ctx context.Context, params TagsManualListParams, opts ...Option) (*TagsManualListOutput, error) {
@@ -200,10 +200,10 @@ func (s *TagsService) SystemActivities(ctx context.Context, params TagsSystemAct
 
 // Get the X-ray of one system tag event.
 //
-// X-ray of ONE system tag, identified by its `eventName` (take it from `tags_system_list`; it goes in
-// the query because names carry dots, e.g. `checkout.transaction.paid.v1`): `label` (human name
-// recorded by the producer, may be null), `category`, `totalLeads`, `leadsCount` (unique contacts that
-// fired it), `coverage` (0..1), `occurrences`, `occurrencesLast7Days`, `occurrencesLast30Days`,
+// X-ray of ONE system tag, identified by its `eventName` (take it from [TagsService.SystemList]; it
+// goes in the query because names carry dots, e.g. `checkout.transaction.paid.v1`): `label` (human
+// name recorded by the producer, may be null), `category`, `totalLeads`, `leadsCount` (unique contacts
+// that fired it), `coverage` (0..1), `occurrences`, `occurrencesLast7Days`, `occurrencesLast30Days`,
 // `newLeadsLast30Days` (first-time firers), `firstSeenAt`/`lastSeenAt`, `daily` (occurrences per day,
 // last 30 days), `monthly` (occurrences per month, last 6 — NOT cumulative: an event is a dated
 // fact), `weekdays` (7 counts, index 0 = Sunday) and `hours` (24 counts) both in America/Sao_Paulo
@@ -231,8 +231,8 @@ func (s *TagsService) SystemInsights(ctx context.Context, params TagsSystemInsig
 // and sort with `orderBy` (`eventName` | `count` | `occurrences` | `occurrencesLast7Days` |
 // `firstSeenAt` | `lastSeenAt`) and `order`; the default is most recent activity first. Tag
 // apply/remove, lead created/captured/manual-update and opportunity move/status/tag events are
-// deliberately excluded, as are events with no contact behind them. Use `tags_system_insights` to
-// X-ray one event and `tags_system_activities` to list the contacts.
+// deliberately excluded, as are events with no contact behind them. Use [TagsService.SystemInsights]
+// to X-ray one event and [TagsService.SystemActivities] to list the contacts.
 //
 // Calls GET /tags/system-list.
 func (s *TagsService) SystemList(ctx context.Context, params TagsSystemListParams, opts ...Option) (*TagsSystemListOutput, error) {

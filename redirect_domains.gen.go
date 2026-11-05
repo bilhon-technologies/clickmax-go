@@ -16,10 +16,10 @@ type RedirectDomainsService struct {
 // List redirect-link domains.
 //
 // Lists the workspace's connected domains available for redirect links (shortened/custom links), each
-// with its own link/click counters. A `domainId` from here is required by `redirect_links_create` and
-// `redirect_links_bulk_create` — call this first. A workspace with no connected custom domain cannot
-// create redirect links yet (there is no shared Clickmax short domain as a fallback); tell the user to
-// connect one under domain settings.
+// with its own link/click counters. A `domainId` from here is required by
+// [RedirectLinksService.Create] and [RedirectLinksService.BulkCreate] — call this first. A workspace
+// with no connected custom domain cannot create redirect links yet (there is no shared Clickmax short
+// domain as a fallback); tell the user to connect one under domain settings.
 //
 // Calls GET /redirect-domains/list.
 func (s *RedirectDomainsService) List(ctx context.Context, params RedirectDomainsListParams, opts ...Option) (*RedirectDomainsListOutput, error) {

@@ -21,8 +21,8 @@ type TemperatureService struct {
 // rest (`thresholdMorno` < `thresholdQuente`, the five `channel*` multipliers, `windowDays`,
 // `halflifeR/F`) is the calibration to store. `name` 1-80 chars. Limit of 20 custom models per
 // workspace (400 beyond it — delete one first). This ONLY stores the snapshot: it does not activate
-// it and does not re-score anyone. To use it, call `temperature_settings_update` with `activeModelId`
-// = the returned `id` AND the same numbers (settings keep their own copy of
+// it and does not re-score anyone. To use it, call [TemperatureService.SettingsUpdate] with
+// `activeModelId` = the returned `id` AND the same numbers (settings keep their own copy of
 // thresholds/channels/window). Unlike the settings call, the numeric ranges of the snapshot are not
 // validated beyond the threshold order, so keep to thresholds/channels 0-100, `windowDays` 1-60,
 // `halflife` 1-30.
@@ -40,8 +40,8 @@ func (s *TemperatureService) CustomModelsCreate(ctx context.Context, body Temper
 //
 // Permanently deletes one saved custom model (`modelId`); the snapshot cannot be recovered. Needs
 // admin/editor or a coordinator attendant. Refuses (400) to delete the model that is currently ACTIVE
-// in the workspace settings — switch `activeModelId` with `temperature_settings_update` first; 404
-// if it does not exist. Contacts and their Temperature are untouched (deleting a non-active model
+// in the workspace settings — switch `activeModelId` with [TemperatureService.SettingsUpdate] first;
+// 404 if it does not exist. Contacts and their Temperature are untouched (deleting a non-active model
 // changes no number).
 //
 // Calls DELETE /temperature/custom-models-delete.
@@ -55,15 +55,15 @@ func (s *TemperatureService) CustomModelsDelete(ctx context.Context, body Temper
 
 // Update a custom Temperature model.
 //
-// Rewrites one saved custom model (`modelId` from `temperature_settings_get` → `customModels[].id`):
-// full replace of `name`, `basedOn` and the calibration numbers — send them all. Needs admin/editor
-// or a coordinator attendant; 404 if the id is not a custom model of this workspace (presets cannot be
-// edited). Editing a snapshot does NOT touch the workspace settings and does NOT trigger a re-score,
-// even if this model is the active one: the settings hold their own copy of
-// thresholds/channels/window/half-lives, so those only change through `temperature_settings_update`.
-// Only the R/F/P/D blend inherited from `basedOn` is read live from the model, and a changed `basedOn`
-// on the ACTIVE model takes effect on the next recompute (next contact activity, the nightly decay
-// pass, or the next settings save).
+// Rewrites one saved custom model (`modelId` from [TemperatureService.SettingsGet] →
+// `customModels[].id`): full replace of `name`, `basedOn` and the calibration numbers — send them
+// all. Needs admin/editor or a coordinator attendant; 404 if the id is not a custom model of this
+// workspace (presets cannot be edited). Editing a snapshot does NOT touch the workspace settings and
+// does NOT trigger a re-score, even if this model is the active one: the settings hold their own copy
+// of thresholds/channels/window/half-lives, so those only change through
+// [TemperatureService.SettingsUpdate]. Only the R/F/P/D blend inherited from `basedOn` is read live
+// from the model, and a changed `basedOn` on the ACTIVE model takes effect on the next recompute (next
+// contact activity, the nightly decay pass, or the next settings save).
 //
 // Calls POST /temperature/custom-models-update.
 func (s *TemperatureService) CustomModelsUpdate(ctx context.Context, body TemperatureCustomModelsUpdateInput, opts ...Option) (*TemperatureCustomModelsUpdateOutput, error) {
@@ -103,26 +103,27 @@ func (s *TemperatureService) LeadExplain(ctx context.Context, params Temperature
 // Preview the impact of switching Temperature model.
 //
 // Answers "how many contacts would be cold/warm/hot if I switched to model X?" WITHOUT saving anything
-// — run it before `temperature_settings_update` changes `activeModelId`. Needs only Temperature read
-// access. `modelId` = a preset id (`lancamento`, `perpetuo`, `highticket`, `afiliado`, `lowticket`,
-// `ecommerce`) or the `id` of one of the workspace `customModels`; anything else is 400. Response:
-// `totalContacts` (whole base), `activeContacts` (contacts with catalogued activity inside the larger
-// of the two models windows), `sampledContacts`, `estimated`, band counts `current` vs `next`
-// (`cold`/`warm`/`hot`, each side summing to `totalContacts`) and up to 3 `samples` (`name`,
-// `currentScore`, `nextScore`, `nextBand`; only contacts with a name or e-mail). How it is computed:
-// contacts with no catalogued activity in the window score 0 under any model and enter EXACTLY; of the
-// active ones up to 400 are re-scored with both calibrations and the band proportions are extended to
-// all active contacts — `estimated: true` means that projection happened (roughly ±5 percentage
-// points per band in the worst case), `false` means every active contact was scored. The sample is a
-// stable pseudo-random pick, so asking again for the same model gives the same numbers. BOTH sides are
-// recomputed live with the plain score-vs-thresholds ruler (no hysteresis), so `current` can differ a
-// little from the stored numbers in lists and `temperature_lead_explain` — compare `current` with
-// `next`, not with the stored distribution. The account per-event overrides (`eventWeights`) apply on
-// both sides. IMPORTANT: `next` uses the TARGET model own thresholds, channel multipliers, window and
-// half-lives (for the active model, the saved settings). `temperature_settings_update` does NOT copy
-// those — it only switches the R/F/P/D blend and keeps the numbers you send — so for the real
-// switch to land where this preview says, send the target model numbers (from
-// `temperature_settings_get` → `builtInModels[]`/`customModels[]`) in that same call.
+// — run it before [TemperatureService.SettingsUpdate] changes `activeModelId`. Needs only
+// Temperature read access. `modelId` = a preset id (`lancamento`, `perpetuo`, `highticket`,
+// `afiliado`, `lowticket`, `ecommerce`) or the `id` of one of the workspace `customModels`; anything
+// else is 400. Response: `totalContacts` (whole base), `activeContacts` (contacts with catalogued
+// activity inside the larger of the two models windows), `sampledContacts`, `estimated`, band counts
+// `current` vs `next` (`cold`/`warm`/`hot`, each side summing to `totalContacts`) and up to 3
+// `samples` (`name`, `currentScore`, `nextScore`, `nextBand`; only contacts with a name or e-mail).
+// How it is computed: contacts with no catalogued activity in the window score 0 under any model and
+// enter EXACTLY; of the active ones up to 400 are re-scored with both calibrations and the band
+// proportions are extended to all active contacts — `estimated: true` means that projection happened
+// (roughly ±5 percentage points per band in the worst case), `false` means every active contact was
+// scored. The sample is a stable pseudo-random pick, so asking again for the same model gives the same
+// numbers. BOTH sides are recomputed live with the plain score-vs-thresholds ruler (no hysteresis), so
+// `current` can differ a little from the stored numbers in lists and [TemperatureService.LeadExplain]
+// — compare `current` with `next`, not with the stored distribution. The account per-event overrides
+// (`eventWeights`) apply on both sides. IMPORTANT: `next` uses the TARGET model own thresholds,
+// channel multipliers, window and half-lives (for the active model, the saved settings).
+// [TemperatureService.SettingsUpdate] does NOT copy those — it only switches the R/F/P/D blend and
+// keeps the numbers you send — so for the real switch to land where this preview says, send the
+// target model numbers (from [TemperatureService.SettingsGet] → `builtInModels[]`/`customModels[]`)
+// in that same call.
 //
 // Calls GET /temperature/model-impact.
 func (s *TemperatureService) ModelImpact(ctx context.Context, params TemperatureModelImpactParams, opts ...Option) (*TemperatureModelImpactOutput, error) {
@@ -138,20 +139,20 @@ func (s *TemperatureService) ModelImpact(ctx context.Context, params Temperature
 // Returns how the workspace scores contact TEMPERATURE: a 0-100 behavioural number that says how
 // engaged a contact is right now, computed from what the contact DID (messages, e-mail opens/clicks,
 // page and checkout activity, payments, members-area use, meetings and pipeline events) — never from
-// profile/registration fields (those belong to the criteria Score, see `lead_score_settings_get`). The
-// engine rates four sub-scores 0-100 — Recency (R, age of the latest positive interaction),
-// Frequency (F), Depth (P) and Declaration/intent-to-buy (D) — and blends them with the weights of
-// the active model; R and F decay over time (`halflifeR`/`halflifeF` days), P and D do not decay
-// inside `windowDays`. A contact is cold below `thresholdMorno`, warm from it, hot from
-// `thresholdQuente`. Response: `settings` = the calibration in force (`activeModelId`, the two
-// thresholds, the five channel multipliers 0-100 `channelEmail|Msg|Page|Pay|Crm`, `windowDays`,
-// `halflifeR/F`, and `eventWeights` = ONLY the per-event overrides the account made, `eventName` →
-// weight −100..100; an event absent from it uses the product default). `builtInModels` = the six
-// presets (`lancamento` default, `perpetuo`, `highticket`, `afiliado`, `lowticket`, `ecommerce`) with
-// their starting numbers and R/F/P/D weights. `customModels` = saved calibration snapshots of this
-// workspace (each has an `id`, `basedOn` preset, and the same numbers). A workspace that never saved
-// settings has no row: this returns the `lancamento` defaults with a throw-away `id`. Read this BEFORE
-// `temperature_settings_update`, which is a full replace.
+// profile/registration fields (those belong to the criteria Score, see
+// [LeadScoreService.SettingsGet]). The engine rates four sub-scores 0-100 — Recency (R, age of the
+// latest positive interaction), Frequency (F), Depth (P) and Declaration/intent-to-buy (D) — and
+// blends them with the weights of the active model; R and F decay over time (`halflifeR`/`halflifeF`
+// days), P and D do not decay inside `windowDays`. A contact is cold below `thresholdMorno`, warm from
+// it, hot from `thresholdQuente`. Response: `settings` = the calibration in force (`activeModelId`,
+// the two thresholds, the five channel multipliers 0-100 `channelEmail|Msg|Page|Pay|Crm`,
+// `windowDays`, `halflifeR/F`, and `eventWeights` = ONLY the per-event overrides the account made,
+// `eventName` → weight −100..100; an event absent from it uses the product default).
+// `builtInModels` = the six presets (`lancamento` default, `perpetuo`, `highticket`, `afiliado`,
+// `lowticket`, `ecommerce`) with their starting numbers and R/F/P/D weights. `customModels` = saved
+// calibration snapshots of this workspace (each has an `id`, `basedOn` preset, and the same numbers).
+// A workspace that never saved settings has no row: this returns the `lancamento` defaults with a
+// throw-away `id`. Read this BEFORE [TemperatureService.SettingsUpdate], which is a full replace.
 //
 // Calls GET /temperature/settings-get.
 func (s *TemperatureService) SettingsGet(ctx context.Context, opts ...Option) (*TemperatureSettingsGetOutput, error) {
@@ -168,21 +169,21 @@ func (s *TemperatureService) SettingsGet(ctx context.Context, opts ...Option) (*
 // workspace admin/editor or an attendant with the coordinator role (otherwise 403). FULL REPLACE of
 // the scalar fields: every one of `activeModelId`, `thresholdMorno`, `thresholdQuente`,
 // `channelEmail`, `channelMsg`, `channelPage`, `channelPay`, `channelCrm`, `windowDays`, `halflifeR`,
-// `halflifeF` must be sent, so start from `temperature_settings_get` and change only what the user
-// asked. Ranges: thresholds and channels 0-100 (`thresholdMorno` MUST be lower than `thresholdQuente`,
-// else 400), `windowDays` 1-60, `halflifeR/F` 1-30. `activeModelId` = a preset id (`lancamento`,
-// `perpetuo`, `highticket`, `afiliado`, `lowticket`, `ecommerce`) or the `id` of one of the workspace
-// `customModels`; anything else is 400. IMPORTANT: the model only supplies the R/F/P/D blend weights
-// — thresholds, channels, window and half-lives are always the numbers you send here, so switching
-// model does NOT load that model numbers: copy them from
+// `halflifeF` must be sent, so start from [TemperatureService.SettingsGet] and change only what the
+// user asked. Ranges: thresholds and channels 0-100 (`thresholdMorno` MUST be lower than
+// `thresholdQuente`, else 400), `windowDays` 1-60, `halflifeR/F` 1-30. `activeModelId` = a preset id
+// (`lancamento`, `perpetuo`, `highticket`, `afiliado`, `lowticket`, `ecommerce`) or the `id` of one of
+// the workspace `customModels`; anything else is 400. IMPORTANT: the model only supplies the R/F/P/D
+// blend weights — thresholds, channels, window and half-lives are always the numbers you send here,
+// so switching model does NOT load that model numbers: copy them from
 // `builtInModels[].channels/thresholds/window/halflifeR/halflifeF` (or the custom model) into the same
 // call if the user wants the preset as-is. Preview a model switch first with
-// `temperature_model_impact`. `eventWeights` (optional) is the FULL set of per-event overrides, not a
-// patch: omitted = keep the stored overrides untouched; `{}` = clear every override (back to product
-// defaults); a map = it REPLACES the stored map, so to change one event send the stored map with that
-// entry changed. Keys are the dotted event names of the engine catalog (e.g.
+// [TemperatureService.ModelImpact]. `eventWeights` (optional) is the FULL set of per-event overrides,
+// not a patch: omitted = keep the stored overrides untouched; `{}` = clear every override (back to
+// product defaults); a map = it REPLACES the stored map, so to change one event send the stored map
+// with that entry changed. Keys are the dotted event names of the engine catalog (e.g.
 // `checkout.pix.generated.v1`, `hermes.email.clicked.v1`); an unknown key is 400 and the error lists
-// it. The catalog is not enumerable by a tool — take names from `temperature_lead_explain`
+// it. The catalog is not enumerable by a tool — take names from [TemperatureService.LeadExplain]
 // (`live.events[].eventName` and `live.missingSignals[]`) or from what the user gives. Weight is
 // −100..100 (negative subtracts); a channel multiplier of 0 switches the whole channel off. EFFECT:
 // contacts that had catalogued activity inside the window are re-scored asynchronously (seconds to
