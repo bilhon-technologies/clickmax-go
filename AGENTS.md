@@ -4,7 +4,7 @@ Public Go module `clickmax.io/go` (package `clickmax`, Apache-2.0) = code genera
 
 ## Rules
 
-- `*.gen.go` = generator output. NEVER edit by hand; change `internal/generator` or the spec, then regenerate. CI fails when the committed output differs from a fresh run.
+- `zz_*.gen.go` = generator output (`zz_` sorts them after the hand-written files; a folder would be a separate package, and `.vscode/settings.json` nests them under `client.go`). NEVER edit by hand; change `internal/generator` or the spec, then regenerate. CI fails when the committed output differs from a fresh run.
 - Names come from the spec path: `/<resource>/<action>` -> `c.<Pascal(resource)>.<Pascal(action)>()`, `/<name>` -> root `c.<Pascal(name)>()`. Bad names are fixed in the API, never aliased here. Component names are re-cased with the same initialism list (`internal/generator/names.go`).
 - Every exported identifier, its doc comment and every error message is public API under semver. Removing or renaming a method, type, field, constant or `ErrorType` value is breaking; the naming rules in `internal/generator/names.go` (initialisms, currency casing, `constantNames`) are frozen for the same reason.
 - Root module has zero dependencies (`go.mod` without `require`). The generator is a separate module (`internal/generator/go.mod`) so its dependencies never reach users.

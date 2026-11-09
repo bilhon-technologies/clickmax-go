@@ -42,9 +42,15 @@ func fileName(slug string) (string, error) {
 		return "", fmt.Errorf("resource %q would get the build constraint file name %s.gen.go", slug, stem)
 	}
 	if stem == "client" || stem == "shared" {
-		return "", fmt.Errorf("resource %q clashes with %s.gen.go", slug, stem)
+		return "", fmt.Errorf("resource %q clashes with %s", slug, genFile(stem))
 	}
-	return stem + ".gen.go", nil
+	return genFile(stem), nil
+}
+
+// genFile names a generated file. The zz_ prefix sorts generated files after the hand-written
+// ones in editors and on GitHub; a folder is not an option because it would be another package.
+func genFile(stem string) string {
+	return "zz_" + stem + ".gen.go"
 }
 
 // render returns the formatted generated files by name.
@@ -56,7 +62,7 @@ func render(m *model) (map[string][]byte, error) {
 		}
 		return files[name]
 	}
-	slugFile := map[string]string{"": "client.gen.go"}
+	slugFile := map[string]string{"": genFile("client")}
 	for _, svc := range m.services {
 		name, err := fileName(svc.slug)
 		if err != nil {
@@ -70,7 +76,7 @@ func render(m *model) (map[string][]byte, error) {
 		slugFile[svc.slug] = name
 	}
 
-	cf := get("client.gen.go")
+	cf := get(genFile("client"))
 	writeClient(cf, m)
 	for _, mt := range m.root {
 		if err := writeMethod(cf, "c *Client", "c", mt); err != nil {
@@ -90,7 +96,7 @@ func render(m *model) (map[string][]byte, error) {
 	}
 	for _, name := range slices.Sorted(maps.Keys(m.decls)) {
 		d := m.decls[name]
-		target := "shared.gen.go"
+		target := genFile("shared")
 		if len(d.owners) == 1 {
 			for owner := range d.owners {
 				target = slugFile[owner]
