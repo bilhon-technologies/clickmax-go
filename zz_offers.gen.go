@@ -909,59 +909,60 @@ func (p OffersGetIncompleteReasonParams) values() url.Values {
 
 // OffersGetOutput is the response of [OffersService.Get].
 type OffersGetOutput struct {
-	ID                   string                                `json:"id"`
-	Name                 string                                `json:"name"`
-	CheckoutTitle        *string                               `json:"checkoutTitle,omitzero"`
-	IsMain               bool                                  `json:"isMain"`
-	Hash                 string                                `json:"hash"`
-	ExternalURL          *string                               `json:"externalUrl,omitzero"`
-	Thumbnail            string                                `json:"thumbnail"`
-	Currency             OffersGetOutputCurrency               `json:"currency"`
-	OriginalPrice        int64                                 `json:"originalPrice"`
-	NewPrice             *int64                                `json:"newPrice,omitzero"`
-	Type                 OffersGetOutputType                   `json:"type"`
-	Country              *string                               `json:"country,omitzero"`
-	Description          *string                               `json:"description,omitzero"`
-	Language             *string                               `json:"language,omitzero"`
-	LimitToRefund        *int64                                `json:"limitToRefund,omitzero"`
-	SupportEmail         *string                               `json:"supportEmail,omitzero"`
-	ShowTimer            bool                                  `json:"showTimer"`
-	ShowCoupon           bool                                  `json:"showCoupon"`
-	HighlightInstallment bool                                  `json:"highlightInstallment"`
-	PassPlatformFee      bool                                  `json:"passPlatformFee"`
-	ShowDescription      bool                                  `json:"showDescription"`
-	AllowAffiliateResale bool                                  `json:"allowAffiliateResale"`
-	BannerDesktop        *string                               `json:"bannerDesktop,omitzero"`
-	BannerMobile         *string                               `json:"bannerMobile,omitzero"`
-	RequiredAddress      bool                                  `json:"requiredAddress"`
-	FreightConfig        *OffersGetOutputFreightConfig         `json:"freightConfig,omitzero"`
-	CheckoutImages       OffersGetOutputCheckoutImages         `json:"checkoutImages"`
-	ProductType          OffersGetOutputProductType            `json:"productType"`
-	ProductID            string                                `json:"productId"`
-	ProductName          string                                `json:"productName"`
-	ImageStock           *string                               `json:"imageStock,omitzero"`
-	StockQuantity        *int64                                `json:"stockQuantity,omitzero"`
-	QuantityItems        *int64                                `json:"quantityItems,omitzero"`
-	OfferSupportEmailID  *string                               `json:"offerSupportEmailId,omitzero"`
-	PaymentConfig        *OffersGetOutputPaymentConfig         `json:"paymentConfig,omitzero"`
-	DefaultInstallment   int64                                 `json:"defaultInstallment"`
-	MembershipData       *OffersGetOutputMembershipData        `json:"membershipData,omitzero"`
-	Deliverables         []OffersGetOutputDeliverablesItem     `json:"deliverables,omitzero"`
-	Coproductions        []OffersGetOutputCoproductionsItem    `json:"coproductions,omitzero"`
-	ProductCategory      *OffersGetOutputProductCategory       `json:"productCategory,omitzero"`
-	ProductClass         *OffersGetOutputProductClass          `json:"productClass,omitzero"`
-	SoftDescriptor       *string                               `json:"softDescriptor,omitzero"`
-	SupportPhone         *string                               `json:"supportPhone,omitzero"`
-	Status               OffersGetOutputStatus                 `json:"status"`
-	ExternalID           *string                               `json:"externalId,omitzero"`
-	GatewayName          *string                               `json:"gatewayName"`
-	IsExternalCheckout   bool                                  `json:"isExternalCheckout"`
-	SupportsChargeLimit  bool                                  `json:"supportsChargeLimit"`
-	ProviderSyncError    map[string]any                        `json:"providerSyncError"`
-	IncompleteReason     []OffersGetOutputIncompleteReasonItem `json:"incompleteReason"`
-	PlanID               *string                               `json:"planId,omitzero"`
-	AddonID              *string                               `json:"addonId,omitzero"`
-	IsRecurrent          *bool                                 `json:"isRecurrent,omitzero"`
+	ID                          string                                `json:"id"`
+	Name                        string                                `json:"name"`
+	CheckoutTitle               *string                               `json:"checkoutTitle,omitzero"`
+	IsMain                      bool                                  `json:"isMain"`
+	Hash                        string                                `json:"hash"`
+	ExternalURL                 *string                               `json:"externalUrl,omitzero"`
+	Thumbnail                   string                                `json:"thumbnail"`
+	Currency                    OffersGetOutputCurrency               `json:"currency"`
+	OriginalPrice               int64                                 `json:"originalPrice"`
+	NewPrice                    *int64                                `json:"newPrice,omitzero"`
+	Type                        OffersGetOutputType                   `json:"type"`
+	Country                     *string                               `json:"country,omitzero"`
+	Description                 *string                               `json:"description,omitzero"`
+	Language                    *string                               `json:"language,omitzero"`
+	LimitToRefund               *int64                                `json:"limitToRefund,omitzero"`
+	SupportEmail                *string                               `json:"supportEmail,omitzero"`
+	ShowTimer                   bool                                  `json:"showTimer"`
+	ShowCoupon                  bool                                  `json:"showCoupon"`
+	HighlightInstallment        bool                                  `json:"highlightInstallment"`
+	PassPlatformFee             bool                                  `json:"passPlatformFee"`
+	ShowDescription             bool                                  `json:"showDescription"`
+	AllowAffiliateResale        bool                                  `json:"allowAffiliateResale"`
+	BannerDesktop               *string                               `json:"bannerDesktop,omitzero"`
+	BannerMobile                *string                               `json:"bannerMobile,omitzero"`
+	RequiredAddress             bool                                  `json:"requiredAddress"`
+	FreightConfig               *OffersGetOutputFreightConfig         `json:"freightConfig,omitzero"`
+	CheckoutImages              OffersGetOutputCheckoutImages         `json:"checkoutImages"`
+	ProductType                 OffersGetOutputProductType            `json:"productType"`
+	ProductID                   string                                `json:"productId"`
+	ProductName                 string                                `json:"productName"`
+	ImageStock                  *string                               `json:"imageStock,omitzero"`
+	StockQuantity               *int64                                `json:"stockQuantity,omitzero"`
+	QuantityItems               *int64                                `json:"quantityItems,omitzero"`
+	OfferSupportEmailID         *string                               `json:"offerSupportEmailId,omitzero"`
+	PaymentConfig               *OffersGetOutputPaymentConfig         `json:"paymentConfig,omitzero"`
+	DefaultInstallment          int64                                 `json:"defaultInstallment"`
+	MembershipData              *OffersGetOutputMembershipData        `json:"membershipData,omitzero"`
+	Deliverables                []OffersGetOutputDeliverablesItem     `json:"deliverables,omitzero"`
+	Coproductions               []OffersGetOutputCoproductionsItem    `json:"coproductions,omitzero"`
+	IsSaleBlockedByCoproduction *bool                                 `json:"isSaleBlockedByCoproduction,omitzero"`
+	ProductCategory             *OffersGetOutputProductCategory       `json:"productCategory,omitzero"`
+	ProductClass                *OffersGetOutputProductClass          `json:"productClass,omitzero"`
+	SoftDescriptor              *string                               `json:"softDescriptor,omitzero"`
+	SupportPhone                *string                               `json:"supportPhone,omitzero"`
+	Status                      OffersGetOutputStatus                 `json:"status"`
+	ExternalID                  *string                               `json:"externalId,omitzero"`
+	GatewayName                 *string                               `json:"gatewayName"`
+	IsExternalCheckout          bool                                  `json:"isExternalCheckout"`
+	SupportsChargeLimit         bool                                  `json:"supportsChargeLimit"`
+	ProviderSyncError           map[string]any                        `json:"providerSyncError"`
+	IncompleteReason            []OffersGetOutputIncompleteReasonItem `json:"incompleteReason"`
+	PlanID                      *string                               `json:"planId,omitzero"`
+	AddonID                     *string                               `json:"addonId,omitzero"`
+	IsRecurrent                 *bool                                 `json:"isRecurrent,omitzero"`
 }
 
 // OffersGetOutputCheckoutImages is the type of [OffersGetOutput.CheckoutImages].
@@ -997,6 +998,9 @@ type OffersGetOutputCoproductionsItem struct {
 	Email      string                                 `json:"email"`
 	Commission float64                                `json:"commission"`
 	Status     OffersGetOutputCoproductionsItemStatus `json:"status"`
+	ExternalID *string                                `json:"externalId,omitzero"`
+	CreatedAt  *time.Time                             `json:"createdAt,omitzero"`
+	ApprovedAt *time.Time                             `json:"approvedAt,omitzero"`
 }
 
 // OffersGetOutputCoproductionsItemStatus is the type of [OffersGetOutputCoproductionsItem.Status].

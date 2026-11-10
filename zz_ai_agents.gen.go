@@ -581,7 +581,7 @@ type AIAgentsGetOutput struct {
 	Status       string                            `json:"status"`
 	Version      float64                           `json:"version"`
 	PublishedAt  *string                           `json:"publishedAt,omitzero"`
-	CredentialID string                            `json:"credentialId"`
+	CredentialID *string                           `json:"credentialId,omitzero"`
 	ModelID      string                            `json:"modelId"`
 	Temperature  float64                           `json:"temperature"`
 	Persona      string                            `json:"persona"`
@@ -740,10 +740,10 @@ type AIAgentsListOutputDataItem struct {
 	Status             string  `json:"status"`
 	Version            float64 `json:"version"`
 	PublishedAt        *string `json:"publishedAt,omitzero"`
-	CredentialID       string  `json:"credentialId"`
+	CredentialID       *string `json:"credentialId,omitzero"`
 	ModelID            string  `json:"modelId"`
 	Temperature        float64 `json:"temperature"`
-	Provider           string  `json:"provider"`
+	Provider           *string `json:"provider,omitzero"`
 	PrimaryRole        *string `json:"primaryRole,omitzero"`
 	ConversationsCount float64 `json:"conversationsCount"`
 	ScheduledCount     float64 `json:"scheduledCount"`

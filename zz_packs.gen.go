@@ -15,9 +15,10 @@ type PacksService struct {
 
 // Update a pack offer affiliation.
 //
-// Updates a pack offer affiliation: its `commission` and/or `isActive` flag. Identify the offer by
+// Updates a pack offer affiliation: its `isActive` flag and/or `commission`. Identify the offer by
 // `packId` + `offerId`. Inactive affiliations block sharing (the snapshot gate flags
-// `offer_inactive`).
+// `offer_inactive`). `commission` (whole percentage, 1-80) is the PRODUCT commission: it applies to
+// every affiliate following the product's default commission, not only this pack.
 //
 // Calls POST /packs/affiliation-offer-update.
 func (s *PacksService) AffiliationOfferUpdate(ctx context.Context, body PacksAffiliationOfferUpdateInput, opts ...Option) (*PacksUpdateOutput, error) {
@@ -31,8 +32,12 @@ func (s *PacksService) AffiliationOfferUpdate(ctx context.Context, body PacksAff
 // Add contents to a pack.
 //
 // Adds funnels, pages, flows, and/or offers to a pack. For funnels4, `funnelModes` chooses per-funnel
-// `full` (pages + automations) or `skeleton` (structure only); `includeProducts` also affiliates the
-// funnel offers. Appending changes the source → run [PacksService.Resnapshot] before re-sharing.
+// `full` (pages + automations) or `skeleton` (structure only); the mode is stored on the pack and
+// reused by every later version. Re-sending a funnel already in the pack with another mode switches
+// its mode; omitting it keeps the current one. `includeProducts` (funnels3 only) also affiliates the
+// funnel offers. funnels4 returns `snapshot` = the new draft version generated with the appended
+// content → publish that `version` with [PacksService.SnapshotPublish] (no [PacksService.Resnapshot]
+// needed). funnels3 returns `snapshot: null`.
 //
 // Calls POST /packs/append.
 func (s *PacksService) Append(ctx context.Context, body PacksAppendInput, opts ...Option) (*PacksAppendOutput, error) {
@@ -43,10 +48,28 @@ func (s *PacksService) Append(ctx context.Context, body PacksAppendInput, opts .
 	return &out, nil
 }
 
-// Set an offer commission in a pack.
+// Preview the offers sold by funnels/pages.
 //
-// Updates the affiliate commission for one offer in a pack. Identify the offer by `packId` +
-// `offerId`; `commission` is the affiliate's percentage.
+// Lists the offers that the checkouts of the given `funnels`/`pages` sell, i.e. what
+// [PacksService.Append] of those ids would bring into the pack: product, commission and whether the
+// offer is shared (`isShared`). Use before appending to tell the user which products go along and to
+// decide each offer's sharing.
+//
+// Calls POST /packs/checkout-offers-preview.
+func (s *PacksService) CheckoutOffersPreview(ctx context.Context, body PacksCheckoutOffersPreviewInput, opts ...Option) (*PacksCheckoutOffersPreviewOutput, error) {
+	var out PacksCheckoutOffersPreviewOutput
+	if err := s.client.do(ctx, "POST", "/packs/checkout-offers-preview", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Set the commission of a pack offer's product.
+//
+// Sets the PRODUCT commission of the product behind one pack offer (`packId` + `offerId`). Not scoped
+// to the pack: every affiliate following the product's default commission, inside and outside the
+// pack, moves to the new value (same as the product's affiliation page). `commission` is a whole
+// percentage from 1 to 80.
 //
 // Calls POST /packs/commission-update.
 func (s *PacksService) CommissionUpdate(ctx context.Context, body PacksCommissionUpdateInput, opts ...Option) (*PacksUpdateOutput, error) {
@@ -57,11 +80,41 @@ func (s *PacksService) CommissionUpdate(ctx context.Context, body PacksCommissio
 	return &out, nil
 }
 
+// Remove the pack cover.
+//
+// Removes the cover of a pack and deletes its uploaded cover images from storage (they stop being
+// public). The pack shows the empty cover area until a new one is set with [PacksService.CoverSet].
+//
+// Calls POST /packs/cover-remove.
+func (s *PacksService) CoverRemove(ctx context.Context, body PacksCoverRemoveInput, opts ...Option) (*PacksCoverRemoveOutput, error) {
+	var out PacksCoverRemoveOutput
+	if err := s.client.do(ctx, "POST", "/packs/cover-remove", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Set the pack cover.
+//
+// Sets the cover image of a pack. `imageUrl` = the public URL of an image the user just uploaded in
+// the chat (e.g. the answer of an `image` question); JPEG, PNG, WebP or AVIF up to 5 MB. Images from
+// any other site are refused: ask the user to upload the file. Returns the new `thumbnailUrl`.
+//
+// Calls POST /packs/cover-set.
+func (s *PacksService) CoverSet(ctx context.Context, body PacksCoverSetInput, opts ...Option) (*PacksCoverSetOutput, error) {
+	var out PacksCoverSetOutput
+	if err := s.client.do(ctx, "POST", "/packs/cover-set", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Create a pack.
 //
 // Creates an empty pack in a project. Requires `projectId` and `name`; `description`, `category`,
-// `level`, `thumbnailUrl`, and `funnelsEngine` (funnels3/funnels4) are optional. Add contents
-// afterward with [PacksService.Append].
+// `level`, and `funnelsEngine` (default `funnels4`; pass `funnels3` only for funnels3 funnels, since
+// [PacksService.Append] rejects funnels from the other engine with 409) are optional. Add contents
+// afterward with [PacksService.Append]; set the cover with [PacksService.CoverSet].
 //
 // Calls POST /packs/create.
 func (s *PacksService) Create(ctx context.Context, body PacksCreateInput, opts ...Option) (*PacksCreateOutput, error) {
@@ -104,9 +157,11 @@ func (s *PacksService) Get(ctx context.Context, params PacksGetParams, opts ...O
 //
 // Imports a published pack into a destination `projectId`, cloning its funnels/pages/flows and
 // affiliating its offers. Heavy operation that creates assets and runs asynchronously: returns an
-// import `id` whose progress is tracked via [PacksService.ImportedGet]. Pass
-// `resolutions`/`externalPageUrls`/`overrideFlowsIds` for dependencies the preview flagged; unresolved
-// deps yield a `partial` import. Read [PacksService.ImportPreview] first.
+// import `id` whose progress is tracked via [PacksService.ImportedGet]. Pass `valueMap` (automation
+// dependencies: kind → author id → own id or null; unresolved ones arrive empty, never with the
+// author id), `resolutions` (`{type: "automation", skip: true}` to skip an automation) and
+// `offerResolutions`/`channelResolutions`/`pageResolutions` for what the preview flagged. Read
+// [PacksService.ImportPreview] first.
 //
 // Calls POST /packs/import.
 func (s *PacksService) Import(ctx context.Context, body PacksImportInput, opts ...Option) (*PacksImportOutput, error) {
@@ -161,6 +216,95 @@ func (s *PacksService) ImportedList(ctx context.Context, params PacksImportedLis
 	return &out, nil
 }
 
+// List the account slots of an imported pack.
+//
+// Lists the "Conecte para ativar" slots of an import (`importId` = the `id` from
+// [PacksService.ImportedList]): each account the author's automations used (WhatsApp number, Telegram
+// bot, email sender, WhatsApp template…) that the importer must connect to their own. A slot is
+// `open`, `pending` (WhatsApp template created from the pack, waiting for Meta; `review` has the
+// status), `filled` or `skipped`. Fill `open` slots with [PacksService.ImportedSlotsUpdate] using a
+// `candidates[].id` (`suggestedId` when there is only one); `fillable=false` slots are configured in
+// the automation editor. `gupshupTemplate` slots with a replicable `template` can be created on one of
+// `whatsappNumbers` via [PacksService.ImportedSlotsTemplatesCreate].
+//
+// Calls GET /packs/imported-slots-list.
+func (s *PacksService) ImportedSlotsList(ctx context.Context, params PacksImportedSlotsListParams, opts ...Option) (*PacksImportedSlotsListOutput, error) {
+	var out PacksImportedSlotsListOutput
+	if err := s.client.do(ctx, "GET", "/packs/imported-slots-list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Create WhatsApp templates from an imported pack's.
+//
+// Creates, on the importer's official WhatsApp number (`channelInstanceId` from `whatsappNumbers` of
+// [PacksService.ImportedSlotsList]), copies of the author's templates for the chosen `gupshupTemplate`
+// slots and submits them to Meta. Only slots whose `template.replicable` is true can be copied. Each
+// slot goes to `pending` and is filled by itself when Meta approves; `failed` lists the ones that did
+// not go out (name already used with another text, Meta refusal). Confirm the template list with the
+// user first.
+//
+// Calls POST /packs/imported-slots-templates-create.
+func (s *PacksService) ImportedSlotsTemplatesCreate(ctx context.Context, body PacksImportedSlotsTemplatesCreateInput, opts ...Option) (*PacksImportedSlotsTemplatesCreateOutput, error) {
+	var out PacksImportedSlotsTemplatesCreateOutput
+	if err := s.client.do(ctx, "POST", "/packs/imported-slots-templates-create", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Fill an imported pack slot.
+//
+// Connects one slot of an import to the importer's own account and rewires the pack automations that
+// use it. `resolvedId` = one of the slot `candidates[].id` (never an id from the author); `null` skips
+// the slot (the person configures it in the automation editor). `applyToSameEntity: true` uses the
+// same account on every other open slot of the same kind in this import. Returns the updated slot
+// list.
+//
+// Calls POST /packs/imported-slots-update.
+func (s *PacksService) ImportedSlotsUpdate(ctx context.Context, body PacksImportedSlotsUpdateInput, opts ...Option) (*PacksImportedSlotsUpdateOutput, error) {
+	var out PacksImportedSlotsUpdateOutput
+	if err := s.client.do(ctx, "POST", "/packs/imported-slots-update", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Update an imported pack to the current version.
+//
+// Applies the pack's current version to an import. `decisions` is keyed by `kind:sourceId` of the
+// `ask=true` items from [PacksService.ImportedUpdateGet]: `keep` (keep the importer's copy), `take`
+// (replace it with the new version; on `changed`, discards the importer's edits) or `delete` (delete
+// the importer's copy; on `removed`). Items without a decision stay as they are. Runs asynchronously
+// and returns the job `id`. Show the item list and get the user's choices before calling.
+//
+// Calls POST /packs/imported-update-apply.
+func (s *PacksService) ImportedUpdateApply(ctx context.Context, body PacksImportedUpdateApplyInput, opts ...Option) (*PacksImportedUpdateApplyOutput, error) {
+	var out PacksImportedUpdateApplyOutput
+	if err := s.client.do(ctx, "POST", "/packs/imported-update-apply", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Check the update of an imported pack.
+//
+// Compares an import (`importId`) with the pack's current published version: `upToDate`, `fromVersion`
+// → `toVersion` and the `items` (funnel/page/flow) that `changed`, were `added` or `removed`.
+// `edited` = the importer changed their copy after importing; `live` = published page/funnel or active
+// automation. Items with `ask=true` need a decision in [PacksService.ImportedUpdateApply]; the others
+// are updated on their own. Read this before applying.
+//
+// Calls GET /packs/imported-update-get.
+func (s *PacksService) ImportedUpdateGet(ctx context.Context, params PacksImportedUpdateGetParams, opts ...Option) (*PacksImportedUpdateGetOutput, error) {
+	var out PacksImportedUpdateGetOutput
+	if err := s.client.do(ctx, "GET", "/packs/imported-update-get", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // List packs.
 //
 // Returns paginated packs owned by the workspace, with optional search, ordering, and filters. Use to
@@ -170,6 +314,22 @@ func (s *PacksService) ImportedList(ctx context.Context, params PacksImportedLis
 func (s *PacksService) List(ctx context.Context, params PacksListParams, opts ...Option) (*PacksListOutput, error) {
 	var out PacksListOutput
 	if err := s.client.do(ctx, "GET", "/packs/list", params.values(), nil, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Share or stop sharing a pack offer.
+//
+// Sets whether the author shares one pack offer (`packId` + `offerId`) with importers. `isShared:
+// false` = importers do not get the author's offer and must pick one of their own on import (the
+// preview flags it as blocking); `true` = they sell the author's offer as affiliates. Changes what
+// everyone importing this pack sells.
+//
+// Calls POST /packs/offer-sharing-update.
+func (s *PacksService) OfferSharingUpdate(ctx context.Context, body PacksOfferSharingUpdateInput, opts ...Option) (*PacksUpdateOutput, error) {
+	var out PacksUpdateOutput
+	if err := s.client.do(ctx, "POST", "/packs/offer-sharing-update", nil, body, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -199,6 +359,21 @@ func (s *PacksService) Remove(ctx context.Context, body PacksRemoveInput, opts .
 func (s *PacksService) Resnapshot(ctx context.Context, body PacksResnapshotInput, opts ...Option) (*PacksResnapshotOutput, error) {
 	var out PacksResnapshotOutput
 	if err := s.client.do(ctx, "POST", "/packs/resnapshot", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// List the assets a pack version carries.
+//
+// Lists the generic assets a snapshot version carries besides funnels/pages/flows (quiz, custom
+// fields…), the "Também vai junto" list. `origin: derived` = included because the pack content uses
+// it; `manual` = added by the author. funnels4 only.
+//
+// Calls GET /packs/snapshot-assets-list.
+func (s *PacksService) SnapshotAssetsList(ctx context.Context, params PacksSnapshotAssetsListParams, opts ...Option) (*PacksSnapshotAssetsListOutput, error) {
+	var out PacksSnapshotAssetsListOutput
+	if err := s.client.do(ctx, "GET", "/packs/snapshot-assets-list", params.values(), nil, &out, opts); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -252,8 +427,11 @@ func (s *PacksService) SnapshotPublish(ctx context.Context, body PacksSnapshotPu
 
 // Update pack metadata.
 //
-// Updates pack metadata (name, description, category, level, thumbnail, active state, etc.). Does not
-// change pack contents — use [PacksService.Append]/[PacksService.Remove] for that.
+// Updates pack metadata (name, description, category, level, active state, etc.); the cover goes
+// through [PacksService.CoverSet]/[PacksService.CoverRemove]. Does not change pack contents — use
+// [PacksService.Append]/[PacksService.Remove] for that. A funnels4 pack can only be activated
+// (`isActive: true`) after a version published with [PacksService.SnapshotPublish] reaches
+// `valid`/`warnings` (409 otherwise); imports use only that published version.
 //
 // Calls POST /packs/update.
 func (s *PacksService) Update(ctx context.Context, body PacksUpdateInput, opts ...Option) (*PacksUpdateOutput, error) {
@@ -266,10 +444,10 @@ func (s *PacksService) Update(ctx context.Context, body PacksUpdateInput, opts .
 
 // PacksAffiliationOfferUpdateInput is the request body of [PacksService.AffiliationOfferUpdate].
 type PacksAffiliationOfferUpdateInput struct {
-	PackID     string          `json:"packId"`
-	Commission Nullable[int64] `json:"commission,omitzero"`
-	IsActive   *bool           `json:"isActive,omitzero"`
-	OfferID    string          `json:"offerId"`
+	PackID     string `json:"packId"`
+	Commission *int64 `json:"commission,omitzero"`
+	IsActive   *bool  `json:"isActive,omitzero"`
+	OfferID    string `json:"offerId"`
 }
 
 // PacksAppendInput is the request body of [PacksService.Append].
@@ -281,6 +459,7 @@ type PacksAppendInput struct {
 	Offers          []string                                    `json:"offers,omitzero"`
 	IncludeProducts *bool                                       `json:"includeProducts,omitzero"`
 	FunnelModes     map[string]PacksAppendInputFunnelModesValue `json:"funnelModes,omitzero"`
+	OfferSharing    map[string]bool                             `json:"offerSharing,omitzero"`
 }
 
 // PacksAppendInputFunnelModesValue is a value of [PacksAppendInput.FunnelModes].
@@ -294,14 +473,71 @@ const (
 
 // PacksAppendOutput is the response of [PacksService.Append].
 type PacksAppendOutput struct {
-	Appended bool `json:"appended"`
+	Appended bool                       `json:"appended"`
+	Snapshot *PacksAppendOutputSnapshot `json:"snapshot"`
+}
+
+// PacksAppendOutputSnapshot is the type of [PacksAppendOutput.Snapshot].
+type PacksAppendOutputSnapshot struct {
+	ID      string  `json:"id"`
+	Version float64 `json:"version"`
+}
+
+// PacksCheckoutOffersPreviewInput is the request body of [PacksService.CheckoutOffersPreview].
+type PacksCheckoutOffersPreviewInput struct {
+	PackID  string   `json:"packId"`
+	Funnels []string `json:"funnels,omitzero"`
+	Pages   []string `json:"pages,omitzero"`
+}
+
+// PacksCheckoutOffersPreviewOutput is the response of [PacksService.CheckoutOffersPreview].
+type PacksCheckoutOffersPreviewOutput struct {
+	Data []PacksCheckoutOffersPreviewOutputDataItem `json:"data"`
+}
+
+// PacksCheckoutOffersPreviewOutputDataItem is an element of [PacksCheckoutOffersPreviewOutput.Data].
+//
+// A value has one of these property sets:
+//   - offerId, offerName, productId, productName, commission, isShared, fromOtherProducer
+//   - offerId, funnelName, pageName, fromOtherProducer
+type PacksCheckoutOffersPreviewOutputDataItem struct {
+	OfferID           string   `json:"offerId"`
+	OfferName         *string  `json:"offerName,omitzero"`
+	ProductID         *string  `json:"productId,omitzero"`
+	ProductName       *string  `json:"productName,omitzero"`
+	Commission        *float64 `json:"commission,omitzero"`
+	IsShared          *bool    `json:"isShared,omitzero"`
+	FromOtherProducer bool     `json:"fromOtherProducer"`
+	FunnelName        *string  `json:"funnelName,omitzero"`
+	PageName          *string  `json:"pageName,omitzero"`
 }
 
 // PacksCommissionUpdateInput is the request body of [PacksService.CommissionUpdate].
 type PacksCommissionUpdateInput struct {
-	Commission Nullable[int64] `json:"commission,omitzero"`
-	PackID     string          `json:"packId"`
-	OfferID    string          `json:"offerId"`
+	Commission int64  `json:"commission"`
+	PackID     string `json:"packId"`
+	OfferID    string `json:"offerId"`
+}
+
+// PacksCoverRemoveInput is the request body of [PacksService.CoverRemove].
+type PacksCoverRemoveInput struct {
+	PackID string `json:"packId"`
+}
+
+// PacksCoverRemoveOutput is the response of [PacksService.CoverRemove].
+type PacksCoverRemoveOutput struct {
+	ThumbnailURL *string `json:"thumbnailUrl,omitzero"`
+}
+
+// PacksCoverSetInput is the request body of [PacksService.CoverSet].
+type PacksCoverSetInput struct {
+	PackID   string `json:"packId"`
+	ImageURL string `json:"imageUrl"`
+}
+
+// PacksCoverSetOutput is the response of [PacksService.CoverSet].
+type PacksCoverSetOutput struct {
+	ThumbnailURL *string `json:"thumbnailUrl,omitzero"`
 }
 
 // PacksCreateInput is the request body of [PacksService.Create].
@@ -312,7 +548,6 @@ type PacksCreateInput struct {
 	LearnMoreURL  Nullable[string]                   `json:"learnMoreUrl,omitzero"`
 	IsActive      *bool                              `json:"isActive,omitzero"`
 	IsFunnelOnly  *bool                              `json:"isFunnelOnly,omitzero"`
-	ThumbnailURL  Nullable[string]                   `json:"thumbnailUrl,omitzero"`
 	Level         Nullable[PacksCreateInputLevel]    `json:"level,omitzero"`
 	Category      Nullable[PacksCreateInputCategory] `json:"category,omitzero"`
 	FunnelsEngine *PacksCreateInputFunnelsEngine     `json:"funnelsEngine,omitzero"`
@@ -366,21 +601,23 @@ type PacksDeleteOutput struct {
 
 // PacksGetOutput is the response of [PacksService.Get].
 type PacksGetOutput struct {
-	ID            string                      `json:"id"`
-	ProjectID     *string                     `json:"projectId,omitzero"`
-	FunnelsEngine PacksGetOutputFunnelsEngine `json:"funnelsEngine"`
-	Name          string                      `json:"name"`
-	Description   *string                     `json:"description,omitzero"`
-	LearnMoreURL  *string                     `json:"learnMoreUrl,omitzero"`
-	ThumbnailURL  *string                     `json:"thumbnailUrl,omitzero"`
-	IsActive      bool                        `json:"isActive"`
-	ShareCount    float64                     `json:"shareCount"`
-	CreatedAt     time.Time                   `json:"createdAt"`
-	UpdatedAt     time.Time                   `json:"updatedAt"`
-	Funnels       []PacksGetOutputFunnelsItem `json:"funnels"`
-	Pages         []PacksGetOutputPagesItem   `json:"pages"`
-	Flows         []PacksGetOutputFlowsItem   `json:"flows"`
-	Offers        []PacksGetOutputOffersItem  `json:"offers"`
+	ID                   string                             `json:"id"`
+	ProjectID            *string                            `json:"projectId,omitzero"`
+	FunnelsEngine        PacksGetOutputFunnelsEngine        `json:"funnelsEngine"`
+	Name                 string                             `json:"name"`
+	Description          *string                            `json:"description,omitzero"`
+	LearnMoreURL         *string                            `json:"learnMoreUrl,omitzero"`
+	ThumbnailURL         *string                            `json:"thumbnailUrl,omitzero"`
+	IsActive             bool                               `json:"isActive"`
+	HasPublishedSnapshot bool                               `json:"hasPublishedSnapshot"`
+	ShareCount           float64                            `json:"shareCount"`
+	CreatedAt            time.Time                          `json:"createdAt"`
+	UpdatedAt            time.Time                          `json:"updatedAt"`
+	Funnels              []PacksGetOutputFunnelsItem        `json:"funnels"`
+	Pages                []PacksGetOutputPagesItem          `json:"pages"`
+	Flows                []PacksGetOutputFlowsItem          `json:"flows"`
+	Offers               []PacksGetOutputOffersItem         `json:"offers"`
+	IncludedAssets       []PacksGetOutputIncludedAssetsItem `json:"includedAssets,omitzero"`
 }
 
 // PacksGetOutputFlowsItem is an element of [PacksGetOutput.Flows].
@@ -408,6 +645,7 @@ type PacksGetOutputFunnelsItem struct {
 	ProjectSlug      string                                `json:"projectSlug"`
 	PlanCategoryName *string                               `json:"planCategoryName,omitzero"`
 	CanUse           bool                                  `json:"canUse"`
+	Mode             PacksGetOutputFunnelsItemMode         `json:"mode"`
 	Thumbnail        *string                               `json:"thumbnail,omitzero"`
 	Pages            []PacksGetOutputFunnelsItemPagesItem  `json:"pages"`
 	Offers           []PacksGetOutputFunnelsItemOffersItem `json:"offers"`
@@ -421,6 +659,15 @@ type PacksGetOutputFunnelsItemFlowsItem struct {
 	ShareID *string  `json:"shareId,omitzero"`
 	Actions []string `json:"actions,omitzero"`
 }
+
+// PacksGetOutputFunnelsItemMode is the type of [PacksGetOutputFunnelsItem.Mode].
+type PacksGetOutputFunnelsItemMode string
+
+// Values of [PacksGetOutputFunnelsItemMode].
+const (
+	PacksGetOutputFunnelsItemModeFull     PacksGetOutputFunnelsItemMode = "full"
+	PacksGetOutputFunnelsItemModeSkeleton PacksGetOutputFunnelsItemMode = "skeleton"
+)
 
 // PacksGetOutputFunnelsItemOffersItem is an element of [PacksGetOutputFunnelsItem.Offers].
 type PacksGetOutputFunnelsItemOffersItem struct {
@@ -444,18 +691,34 @@ type PacksGetOutputFunnelsItemPagesItem struct {
 	Thumbnail   *string `json:"thumbnail,omitzero"`
 }
 
+// PacksGetOutputIncludedAssetsItem is an element of [PacksGetOutput.IncludedAssets].
+type PacksGetOutputIncludedAssetsItem struct {
+	Kind string  `json:"kind"`
+	Name *string `json:"name,omitzero"`
+}
+
 // PacksGetOutputOffersItem is an element of [PacksGetOutput.Offers].
 type PacksGetOutputOffersItem struct {
-	ID                  string   `json:"id"`
-	Name                string   `json:"name"`
-	PackCommission      *float64 `json:"packCommission,omitzero"`
-	AffiliationIsActive bool     `json:"affiliationIsActive"`
-	AffiliationIsShared bool     `json:"affiliationIsShared"`
-	DefaultCommission   *int64   `json:"defaultCommission,omitzero"`
-	ProductName         string   `json:"productName"`
-	OriginalPrice       int64    `json:"originalPrice"`
-	Thumbnail           *string  `json:"thumbnail,omitzero"`
+	ID                  string                         `json:"id"`
+	Name                string                         `json:"name"`
+	PackCommission      *float64                       `json:"packCommission,omitzero"`
+	AffiliationIsActive bool                           `json:"affiliationIsActive"`
+	AffiliationIsShared bool                           `json:"affiliationIsShared"`
+	Source              PacksGetOutputOffersItemSource `json:"source"`
+	DefaultCommission   *int64                         `json:"defaultCommission,omitzero"`
+	ProductName         string                         `json:"productName"`
+	OriginalPrice       int64                          `json:"originalPrice"`
+	Thumbnail           *string                        `json:"thumbnail,omitzero"`
 }
+
+// PacksGetOutputOffersItemSource is the type of [PacksGetOutputOffersItem.Source].
+type PacksGetOutputOffersItemSource string
+
+// Values of [PacksGetOutputOffersItemSource].
+const (
+	PacksGetOutputOffersItemSourceManual  PacksGetOutputOffersItemSource = "manual"
+	PacksGetOutputOffersItemSourceDerived PacksGetOutputOffersItemSource = "derived"
+)
 
 // PacksGetOutputPagesItem is an element of [PacksGetOutput.Pages].
 type PacksGetOutputPagesItem struct {
@@ -484,9 +747,11 @@ type PacksImportInput struct {
 	Title              *string                                            `json:"title,omitzero"`
 	DomainID           *string                                            `json:"domainId,omitzero"`
 	Resolutions        map[string]PacksImportInputResolutionsValue        `json:"resolutions,omitzero"`
+	ValueMap           map[string]map[string]*string                      `json:"valueMap,omitzero"`
 	OfferResolutions   map[string]PacksImportInputOfferResolutionsValue   `json:"offerResolutions,omitzero"`
 	ChannelResolutions map[string]PacksImportInputChannelResolutionsValue `json:"channelResolutions,omitzero"`
 	PageResolutions    map[string]PacksImportInputPageResolutionsValue    `json:"pageResolutions,omitzero"`
+	NodeResolutions    map[string]PacksImportInputNodeResolutionsValue    `json:"nodeResolutions,omitzero"`
 	ExternalPageURLs   map[string]string                                  `json:"externalPageUrls,omitzero"`
 	OverrideFlowsIDs   []PacksImportInputOverrideFlowsIDsItem             `json:"overrideFlowsIds,omitzero"`
 }
@@ -494,6 +759,15 @@ type PacksImportInput struct {
 // PacksImportInputChannelResolutionsValue is a value of [PacksImportInput.ChannelResolutions].
 type PacksImportInputChannelResolutionsValue struct {
 	ChannelID string `json:"channelId"`
+}
+
+// PacksImportInputNodeResolutionsValue is a value of [PacksImportInput.NodeResolutions].
+type PacksImportInputNodeResolutionsValue struct {
+	ResourceID string           `json:"resourceId"`
+	Name       *string          `json:"name,omitzero"`
+	Slug       Nullable[string] `json:"slug,omitzero"`
+	URL        *string          `json:"url,omitzero"`
+	PageURL    Nullable[string] `json:"pageUrl,omitzero"`
 }
 
 // PacksImportInputOfferResolutionsValue is a value of [PacksImportInput.OfferResolutions].
@@ -515,19 +789,8 @@ type PacksImportInputPageResolutionsValue struct {
 
 // PacksImportInputResolutionsValue is a value of [PacksImportInput.Resolutions].
 type PacksImportInputResolutionsValue struct {
-	Type              PacksImportInputResolutionsValueType                    `json:"type"`
-	StepsDependencies []PacksImportInputResolutionsValueStepsDependenciesItem `json:"stepsDependencies,omitzero"`
-}
-
-// PacksImportInputResolutionsValueStepsDependenciesItem is an element of
-// [PacksImportInputResolutionsValue.StepsDependencies].
-type PacksImportInputResolutionsValueStepsDependenciesItem struct {
-	StepID string         `json:"stepId"`
-	Type   string         `json:"type"`
-	Action *string        `json:"action,omitzero"`
-	Target any            `json:"target,omitzero"`
-	Meta   map[string]any `json:"meta,omitzero"`
-	Input  map[string]any `json:"input,omitzero"`
+	Type PacksImportInputResolutionsValueType `json:"type"`
+	Skip *bool                                `json:"skip,omitzero"`
 }
 
 // PacksImportInputResolutionsValueType is the type of [PacksImportInputResolutionsValue.Type].
@@ -551,8 +814,31 @@ type PacksImportPreviewOutput struct {
 	StandaloneAutomations []PacksImportPreviewOutputStandaloneAutomationsItem `json:"standaloneAutomations"`
 	StandaloneOffers      []PacksImportPreviewOutputStandaloneOffersItem      `json:"standaloneOffers"`
 	Channels              []PacksImportPreviewOutputChannelsItem              `json:"channels"`
+	AffiliationBlockers   []PacksImportPreviewOutputAffiliationBlockersItem   `json:"affiliationBlockers"`
+	SetupNodes            []PacksImportPreviewOutputSetupNodesItem            `json:"setupNodes"`
 	PageEmbeds            []PacksImportPreviewOutputPageEmbedsItem            `json:"pageEmbeds"`
 }
+
+// PacksImportPreviewOutputAffiliationBlockersItem is an element of
+// [PacksImportPreviewOutput.AffiliationBlockers].
+type PacksImportPreviewOutputAffiliationBlockersItem struct {
+	OfferID     string                                                `json:"offerId"`
+	OfferName   *string                                               `json:"offerName,omitzero"`
+	ProductID   *string                                               `json:"productId,omitzero"`
+	ProductName *string                                               `json:"productName,omitzero"`
+	Reason      PacksImportPreviewOutputAffiliationBlockersItemReason `json:"reason"`
+}
+
+// PacksImportPreviewOutputAffiliationBlockersItemReason is the type of
+// [PacksImportPreviewOutputAffiliationBlockersItem.Reason].
+type PacksImportPreviewOutputAffiliationBlockersItemReason string
+
+// Values of [PacksImportPreviewOutputAffiliationBlockersItemReason].
+const (
+	PacksImportPreviewOutputAffiliationBlockersItemReasonAffiliationDisabled PacksImportPreviewOutputAffiliationBlockersItemReason = "affiliation_disabled"
+	PacksImportPreviewOutputAffiliationBlockersItemReasonProductDeleted      PacksImportPreviewOutputAffiliationBlockersItemReason = "product_deleted"
+	PacksImportPreviewOutputAffiliationBlockersItemReasonImporterSuspended   PacksImportPreviewOutputAffiliationBlockersItemReason = "importer_suspended"
+)
 
 // PacksImportPreviewOutputChannelsItem is an element of [PacksImportPreviewOutput.Channels].
 type PacksImportPreviewOutputChannelsItem struct {
@@ -590,7 +876,6 @@ type PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItem struct {
 	StepID     *string                                                                      `json:"stepId,omitzero"`
 	StepType   string                                                                       `json:"stepType"`
 	StepLabel  string                                                                       `json:"stepLabel"`
-	Step       *PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemStep      `json:"step,omitzero"`
 	FieldPath  string                                                                       `json:"fieldPath"`
 	Required   bool                                                                         `json:"required"`
 	Resolution PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemResolution `json:"resolution"`
@@ -605,17 +890,6 @@ const (
 	PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemResolutionAutoMap        PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemResolution = "auto-map"
 	PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemResolutionWizardRequired PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemResolution = "wizard-required"
 )
-
-// PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemStep is the type of
-// [PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItem.Step].
-type PacksImportPreviewOutputFunnelsItemAutomationsItemDependenciesItemStep struct {
-	ID     string         `json:"id"`
-	Type   string         `json:"type"`
-	Action *string        `json:"action,omitzero"`
-	Target any            `json:"target,omitzero"`
-	Meta   map[string]any `json:"meta,omitzero"`
-	Input  map[string]any `json:"input,omitzero"`
-}
 
 // PacksImportPreviewOutputFunnelsItemAutomationsItemScope is the type of
 // [PacksImportPreviewOutputFunnelsItemAutomationsItem.Scope].
@@ -695,6 +969,26 @@ type PacksImportPreviewOutputPageEmbedsItemListsItem struct {
 	Name string `json:"name"`
 }
 
+// PacksImportPreviewOutputSetupNodesItem is an element of [PacksImportPreviewOutput.SetupNodes].
+type PacksImportPreviewOutputSetupNodesItem struct {
+	NodeID     string                                     `json:"nodeId"`
+	FunnelID   string                                     `json:"funnelId"`
+	FunnelName string                                     `json:"funnelName"`
+	Label      string                                     `json:"label"`
+	Kind       PacksImportPreviewOutputSetupNodesItemKind `json:"kind"`
+}
+
+// PacksImportPreviewOutputSetupNodesItemKind is the type of
+// [PacksImportPreviewOutputSetupNodesItem.Kind].
+type PacksImportPreviewOutputSetupNodesItemKind string
+
+// Values of [PacksImportPreviewOutputSetupNodesItemKind].
+const (
+	PacksImportPreviewOutputSetupNodesItemKindQuiz     PacksImportPreviewOutputSetupNodesItemKind = "quiz"
+	PacksImportPreviewOutputSetupNodesItemKindCalendar PacksImportPreviewOutputSetupNodesItemKind = "calendar"
+	PacksImportPreviewOutputSetupNodesItemKindWebchat  PacksImportPreviewOutputSetupNodesItemKind = "webchat"
+)
+
 // PacksImportPreviewOutputStandaloneAutomationsItem is an element of
 // [PacksImportPreviewOutput.StandaloneAutomations].
 type PacksImportPreviewOutputStandaloneAutomationsItem struct {
@@ -715,7 +1009,6 @@ type PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItem struct {
 	StepID     *string                                                                     `json:"stepId,omitzero"`
 	StepType   string                                                                      `json:"stepType"`
 	StepLabel  string                                                                      `json:"stepLabel"`
-	Step       *PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemStep      `json:"step,omitzero"`
 	FieldPath  string                                                                      `json:"fieldPath"`
 	Required   bool                                                                        `json:"required"`
 	Resolution PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemResolution `json:"resolution"`
@@ -730,17 +1023,6 @@ const (
 	PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemResolutionAutoMap        PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemResolution = "auto-map"
 	PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemResolutionWizardRequired PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemResolution = "wizard-required"
 )
-
-// PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemStep is the type of
-// [PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItem.Step].
-type PacksImportPreviewOutputStandaloneAutomationsItemDependenciesItemStep struct {
-	ID     string         `json:"id"`
-	Type   string         `json:"type"`
-	Action *string        `json:"action,omitzero"`
-	Target any            `json:"target,omitzero"`
-	Meta   map[string]any `json:"meta,omitzero"`
-	Input  map[string]any `json:"input,omitzero"`
-}
 
 // PacksImportPreviewOutputStandaloneAutomationsItemScope is the type of
 // [PacksImportPreviewOutputStandaloneAutomationsItem.Scope].
@@ -795,14 +1077,15 @@ func (p PacksImportPreviewParams) values() url.Values {
 
 // PacksImportedGetOutput is the response of [PacksService.ImportedGet].
 type PacksImportedGetOutput struct {
-	ID         string                           `json:"id"`
-	ProjectID  *string                          `json:"projectId,omitzero"`
-	Title      *string                          `json:"title,omitzero"`
-	Status     PacksImportedGetOutputStatus     `json:"status"`
-	User       PacksImportedGetOutputUser       `json:"user"`
-	CreatedAt  time.Time                        `json:"createdAt"`
-	UpdatedAt  time.Time                        `json:"updatedAt"`
-	Aggregates PacksImportedGetOutputAggregates `json:"aggregates"`
+	ID            string                              `json:"id"`
+	ProjectID     *string                             `json:"projectId,omitzero"`
+	Title         *string                             `json:"title,omitzero"`
+	Status        PacksImportedGetOutputStatus        `json:"status"`
+	FunnelsEngine PacksImportedGetOutputFunnelsEngine `json:"funnelsEngine"`
+	User          PacksImportedGetOutputUser          `json:"user"`
+	CreatedAt     time.Time                           `json:"createdAt"`
+	UpdatedAt     time.Time                           `json:"updatedAt"`
+	Aggregates    PacksImportedGetOutputAggregates    `json:"aggregates"`
 }
 
 // PacksImportedGetOutputAggregates is the type of [PacksImportedGetOutput.Aggregates].
@@ -915,6 +1198,15 @@ const (
 	PacksImportedGetOutputAggregatesPagesItemStatusSuccess PacksImportedGetOutputAggregatesPagesItemStatus = "success"
 )
 
+// PacksImportedGetOutputFunnelsEngine is the type of [PacksImportedGetOutput.FunnelsEngine].
+type PacksImportedGetOutputFunnelsEngine string
+
+// Values of [PacksImportedGetOutputFunnelsEngine].
+const (
+	PacksImportedGetOutputFunnelsEngineFunnels3 PacksImportedGetOutputFunnelsEngine = "funnels3"
+	PacksImportedGetOutputFunnelsEngineFunnels4 PacksImportedGetOutputFunnelsEngine = "funnels4"
+)
+
 // PacksImportedGetOutputStatus is the type of [PacksImportedGetOutput.Status].
 type PacksImportedGetOutputStatus string
 
@@ -953,13 +1245,17 @@ type PacksImportedListOutput struct {
 
 // PacksImportedListOutputDataItem is an element of [PacksImportedListOutput.Data].
 type PacksImportedListOutputDataItem struct {
-	ID        string                                `json:"id"`
-	ProjectID *string                               `json:"projectId,omitzero"`
-	Title     *string                               `json:"title,omitzero"`
-	Status    PacksImportedListOutputDataItemStatus `json:"status"`
-	User      PacksImportedListOutputDataItemUser   `json:"user"`
-	CreatedAt time.Time                             `json:"createdAt"`
-	UpdatedAt time.Time                             `json:"updatedAt"`
+	ID              string                                       `json:"id"`
+	PackID          string                                       `json:"packId"`
+	ProjectID       *string                                      `json:"projectId,omitzero"`
+	Title           *string                                      `json:"title,omitzero"`
+	Status          PacksImportedListOutputDataItemStatus        `json:"status"`
+	SnapshotVersion *int64                                       `json:"snapshotVersion,omitzero"`
+	LatestVersion   *int64                                       `json:"latestVersion,omitzero"`
+	UpdateStatus    *PacksImportedListOutputDataItemUpdateStatus `json:"updateStatus,omitzero"`
+	User            PacksImportedListOutputDataItemUser          `json:"user"`
+	CreatedAt       time.Time                                    `json:"createdAt"`
+	UpdatedAt       time.Time                                    `json:"updatedAt"`
 }
 
 // PacksImportedListOutputDataItemStatus is the type of [PacksImportedListOutputDataItem.Status].
@@ -971,6 +1267,18 @@ const (
 	PacksImportedListOutputDataItemStatusFailed  PacksImportedListOutputDataItemStatus = "failed"
 	PacksImportedListOutputDataItemStatusSuccess PacksImportedListOutputDataItemStatus = "success"
 	PacksImportedListOutputDataItemStatusPartial PacksImportedListOutputDataItemStatus = "partial"
+)
+
+// PacksImportedListOutputDataItemUpdateStatus is the type of
+// [PacksImportedListOutputDataItem.UpdateStatus].
+type PacksImportedListOutputDataItemUpdateStatus string
+
+// Values of [PacksImportedListOutputDataItemUpdateStatus].
+const (
+	PacksImportedListOutputDataItemUpdateStatusPending PacksImportedListOutputDataItemUpdateStatus = "pending"
+	PacksImportedListOutputDataItemUpdateStatusFailed  PacksImportedListOutputDataItemUpdateStatus = "failed"
+	PacksImportedListOutputDataItemUpdateStatusSuccess PacksImportedListOutputDataItemUpdateStatus = "success"
+	PacksImportedListOutputDataItemUpdateStatusPartial PacksImportedListOutputDataItemUpdateStatus = "partial"
 )
 
 // PacksImportedListOutputDataItemUser is the type of [PacksImportedListOutputDataItem.User].
@@ -1000,6 +1308,436 @@ func (p PacksImportedListParams) values() url.Values {
 	addInt(v, "page", p.Page)
 	addInt(v, "perPage", p.PerPage)
 	addString(v, "projectId", &p.ProjectID)
+	return v
+}
+
+// PacksImportedSlotsListOutput is the response of [PacksService.ImportedSlotsList].
+type PacksImportedSlotsListOutput struct {
+	Slots           []PacksImportedSlotsListOutputSlotsItem           `json:"slots"`
+	WhatsappNumbers []PacksImportedSlotsListOutputWhatsappNumbersItem `json:"whatsappNumbers"`
+}
+
+// PacksImportedSlotsListOutputSlotsItem is an element of [PacksImportedSlotsListOutput.Slots].
+type PacksImportedSlotsListOutputSlotsItem struct {
+	ID            string                                                `json:"id"`
+	Entity        string                                                `json:"entity"`
+	SourceLabel   *string                                               `json:"sourceLabel,omitzero"`
+	Status        PacksImportedSlotsListOutputSlotsItemStatus           `json:"status"`
+	ResolvedID    *string                                               `json:"resolvedId,omitzero"`
+	ResolvedLabel *string                                               `json:"resolvedLabel,omitzero"`
+	Fillable      bool                                                  `json:"fillable"`
+	Candidates    []PacksImportedSlotsListOutputSlotsItemCandidatesItem `json:"candidates"`
+	SuggestedID   *string                                               `json:"suggestedId,omitzero"`
+	Placements    []PacksImportedSlotsListOutputSlotsItemPlacementsItem `json:"placements"`
+	Locations     []PacksImportedSlotsListOutputSlotsItemLocationsItem  `json:"locations"`
+	Template      *PacksImportedSlotsListOutputSlotsItemTemplate        `json:"template,omitzero"`
+	Review        *PacksImportedSlotsListOutputSlotsItemReview          `json:"review,omitzero"`
+	AIAgent       *PacksImportedSlotsListOutputSlotsItemAIAgent         `json:"aiAgent,omitzero"`
+}
+
+// PacksImportedSlotsListOutputSlotsItemAIAgent is the type of
+// [PacksImportedSlotsListOutputSlotsItem.AIAgent].
+type PacksImportedSlotsListOutputSlotsItemAIAgent struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// PacksImportedSlotsListOutputSlotsItemCandidatesItem is an element of
+// [PacksImportedSlotsListOutputSlotsItem.Candidates].
+type PacksImportedSlotsListOutputSlotsItemCandidatesItem struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// PacksImportedSlotsListOutputSlotsItemLocationsItem is an element of
+// [PacksImportedSlotsListOutputSlotsItem.Locations].
+type PacksImportedSlotsListOutputSlotsItemLocationsItem struct {
+	AssetID   string  `json:"assetId"`
+	AssetName *string `json:"assetName,omitzero"`
+	Kind      string  `json:"kind"`
+}
+
+// PacksImportedSlotsListOutputSlotsItemPlacementsItem is an element of
+// [PacksImportedSlotsListOutputSlotsItem.Placements].
+type PacksImportedSlotsListOutputSlotsItemPlacementsItem struct {
+	AssetName *string                                                  `json:"assetName,omitzero"`
+	Kind      string                                                   `json:"kind"`
+	Role      *PacksImportedSlotsListOutputSlotsItemPlacementsItemRole `json:"role,omitzero"`
+	Weight    *float64                                                 `json:"weight,omitzero"`
+}
+
+// PacksImportedSlotsListOutputSlotsItemPlacementsItemRole is the type of
+// [PacksImportedSlotsListOutputSlotsItemPlacementsItem.Role].
+type PacksImportedSlotsListOutputSlotsItemPlacementsItemRole string
+
+// Values of [PacksImportedSlotsListOutputSlotsItemPlacementsItemRole].
+const (
+	PacksImportedSlotsListOutputSlotsItemPlacementsItemRoleOwner  PacksImportedSlotsListOutputSlotsItemPlacementsItemRole = "owner"
+	PacksImportedSlotsListOutputSlotsItemPlacementsItemRoleAdmin  PacksImportedSlotsListOutputSlotsItemPlacementsItemRole = "admin"
+	PacksImportedSlotsListOutputSlotsItemPlacementsItemRoleMember PacksImportedSlotsListOutputSlotsItemPlacementsItemRole = "member"
+)
+
+// PacksImportedSlotsListOutputSlotsItemReview is the type of
+// [PacksImportedSlotsListOutputSlotsItem.Review].
+type PacksImportedSlotsListOutputSlotsItemReview struct {
+	TemplateID  string  `json:"templateId"`
+	ElementName string  `json:"elementName"`
+	Status      string  `json:"status"`
+	Reason      *string `json:"reason,omitzero"`
+}
+
+// PacksImportedSlotsListOutputSlotsItemStatus is the type of
+// [PacksImportedSlotsListOutputSlotsItem.Status].
+type PacksImportedSlotsListOutputSlotsItemStatus string
+
+// Values of [PacksImportedSlotsListOutputSlotsItemStatus].
+const (
+	PacksImportedSlotsListOutputSlotsItemStatusOpen    PacksImportedSlotsListOutputSlotsItemStatus = "open"
+	PacksImportedSlotsListOutputSlotsItemStatusPending PacksImportedSlotsListOutputSlotsItemStatus = "pending"
+	PacksImportedSlotsListOutputSlotsItemStatusFilled  PacksImportedSlotsListOutputSlotsItemStatus = "filled"
+	PacksImportedSlotsListOutputSlotsItemStatusSkipped PacksImportedSlotsListOutputSlotsItemStatus = "skipped"
+)
+
+// PacksImportedSlotsListOutputSlotsItemTemplate is the type of
+// [PacksImportedSlotsListOutputSlotsItem.Template].
+type PacksImportedSlotsListOutputSlotsItemTemplate struct {
+	ElementName  string `json:"elementName"`
+	LanguageCode string `json:"languageCode"`
+	Category     string `json:"category"`
+	Header       string `json:"header"`
+	Body         string `json:"body"`
+	Footer       string `json:"footer"`
+	Replicable   bool   `json:"replicable"`
+}
+
+// PacksImportedSlotsListOutputWhatsappNumbersItem is an element of
+// [PacksImportedSlotsListOutput.WhatsappNumbers].
+type PacksImportedSlotsListOutputWhatsappNumbersItem struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// PacksImportedSlotsListParams holds the query parameters of [PacksService.ImportedSlotsList].
+type PacksImportedSlotsListParams struct {
+	ImportID string
+}
+
+func (p PacksImportedSlotsListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "importId", &p.ImportID)
+	return v
+}
+
+// PacksImportedSlotsTemplatesCreateInput is the request body of
+// [PacksService.ImportedSlotsTemplatesCreate].
+type PacksImportedSlotsTemplatesCreateInput struct {
+	ImportID          string   `json:"importId"`
+	ChannelInstanceID string   `json:"channelInstanceId"`
+	SlotIDs           []string `json:"slotIds"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutput is the response of
+// [PacksService.ImportedSlotsTemplatesCreate].
+type PacksImportedSlotsTemplatesCreateOutput struct {
+	Slots           []PacksImportedSlotsTemplatesCreateOutputSlotsItem           `json:"slots"`
+	WhatsappNumbers []PacksImportedSlotsTemplatesCreateOutputWhatsappNumbersItem `json:"whatsappNumbers"`
+	Failed          []PacksImportedSlotsTemplatesCreateOutputFailedItem          `json:"failed"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputFailedItem is an element of
+// [PacksImportedSlotsTemplatesCreateOutput.Failed].
+type PacksImportedSlotsTemplatesCreateOutputFailedItem struct {
+	SlotID string `json:"slotId"`
+	Error  string `json:"error"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItem is an element of
+// [PacksImportedSlotsTemplatesCreateOutput.Slots].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItem struct {
+	ID            string                                                           `json:"id"`
+	Entity        string                                                           `json:"entity"`
+	SourceLabel   *string                                                          `json:"sourceLabel,omitzero"`
+	Status        PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus           `json:"status"`
+	ResolvedID    *string                                                          `json:"resolvedId,omitzero"`
+	ResolvedLabel *string                                                          `json:"resolvedLabel,omitzero"`
+	Fillable      bool                                                             `json:"fillable"`
+	Candidates    []PacksImportedSlotsTemplatesCreateOutputSlotsItemCandidatesItem `json:"candidates"`
+	SuggestedID   *string                                                          `json:"suggestedId,omitzero"`
+	Placements    []PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItem `json:"placements"`
+	Locations     []PacksImportedSlotsTemplatesCreateOutputSlotsItemLocationsItem  `json:"locations"`
+	Template      *PacksImportedSlotsTemplatesCreateOutputSlotsItemTemplate        `json:"template,omitzero"`
+	Review        *PacksImportedSlotsTemplatesCreateOutputSlotsItemReview          `json:"review,omitzero"`
+	AIAgent       *PacksImportedSlotsTemplatesCreateOutputSlotsItemAIAgent         `json:"aiAgent,omitzero"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemAIAgent is the type of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.AIAgent].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemAIAgent struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemCandidatesItem is an element of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.Candidates].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemCandidatesItem struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemLocationsItem is an element of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.Locations].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemLocationsItem struct {
+	AssetID   string  `json:"assetId"`
+	AssetName *string `json:"assetName,omitzero"`
+	Kind      string  `json:"kind"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItem is an element of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.Placements].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItem struct {
+	AssetName *string                                                             `json:"assetName,omitzero"`
+	Kind      string                                                              `json:"kind"`
+	Role      *PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole `json:"role,omitzero"`
+	Weight    *float64                                                            `json:"weight,omitzero"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole is the type of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItem.Role].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole string
+
+// Values of [PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole].
+const (
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRoleOwner  PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole = "owner"
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRoleAdmin  PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole = "admin"
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRoleMember PacksImportedSlotsTemplatesCreateOutputSlotsItemPlacementsItemRole = "member"
+)
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemReview is the type of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.Review].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemReview struct {
+	TemplateID  string  `json:"templateId"`
+	ElementName string  `json:"elementName"`
+	Status      string  `json:"status"`
+	Reason      *string `json:"reason,omitzero"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus is the type of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.Status].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus string
+
+// Values of [PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus].
+const (
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemStatusOpen    PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus = "open"
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemStatusPending PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus = "pending"
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemStatusFilled  PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus = "filled"
+	PacksImportedSlotsTemplatesCreateOutputSlotsItemStatusSkipped PacksImportedSlotsTemplatesCreateOutputSlotsItemStatus = "skipped"
+)
+
+// PacksImportedSlotsTemplatesCreateOutputSlotsItemTemplate is the type of
+// [PacksImportedSlotsTemplatesCreateOutputSlotsItem.Template].
+type PacksImportedSlotsTemplatesCreateOutputSlotsItemTemplate struct {
+	ElementName  string `json:"elementName"`
+	LanguageCode string `json:"languageCode"`
+	Category     string `json:"category"`
+	Header       string `json:"header"`
+	Body         string `json:"body"`
+	Footer       string `json:"footer"`
+	Replicable   bool   `json:"replicable"`
+}
+
+// PacksImportedSlotsTemplatesCreateOutputWhatsappNumbersItem is an element of
+// [PacksImportedSlotsTemplatesCreateOutput.WhatsappNumbers].
+type PacksImportedSlotsTemplatesCreateOutputWhatsappNumbersItem struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// PacksImportedSlotsUpdateInput is the request body of [PacksService.ImportedSlotsUpdate].
+type PacksImportedSlotsUpdateInput struct {
+	ImportID          string           `json:"importId"`
+	SlotID            string           `json:"slotId"`
+	ResolvedID        Nullable[string] `json:"resolvedId,omitzero"`
+	ApplyToSameEntity *bool            `json:"applyToSameEntity,omitzero"`
+}
+
+// PacksImportedSlotsUpdateOutput is the response of [PacksService.ImportedSlotsUpdate].
+type PacksImportedSlotsUpdateOutput struct {
+	Slots           []PacksImportedSlotsUpdateOutputSlotsItem           `json:"slots"`
+	WhatsappNumbers []PacksImportedSlotsUpdateOutputWhatsappNumbersItem `json:"whatsappNumbers"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItem is an element of [PacksImportedSlotsUpdateOutput.Slots].
+type PacksImportedSlotsUpdateOutputSlotsItem struct {
+	ID            string                                                  `json:"id"`
+	Entity        string                                                  `json:"entity"`
+	SourceLabel   *string                                                 `json:"sourceLabel,omitzero"`
+	Status        PacksImportedSlotsUpdateOutputSlotsItemStatus           `json:"status"`
+	ResolvedID    *string                                                 `json:"resolvedId,omitzero"`
+	ResolvedLabel *string                                                 `json:"resolvedLabel,omitzero"`
+	Fillable      bool                                                    `json:"fillable"`
+	Candidates    []PacksImportedSlotsUpdateOutputSlotsItemCandidatesItem `json:"candidates"`
+	SuggestedID   *string                                                 `json:"suggestedId,omitzero"`
+	Placements    []PacksImportedSlotsUpdateOutputSlotsItemPlacementsItem `json:"placements"`
+	Locations     []PacksImportedSlotsUpdateOutputSlotsItemLocationsItem  `json:"locations"`
+	Template      *PacksImportedSlotsUpdateOutputSlotsItemTemplate        `json:"template,omitzero"`
+	Review        *PacksImportedSlotsUpdateOutputSlotsItemReview          `json:"review,omitzero"`
+	AIAgent       *PacksImportedSlotsUpdateOutputSlotsItemAIAgent         `json:"aiAgent,omitzero"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItemAIAgent is the type of
+// [PacksImportedSlotsUpdateOutputSlotsItem.AIAgent].
+type PacksImportedSlotsUpdateOutputSlotsItemAIAgent struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItemCandidatesItem is an element of
+// [PacksImportedSlotsUpdateOutputSlotsItem.Candidates].
+type PacksImportedSlotsUpdateOutputSlotsItemCandidatesItem struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItemLocationsItem is an element of
+// [PacksImportedSlotsUpdateOutputSlotsItem.Locations].
+type PacksImportedSlotsUpdateOutputSlotsItemLocationsItem struct {
+	AssetID   string  `json:"assetId"`
+	AssetName *string `json:"assetName,omitzero"`
+	Kind      string  `json:"kind"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItemPlacementsItem is an element of
+// [PacksImportedSlotsUpdateOutputSlotsItem.Placements].
+type PacksImportedSlotsUpdateOutputSlotsItemPlacementsItem struct {
+	AssetName *string                                                    `json:"assetName,omitzero"`
+	Kind      string                                                     `json:"kind"`
+	Role      *PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole `json:"role,omitzero"`
+	Weight    *float64                                                   `json:"weight,omitzero"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole is the type of
+// [PacksImportedSlotsUpdateOutputSlotsItemPlacementsItem.Role].
+type PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole string
+
+// Values of [PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole].
+const (
+	PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRoleOwner  PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole = "owner"
+	PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRoleAdmin  PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole = "admin"
+	PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRoleMember PacksImportedSlotsUpdateOutputSlotsItemPlacementsItemRole = "member"
+)
+
+// PacksImportedSlotsUpdateOutputSlotsItemReview is the type of
+// [PacksImportedSlotsUpdateOutputSlotsItem.Review].
+type PacksImportedSlotsUpdateOutputSlotsItemReview struct {
+	TemplateID  string  `json:"templateId"`
+	ElementName string  `json:"elementName"`
+	Status      string  `json:"status"`
+	Reason      *string `json:"reason,omitzero"`
+}
+
+// PacksImportedSlotsUpdateOutputSlotsItemStatus is the type of
+// [PacksImportedSlotsUpdateOutputSlotsItem.Status].
+type PacksImportedSlotsUpdateOutputSlotsItemStatus string
+
+// Values of [PacksImportedSlotsUpdateOutputSlotsItemStatus].
+const (
+	PacksImportedSlotsUpdateOutputSlotsItemStatusOpen    PacksImportedSlotsUpdateOutputSlotsItemStatus = "open"
+	PacksImportedSlotsUpdateOutputSlotsItemStatusPending PacksImportedSlotsUpdateOutputSlotsItemStatus = "pending"
+	PacksImportedSlotsUpdateOutputSlotsItemStatusFilled  PacksImportedSlotsUpdateOutputSlotsItemStatus = "filled"
+	PacksImportedSlotsUpdateOutputSlotsItemStatusSkipped PacksImportedSlotsUpdateOutputSlotsItemStatus = "skipped"
+)
+
+// PacksImportedSlotsUpdateOutputSlotsItemTemplate is the type of
+// [PacksImportedSlotsUpdateOutputSlotsItem.Template].
+type PacksImportedSlotsUpdateOutputSlotsItemTemplate struct {
+	ElementName  string `json:"elementName"`
+	LanguageCode string `json:"languageCode"`
+	Category     string `json:"category"`
+	Header       string `json:"header"`
+	Body         string `json:"body"`
+	Footer       string `json:"footer"`
+	Replicable   bool   `json:"replicable"`
+}
+
+// PacksImportedSlotsUpdateOutputWhatsappNumbersItem is an element of
+// [PacksImportedSlotsUpdateOutput.WhatsappNumbers].
+type PacksImportedSlotsUpdateOutputWhatsappNumbersItem struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// PacksImportedUpdateApplyInput is the request body of [PacksService.ImportedUpdateApply].
+type PacksImportedUpdateApplyInput struct {
+	ImportID  string                                                 `json:"importId"`
+	Decisions map[string]PacksImportedUpdateApplyInputDecisionsValue `json:"decisions"`
+}
+
+// PacksImportedUpdateApplyInputDecisionsValue is a value of [PacksImportedUpdateApplyInput.Decisions].
+type PacksImportedUpdateApplyInputDecisionsValue string
+
+// Values of [PacksImportedUpdateApplyInputDecisionsValue].
+const (
+	PacksImportedUpdateApplyInputDecisionsValueKeep   PacksImportedUpdateApplyInputDecisionsValue = "keep"
+	PacksImportedUpdateApplyInputDecisionsValueTake   PacksImportedUpdateApplyInputDecisionsValue = "take"
+	PacksImportedUpdateApplyInputDecisionsValueDelete PacksImportedUpdateApplyInputDecisionsValue = "delete"
+)
+
+// PacksImportedUpdateApplyOutput is the response of [PacksService.ImportedUpdateApply].
+type PacksImportedUpdateApplyOutput struct {
+	ID string `json:"id"`
+}
+
+// PacksImportedUpdateGetOutput is the response of [PacksService.ImportedUpdateGet].
+type PacksImportedUpdateGetOutput struct {
+	ImportID    string                                  `json:"importId"`
+	FromVersion *int64                                  `json:"fromVersion,omitzero"`
+	ToVersion   int64                                   `json:"toVersion"`
+	UpToDate    bool                                    `json:"upToDate"`
+	Items       []PacksImportedUpdateGetOutputItemsItem `json:"items"`
+}
+
+// PacksImportedUpdateGetOutputItemsItem is an element of [PacksImportedUpdateGetOutput.Items].
+type PacksImportedUpdateGetOutputItemsItem struct {
+	Kind     PacksImportedUpdateGetOutputItemsItemKind   `json:"kind"`
+	SourceID string                                      `json:"sourceId"`
+	Name     *string                                     `json:"name,omitzero"`
+	Change   PacksImportedUpdateGetOutputItemsItemChange `json:"change"`
+	TargetID *string                                     `json:"targetId,omitzero"`
+	Edited   bool                                        `json:"edited"`
+	Live     bool                                        `json:"live"`
+	Ask      bool                                        `json:"ask"`
+}
+
+// PacksImportedUpdateGetOutputItemsItemChange is the type of
+// [PacksImportedUpdateGetOutputItemsItem.Change].
+type PacksImportedUpdateGetOutputItemsItemChange string
+
+// Values of [PacksImportedUpdateGetOutputItemsItemChange].
+const (
+	PacksImportedUpdateGetOutputItemsItemChangeChanged PacksImportedUpdateGetOutputItemsItemChange = "changed"
+	PacksImportedUpdateGetOutputItemsItemChangeAdded   PacksImportedUpdateGetOutputItemsItemChange = "added"
+	PacksImportedUpdateGetOutputItemsItemChangeRemoved PacksImportedUpdateGetOutputItemsItemChange = "removed"
+)
+
+// PacksImportedUpdateGetOutputItemsItemKind is the type of
+// [PacksImportedUpdateGetOutputItemsItem.Kind].
+type PacksImportedUpdateGetOutputItemsItemKind string
+
+// Values of [PacksImportedUpdateGetOutputItemsItemKind].
+const (
+	PacksImportedUpdateGetOutputItemsItemKindFunnel PacksImportedUpdateGetOutputItemsItemKind = "funnel"
+	PacksImportedUpdateGetOutputItemsItemKindPage   PacksImportedUpdateGetOutputItemsItemKind = "page"
+	PacksImportedUpdateGetOutputItemsItemKindFlow   PacksImportedUpdateGetOutputItemsItemKind = "flow"
+)
+
+// PacksImportedUpdateGetParams holds the query parameters of [PacksService.ImportedUpdateGet].
+type PacksImportedUpdateGetParams struct {
+	ImportID string
+}
+
+func (p PacksImportedUpdateGetParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "importId", &p.ImportID)
 	return v
 }
 
@@ -1111,6 +1849,13 @@ const (
 	PacksListParamsOrderDesc PacksListParamsOrder = "desc"
 )
 
+// PacksOfferSharingUpdateInput is the request body of [PacksService.OfferSharingUpdate].
+type PacksOfferSharingUpdateInput struct {
+	IsShared bool   `json:"isShared"`
+	PackID   string `json:"packId"`
+	OfferID  string `json:"offerId"`
+}
+
 // PacksRemoveInput is the request body of [PacksService.Remove].
 type PacksRemoveInput struct {
 	PackID  string   `json:"packId"`
@@ -1134,6 +1879,42 @@ type PacksResnapshotInput struct {
 type PacksResnapshotOutput struct {
 	ID      string `json:"id"`
 	Version int64  `json:"version"`
+}
+
+// PacksSnapshotAssetsListOutput is the response of [PacksService.SnapshotAssetsList].
+type PacksSnapshotAssetsListOutput struct {
+	Assets []PacksSnapshotAssetsListOutputAssetsItem `json:"assets"`
+}
+
+// PacksSnapshotAssetsListOutputAssetsItem is an element of [PacksSnapshotAssetsListOutput.Assets].
+type PacksSnapshotAssetsListOutputAssetsItem struct {
+	Kind     string                                        `json:"kind"`
+	SourceID string                                        `json:"sourceId"`
+	Origin   PacksSnapshotAssetsListOutputAssetsItemOrigin `json:"origin"`
+	Name     *string                                       `json:"name,omitzero"`
+}
+
+// PacksSnapshotAssetsListOutputAssetsItemOrigin is the type of
+// [PacksSnapshotAssetsListOutputAssetsItem.Origin].
+type PacksSnapshotAssetsListOutputAssetsItemOrigin string
+
+// Values of [PacksSnapshotAssetsListOutputAssetsItemOrigin].
+const (
+	PacksSnapshotAssetsListOutputAssetsItemOriginManual  PacksSnapshotAssetsListOutputAssetsItemOrigin = "manual"
+	PacksSnapshotAssetsListOutputAssetsItemOriginDerived PacksSnapshotAssetsListOutputAssetsItemOrigin = "derived"
+)
+
+// PacksSnapshotAssetsListParams holds the query parameters of [PacksService.SnapshotAssetsList].
+type PacksSnapshotAssetsListParams struct {
+	PackID  string
+	Version int64
+}
+
+func (p PacksSnapshotAssetsListParams) values() url.Values {
+	v := url.Values{}
+	addString(v, "packId", &p.PackID)
+	addInt(v, "version", &p.Version)
+	return v
 }
 
 // PacksSnapshotDriftOutput is the response of [PacksService.SnapshotDrift].
@@ -1187,6 +1968,7 @@ type PacksSnapshotGetOutputValidationIssuesItem struct {
 	AssetType PacksSnapshotGetOutputValidationIssuesItemAssetType `json:"assetType"`
 	AssetID   *string                                             `json:"assetId,omitzero"`
 	Message   string                                              `json:"message"`
+	Params    map[string]string                                   `json:"params,omitzero"`
 }
 
 // PacksSnapshotGetOutputValidationIssuesItemAssetType is the type of
@@ -1263,6 +2045,7 @@ type PacksSnapshotPublishOutputValidationIssuesItem struct {
 	AssetType PacksSnapshotPublishOutputValidationIssuesItemAssetType `json:"assetType"`
 	AssetID   *string                                                 `json:"assetId,omitzero"`
 	Message   string                                                  `json:"message"`
+	Params    map[string]string                                       `json:"params,omitzero"`
 }
 
 // PacksSnapshotPublishOutputValidationIssuesItemAssetType is the type of
@@ -1297,7 +2080,6 @@ type PacksUpdateInput struct {
 	LearnMoreURL  Nullable[string]                   `json:"learnMoreUrl,omitzero"`
 	IsActive      *bool                              `json:"isActive,omitzero"`
 	IsFunnelOnly  *bool                              `json:"isFunnelOnly,omitzero"`
-	ThumbnailURL  Nullable[string]                   `json:"thumbnailUrl,omitzero"`
 	Level         Nullable[PacksUpdateInputLevel]    `json:"level,omitzero"`
 	Category      Nullable[PacksUpdateInputCategory] `json:"category,omitzero"`
 	FunnelsEngine *PacksUpdateInputFunnelsEngine     `json:"funnelsEngine,omitzero"`
@@ -1335,7 +2117,7 @@ const (
 )
 
 // PacksUpdateOutput is the response of [PacksService.AffiliationOfferUpdate],
-// [PacksService.CommissionUpdate] and [PacksService.Update].
+// [PacksService.CommissionUpdate], [PacksService.OfferSharingUpdate] and [PacksService.Update].
 type PacksUpdateOutput struct {
 	Updated bool `json:"updated"`
 }

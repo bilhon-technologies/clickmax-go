@@ -384,6 +384,7 @@ const (
 	ListsGetLeadsOutputDataItemSubOriginSocialComment         ListsGetLeadsOutputDataItemSubOrigin = "SocialComment"
 	ListsGetLeadsOutputDataItemSubOriginCxManualCreation      ListsGetLeadsOutputDataItemSubOrigin = "CxManualCreation"
 	ListsGetLeadsOutputDataItemSubOriginCxManualImportCSV     ListsGetLeadsOutputDataItemSubOrigin = "CxManualImportCsv"
+	ListsGetLeadsOutputDataItemSubOriginCxCRMImport           ListsGetLeadsOutputDataItemSubOrigin = "CxCrmImport"
 )
 
 // ListsGetLeadsOutputDataItemSuspectedFraudReasonsItem is an element of

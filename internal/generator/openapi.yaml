@@ -857,9 +857,11 @@ paths:
         <contact>": resolve the contact with `leads_search` first and pass
         `leadId` — this tool never takes a name. Filter by `outcome`,
         `reasonCode`, `trigger` (`inbound` = contact message, `follow_up`,
-        `flow_opening`), `delivered`, agent, deployment or number. Window =
-        `days` (default 7, max 90); widen it before saying there is no decision.
-        Rows include the contact name: only repeat it to the user who asked.'
+        `flow_opening`, `commitment` = a date agreed in the conversation came
+        due, `routine_morning` = the morning routine answering a message sent
+        after hours), `delivered`, agent, deployment or number. Window = `days`
+        (default 7, max 90); widen it before saying there is no decision. Rows
+        include the contact name: only repeat it to the user who asked.'
       operationId: aiSdrDecisionsList
       tags:
         - ai-sdr
@@ -946,6 +948,8 @@ paths:
               - inbound
               - follow_up
               - flow_opening
+              - commitment
+              - routine_morning
         - in: query
           name: delivered
           required: false
@@ -18612,6 +18616,7 @@ paths:
               - instagram
               - social
               - whatsapp
+              - whatsappWeb
               - email
               - telegram
               - voice
@@ -19262,6 +19267,111 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FlowsStepsCreateOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /flows/webhook-get:
+    post:
+      summary: Get a flow's webhook URL and field mapping
+      description: "The webhook of ONE flow: its `id`, the public `publicUrl` an
+        external system POSTs JSON to, `rotatedAt`, the current `fieldMapping`
+        (null = only the top-level keys of the body are read) and the call log —
+        `recentCalls` = the 5 newest calls (older ones are left out;
+        `callsTotal` counts all), each with the `payload` received (a payload
+        over 4000 chars of JSON, or past 16000 chars across the calls, comes
+        TRUNCATED as `{ truncated: true, preview }` — `preview` = the first
+        chars of its JSON; when the budget is spent the oldest calls come as
+        just `{ truncated: true }`), `status` (`accepted` | `duplicated` |
+        `invalid` | `error`), `result` and the `instanceId` of the execution it
+        started (null when the flow was paused, no trigger matched or the
+        contact was in its re-entry interval). Read `recentCalls[].payload` to
+        learn the real shape before writing a mapping with
+        `flows_webhook_field_mapping_set`. Each flow has exactly ONE webhook,
+        created on the first call and returned unchanged afterwards. Its `id` is
+        the `flowWebhookId` constraint of the flow entry trigger
+        `crm.flow_webhook.received.v1`; a flow without that trigger never runs
+        from the URL. Payloads hold contact data. 404 = the flow does not exist
+        in this workspace."
+      operationId: flowsWebhookGet
+      tags:
+        - flows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowsWebhookGetInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowsWebhookGetOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /flows/webhook-field-mapping-set:
+    post:
+      summary: Set a flow webhook's field mapping
+      description: 'Replaces the WHOLE field mapping of a flow webhook (`id` from
+        `flows_webhook_get`); `fieldMapping: null`, or one without any path,
+        removes it and the webhook goes back to reading only the top-level keys.
+        Applies to the next calls only — past calls are not reprocessed. A
+        malformed path is rejected with 400. `fieldMapping` = `{ fields?: {
+        <contactField>: <path> }, customFields?: { <ref>: <path> } }` — TARGET
+        field ← SOURCE path in the received JSON body. `<contactField>` = one of
+        the keys the `fields` schema lists (`address` cannot be mapped; any
+        other key is dropped). `<ref>` = a CONTACT custom field id, `fieldName`
+        or display name (as in `custom_fields_list`). `<path>` is a path inside
+        the body WITHOUT `$trigger` and without braces: `contact.email`,
+        `data.items[0].sku`, `order["customer name"]`; a JSON string value is
+        navigable. A mapped value WINS over a top-level key of the same name
+        (e.g. the seller `email` at the root of an order payload); a path
+        missing in a payload leaves the field empty and never erases the
+        top-level key. A numeric phone/document becomes text and `tags` given as
+        "a, b, c" becomes a list. Without a mapping only TOP-LEVEL contract keys
+        are read as contact data (`email`, `fullName`, `telephone`, …,
+        `customFields`, `tags`, `leadId`). Every other key, nested ones
+        included, stays available to the steps as `{{$trigger.<path>}}`.
+        Example: body
+        `{"event":"order.paid","customer":{"mail":"ana@x.com","phone":5511987654321,"name":"Ana"},"plan":{"code":"annual"}}`
+        →
+        `{"fields":{"email":"customer.mail","telephone":"customer.phone","fullName":"customer.name"},"customFields":{"plano":"plan.code"}}`.'
+      operationId: flowsWebhookFieldMappingSet
+      tags:
+        - flows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowsWebhookFieldMappingSetInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowsWebhookFieldMappingSetOutput"
         4XX:
           description: Request error
           content:
@@ -28732,9 +28842,11 @@ paths:
     post:
       summary: Create a pack
       description: Creates an empty pack in a project. Requires `projectId` and
-        `name`; `description`, `category`, `level`, `thumbnailUrl`, and
-        `funnelsEngine` (funnels3/funnels4) are optional. Add contents afterward
-        with `packs_append`.
+        `name`; `description`, `category`, `level`, and `funnelsEngine` (default
+        `funnels4`; pass `funnels3` only for funnels3 funnels, since
+        `packs_append` rejects funnels from the other engine with 409) are
+        optional. Add contents afterward with `packs_append`; set the cover with
+        `packs_cover_set`.
       operationId: packsCreate
       tags:
         - packs
@@ -28766,9 +28878,13 @@ paths:
   /packs/update:
     post:
       summary: Update pack metadata
-      description: Updates pack metadata (name, description, category, level,
-        thumbnail, active state, etc.). Does not change pack contents — use
-        `packs_append`/`packs_remove` for that.
+      description: "Updates pack metadata (name, description, category, level, active
+        state, etc.); the cover goes through
+        `packs_cover_set`/`packs_cover_remove`. Does not change pack contents —
+        use `packs_append`/`packs_remove` for that. A funnels4 pack can only be
+        activated (`isActive: true`) after a version published with
+        `packs_snapshot_publish` reaches `valid`/`warnings` (409 otherwise);
+        imports use only that published version."
       operationId: packsUpdate
       tags:
         - packs
@@ -28800,11 +28916,15 @@ paths:
   /packs/append:
     post:
       summary: Add contents to a pack
-      description: Adds funnels, pages, flows, and/or offers to a pack. For funnels4,
+      description: "Adds funnels, pages, flows, and/or offers to a pack. For funnels4,
         `funnelModes` chooses per-funnel `full` (pages + automations) or
-        `skeleton` (structure only); `includeProducts` also affiliates the
-        funnel offers. Appending changes the source → run `packs_resnapshot`
-        before re-sharing.
+        `skeleton` (structure only); the mode is stored on the pack and reused
+        by every later version. Re-sending a funnel already in the pack with
+        another mode switches its mode; omitting it keeps the current one.
+        `includeProducts` (funnels3 only) also affiliates the funnel offers.
+        funnels4 returns `snapshot` = the new draft version generated with the
+        appended content → publish that `version` with `packs_snapshot_publish`
+        (no `packs_resnapshot` needed). funnels3 returns `snapshot: null`."
       operationId: packsAppend
       tags:
         - packs
@@ -28868,10 +28988,12 @@ paths:
                 $ref: "#/components/schemas/ApiError"
   /packs/commission-update:
     post:
-      summary: Set an offer commission in a pack
-      description: Updates the affiliate commission for one offer in a pack. Identify
-        the offer by `packId` + `offerId`; `commission` is the affiliate's
-        percentage.
+      summary: Set the commission of a pack offer's product
+      description: "Sets the PRODUCT commission of the product behind one pack offer
+        (`packId` + `offerId`). Not scoped to the pack: every affiliate
+        following the product's default commission, inside and outside the pack,
+        moves to the new value (same as the product's affiliation page).
+        `commission` is a whole percentage from 1 to 80."
       operationId: packsCommissionUpdate
       tags:
         - packs
@@ -28903,9 +29025,12 @@ paths:
   /packs/affiliation-offer-update:
     post:
       summary: Update a pack offer affiliation
-      description: "Updates a pack offer affiliation: its `commission` and/or
-        `isActive` flag. Identify the offer by `packId` + `offerId`. Inactive
-        affiliations block sharing (the snapshot gate flags `offer_inactive`)."
+      description: "Updates a pack offer affiliation: its `isActive` flag and/or
+        `commission`. Identify the offer by `packId` + `offerId`. Inactive
+        affiliations block sharing (the snapshot gate flags `offer_inactive`).
+        `commission` (whole percentage, 1-80) is the PRODUCT commission: it
+        applies to every affiliate following the product's default commission,
+        not only this pack."
       operationId: packsAffiliationOfferUpdate
       tags:
         - packs
@@ -29042,13 +29167,15 @@ paths:
   /packs/import:
     post:
       summary: Import a pack
-      description: "Imports a published pack into a destination `projectId`, cloning
+      description: 'Imports a published pack into a destination `projectId`, cloning
         its funnels/pages/flows and affiliating its offers. Heavy operation that
         creates assets and runs asynchronously: returns an import `id` whose
-        progress is tracked via `packs_imported_get`. Pass
-        `resolutions`/`externalPageUrls`/`overrideFlowsIds` for dependencies the
-        preview flagged; unresolved deps yield a `partial` import. Read
-        `packs_import_preview` first."
+        progress is tracked via `packs_imported_get`. Pass `valueMap`
+        (automation dependencies: kind → author id → own id or null; unresolved
+        ones arrive empty, never with the author id), `resolutions` (`{type:
+        "automation", skip: true}` to skip an automation) and
+        `offerResolutions`/`channelResolutions`/`pageResolutions` for what the
+        preview flagged. Read `packs_import_preview` first.'
       operationId: packsImport
       tags:
         - packs
@@ -29065,6 +29192,390 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PacksImportOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/imported-slots-list:
+    get:
+      summary: List the account slots of an imported pack
+      description: "Lists the \"Conecte para ativar\" slots of an import (`importId` =
+        the `id` from `packs_imported_list`): each account the author's
+        automations used (WhatsApp number, Telegram bot, email sender, WhatsApp
+        template…) that the importer must connect to their own. A slot is
+        `open`, `pending` (WhatsApp template created from the pack, waiting for
+        Meta; `review` has the status), `filled` or `skipped`. Fill `open` slots
+        with `packs_imported_slots_update` using a `candidates[].id`
+        (`suggestedId` when there is only one); `fillable=false` slots are
+        configured in the automation editor. `gupshupTemplate` slots with a
+        replicable `template` can be created on one of `whatsappNumbers` via
+        `packs_imported_slots_templates_create`."
+      operationId: packsImportedSlotsList
+      tags:
+        - packs
+      parameters:
+        - in: query
+          name: importId
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksImportedSlotsListOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/imported-slots-update:
+    post:
+      summary: Fill an imported pack slot
+      description: "Connects one slot of an import to the importer's own account and
+        rewires the pack automations that use it. `resolvedId` = one of the slot
+        `candidates[].id` (never an id from the author); `null` skips the slot
+        (the person configures it in the automation editor). `applyToSameEntity:
+        true` uses the same account on every other open slot of the same kind in
+        this import. Returns the updated slot list."
+      operationId: packsImportedSlotsUpdate
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksImportedSlotsUpdateInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksImportedSlotsUpdateOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/imported-slots-templates-create:
+    post:
+      summary: Create WhatsApp templates from an imported pack's
+      description: Creates, on the importer's official WhatsApp number
+        (`channelInstanceId` from `whatsappNumbers` of
+        `packs_imported_slots_list`), copies of the author's templates for the
+        chosen `gupshupTemplate` slots and submits them to Meta. Only slots
+        whose `template.replicable` is true can be copied. Each slot goes to
+        `pending` and is filled by itself when Meta approves; `failed` lists the
+        ones that did not go out (name already used with another text, Meta
+        refusal). Confirm the template list with the user first.
+      operationId: packsImportedSlotsTemplatesCreate
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksImportedSlotsTemplatesCreateInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksImportedSlotsTemplatesCreateOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/imported-update-get:
+    get:
+      summary: Check the update of an imported pack
+      description: "Compares an import (`importId`) with the pack's current published
+        version: `upToDate`, `fromVersion` → `toVersion` and the `items`
+        (funnel/page/flow) that `changed`, were `added` or `removed`. `edited` =
+        the importer changed their copy after importing; `live` = published
+        page/funnel or active automation. Items with `ask=true` need a decision
+        in `packs_imported_update_apply`; the others are updated on their own.
+        Read this before applying."
+      operationId: packsImportedUpdateGet
+      tags:
+        - packs
+      parameters:
+        - in: query
+          name: importId
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksImportedUpdateGetOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/imported-update-apply:
+    post:
+      summary: Update an imported pack to the current version
+      description: "Applies the pack's current version to an import. `decisions` is
+        keyed by `kind:sourceId` of the `ask=true` items from
+        `packs_imported_update_get`: `keep` (keep the importer's copy), `take`
+        (replace it with the new version; on `changed`, discards the importer's
+        edits) or `delete` (delete the importer's copy; on `removed`). Items
+        without a decision stay as they are. Runs asynchronously and returns the
+        job `id`. Show the item list and get the user's choices before calling."
+      operationId: packsImportedUpdateApply
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksImportedUpdateApplyInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksImportedUpdateApplyOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/snapshot-assets-list:
+    get:
+      summary: List the assets a pack version carries
+      description: 'Lists the generic assets a snapshot version carries besides
+        funnels/pages/flows (quiz, custom fields…), the "Também vai junto" list.
+        `origin: derived` = included because the pack content uses it; `manual`
+        = added by the author. funnels4 only.'
+      operationId: packsSnapshotAssetsList
+      tags:
+        - packs
+      parameters:
+        - in: query
+          name: packId
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        - in: query
+          name: version
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksSnapshotAssetsListOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/checkout-offers-preview:
+    post:
+      summary: Preview the offers sold by funnels/pages
+      description: "Lists the offers that the checkouts of the given `funnels`/`pages`
+        sell, i.e. what `packs_append` of those ids would bring into the pack:
+        product, commission and whether the offer is shared (`isShared`). Use
+        before appending to tell the user which products go along and to decide
+        each offer's sharing."
+      operationId: packsCheckoutOffersPreview
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksCheckoutOffersPreviewInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksCheckoutOffersPreviewOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/offer-sharing-update:
+    post:
+      summary: Share or stop sharing a pack offer
+      description: "Sets whether the author shares one pack offer (`packId` +
+        `offerId`) with importers. `isShared: false` = importers do not get the
+        author's offer and must pick one of their own on import (the preview
+        flags it as blocking); `true` = they sell the author's offer as
+        affiliates. Changes what everyone importing this pack sells."
+      operationId: packsOfferSharingUpdate
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksOfferSharingUpdateInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksUpdateOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/cover-set:
+    post:
+      summary: Set the pack cover
+      description: "Sets the cover image of a pack. `imageUrl` = the public URL of an
+        image the user just uploaded in the chat (e.g. the answer of an `image`
+        question); JPEG, PNG, WebP or AVIF up to 5 MB. Images from any other
+        site are refused: ask the user to upload the file. Returns the new
+        `thumbnailUrl`."
+      operationId: packsCoverSet
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksCoverSetInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksCoverSetOutput"
+        4XX:
+          description: Request error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        5XX:
+          description: Internal or upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /packs/cover-remove:
+    post:
+      summary: Remove the pack cover
+      description: Removes the cover of a pack and deletes its uploaded cover images
+        from storage (they stop being public). The pack shows the empty cover
+        area until a new one is set with `packs_cover_set`.
+      operationId: packsCoverRemove
+      tags:
+        - packs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacksCoverRemoveInput"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacksCoverRemoveOutput"
         4XX:
           description: Request error
           content:
@@ -31757,13 +32268,17 @@ components:
                   - string
                   - "null"
               credentialId:
-                type: string
+                type:
+                  - string
+                  - "null"
               modelId:
                 type: string
               temperature:
                 type: number
               provider:
-                type: string
+                type:
+                  - string
+                  - "null"
               primaryRole:
                 type:
                   - string
@@ -31780,10 +32295,8 @@ components:
               - purpose
               - status
               - version
-              - credentialId
               - modelId
               - temperature
-              - provider
               - conversationsCount
               - scheduledCount
               - escalatedCount
@@ -31830,7 +32343,9 @@ components:
             - string
             - "null"
         credentialId:
-          type: string
+          type:
+            - string
+            - "null"
         modelId:
           type: string
         temperature:
@@ -31875,7 +32390,6 @@ components:
         - purpose
         - status
         - version
-        - credentialId
         - modelId
         - temperature
         - persona
@@ -41709,6 +42223,12 @@ components:
                   - members.course.completed.v1
               - type: string
                 enum:
+                  - members.lead.activities.recorded.v1
+              - type: string
+                enum:
+                  - members.comment.created.v1
+              - type: string
+                enum:
                   - checkout.transaction.created.v1
               - type: string
                 enum:
@@ -41875,6 +42395,9 @@ components:
               - type: string
                 enum:
                   - hermes.whatsapp.group.message.received.v1
+              - type: string
+                enum:
+                  - hermes.whatsapp.channel.message.received.v1
               - type: string
                 enum:
                   - hermes.webchat.message.received.v1
@@ -44674,6 +45197,10 @@ components:
                         - type: "null"
                     groupShowSeatsLeft:
                       type: boolean
+                    groupShowSessionBadge:
+                      type: boolean
+                    groupSessionsEnabled:
+                      type: boolean
                     ownerId:
                       type: string
                       format: uuid
@@ -44713,6 +45240,8 @@ components:
                     - otpChannel
                     - bookingScreeningMode
                     - groupShowSeatsLeft
+                    - groupShowSessionBadge
+                    - groupSessionsEnabled
                     - ownerId
                     - createdAt
                     - updatedAt
@@ -61422,6 +61951,12 @@ components:
                   - members.course.completed.v1
               - type: string
                 enum:
+                  - members.lead.activities.recorded.v1
+              - type: string
+                enum:
+                  - members.comment.created.v1
+              - type: string
+                enum:
                   - checkout.transaction.created.v1
               - type: string
                 enum:
@@ -61588,6 +62123,9 @@ components:
               - type: string
                 enum:
                   - hermes.whatsapp.group.message.received.v1
+              - type: string
+                enum:
+                  - hermes.whatsapp.channel.message.received.v1
               - type: string
                 enum:
                   - hermes.webchat.message.received.v1
@@ -62873,6 +63411,12 @@ components:
                   - members.course.completed.v1
               - type: string
                 enum:
+                  - members.lead.activities.recorded.v1
+              - type: string
+                enum:
+                  - members.comment.created.v1
+              - type: string
+                enum:
                   - checkout.transaction.created.v1
               - type: string
                 enum:
@@ -63039,6 +63583,9 @@ components:
               - type: string
                 enum:
                   - hermes.whatsapp.group.message.received.v1
+              - type: string
+                enum:
+                  - hermes.whatsapp.channel.message.received.v1
               - type: string
                 enum:
                   - hermes.webchat.message.received.v1
@@ -68196,6 +68743,8 @@ components:
                         const: CxManualCreation
                       - type: string
                         const: CxManualImportCsv
+                      - type: string
+                        const: CxCrmImport
                       - type: "null"
                         const: null
                   - type: "null"
@@ -68759,6 +69308,8 @@ components:
                   const: CxManualCreation
                 - type: string
                   const: CxManualImportCsv
+                - type: string
+                  const: CxCrmImport
                 - type: "null"
                   const: null
             - type: "null"
@@ -70587,6 +71138,8 @@ components:
                       const: CxManualCreation
                     - type: string
                       const: CxManualImportCsv
+                    - type: string
+                      const: CxCrmImport
                     - type: "null"
                       const: null
                 - type: "null"
@@ -71564,6 +72117,8 @@ components:
                       const: CxManualCreation
                     - type: string
                       const: CxManualImportCsv
+                    - type: string
+                      const: CxCrmImport
                     - type: "null"
                       const: null
                 - type: "null"
@@ -74011,6 +74566,7 @@ components:
                           - SocialComment
                           - CxManualCreation
                           - CxManualImportCsv
+                          - CxCrmImport
                     - type: "null"
                 temperatureStatus:
                   anyOf:
@@ -74797,6 +75353,7 @@ components:
                           - SocialComment
                           - CxManualCreation
                           - CxManualImportCsv
+                          - CxCrmImport
                     - type: "null"
                 temperatureStatus:
                   anyOf:
@@ -75429,6 +75986,7 @@ components:
               - SocialComment
               - CxManualCreation
               - CxManualImportCsv
+              - CxCrmImport
       required:
         - data
       additionalProperties: false
@@ -75532,6 +76090,7 @@ components:
                     - SocialComment
                     - CxManualCreation
                     - CxManualImportCsv
+                    - CxCrmImport
             required:
               - origin
             additionalProperties: false
@@ -76409,6 +76968,8 @@ components:
                         const: CxManualCreation
                       - type: string
                         const: CxManualImportCsv
+                      - type: string
+                        const: CxCrmImport
                       - type: "null"
                         const: null
                   - type: "null"
@@ -78819,6 +79380,8 @@ components:
                         const: CxManualCreation
                       - type: string
                         const: CxManualImportCsv
+                      - type: string
+                        const: CxCrmImport
                       - type: "null"
                         const: null
                   - type: "null"
@@ -123264,6 +123827,332 @@ components:
       required:
         - flowId
         - content
+    FlowsWebhookGetInput:
+      type: object
+      properties:
+        flowId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - flowId
+    FlowsWebhookGetOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        flowId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        publicUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        rotatedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+            - type: "null"
+        fieldMapping:
+          anyOf:
+            - type: object
+              properties:
+                fields:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    fullName:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    telephone:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    document:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    instagram:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    birthday:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    profession:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    city:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    state:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    tags:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    leadId:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    idempotencyKey:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                  additionalProperties: false
+                customFields:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+              additionalProperties: false
+            - type: "null"
+        recentCalls:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              status:
+                type: string
+                enum:
+                  - accepted
+                  - duplicated
+                  - invalid
+                  - error
+              payload:
+                type: object
+                propertyNames:
+                  type: string
+                additionalProperties: {}
+              result:
+                anyOf:
+                  - type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties: {}
+                  - type: "null"
+              idempotencyKey:
+                type:
+                  - string
+                  - "null"
+              createdAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+              instanceId:
+                anyOf:
+                  - type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  - type: "null"
+            required:
+              - id
+              - status
+              - payload
+              - createdAt
+            additionalProperties: false
+        callsTotal:
+          type: number
+      required:
+        - id
+        - flowId
+        - publicUrl
+        - createdAt
+        - recentCalls
+        - callsTotal
+      additionalProperties: false
+    FlowsWebhookFieldMappingSetInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        fieldMapping:
+          anyOf:
+            - type: object
+              properties:
+                fields:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    fullName:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    telephone:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    document:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    instagram:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    birthday:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    profession:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    city:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    state:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    tags:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    leadId:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    idempotencyKey:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                customFields:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+            - type: "null"
+      required:
+        - id
+    FlowsWebhookFieldMappingSetOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        flowId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        publicUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        rotatedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+            - type: "null"
+        fieldMapping:
+          anyOf:
+            - type: object
+              properties:
+                fields:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    fullName:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    telephone:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    document:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    instagram:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    birthday:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    profession:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    city:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    state:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    tags:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    leadId:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                    idempotencyKey:
+                      type: string
+                      minLength: 1
+                      maxLength: 200
+                  additionalProperties: false
+                customFields:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+              additionalProperties: false
+            - type: "null"
+      required:
+        - id
+        - flowId
+        - publicUrl
+        - createdAt
+      additionalProperties: false
     InstagramPostsListOutput:
       type: object
       properties:
@@ -149224,6 +150113,7 @@ components:
                         - social
                         - webchat
                         - forms
+                        - max_design
                         - credits
                         - ai_credits
                         - ai_standard_allowance
@@ -149478,6 +150368,7 @@ components:
                   - social
                   - webchat
                   - forms
+                  - max_design
                   - credits
                   - ai_credits
                   - ai_standard_allowance
@@ -149518,6 +150409,16 @@ components:
                   - type: string
                     format: date-time
                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+                  - type: "null"
+              countMode:
+                anyOf:
+                  - anyOf:
+                      - type: string
+                        const: active
+                      - type: string
+                        const: uses
+                      - type: "null"
+                        const: null
                   - type: "null"
               from:
                 type: object
@@ -149608,6 +150509,7 @@ components:
                   - social
                   - webchat
                   - forms
+                  - max_design
                   - credits
                   - ai_credits
                   - ai_standard_allowance
@@ -149648,6 +150550,16 @@ components:
                   - type: string
                     format: date-time
                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+                  - type: "null"
+              countMode:
+                anyOf:
+                  - anyOf:
+                      - type: string
+                        const: active
+                      - type: string
+                        const: uses
+                      - type: "null"
+                        const: null
                   - type: "null"
               from:
                 type: object
@@ -149786,6 +150698,7 @@ components:
                   - social
                   - webchat
                   - forms
+                  - max_design
                   - credits
                   - ai_credits
                   - ai_standard_allowance
@@ -149930,6 +150843,8 @@ components:
                               const: webchat
                             - type: string
                               const: forms
+                            - type: string
+                              const: max_design
                             - type: string
                               const: credits
                             - type: string
@@ -155064,12 +155979,24 @@ components:
                 type: boolean
               hasActiveAffiliation:
                 type: boolean
+              hasPendingCoproduction:
+                type: boolean
               affiliateCommission:
                 anyOf:
                   - type: integer
                     minimum: 1
                     maximum: 100
                   - type: "null"
+              coproductionCommission:
+                anyOf:
+                  - type: integer
+                    minimum: 0
+                    maximum: 100
+                  - type: "null"
+              coproducersCount:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
               offers:
                 type: array
                 items:
@@ -158059,11 +158986,27 @@ components:
                   - pending_seller
                   - approved
                   - deleted
+              externalId:
+                type:
+                  - string
+                  - "null"
+              createdAt:
+                type: string
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+              approvedAt:
+                anyOf:
+                  - type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+                  - type: "null"
             required:
               - email
               - commission
               - status
             additionalProperties: false
+        isSaleBlockedByCoproduction:
+          type: boolean
         productCategory:
           type: string
           enum:
@@ -163196,7 +164139,6 @@ components:
                     pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
                   - type: "null"
               shareCount:
-                default: 0
                 type: number
               updatedAt:
                 type: string
@@ -163344,8 +164286,9 @@ components:
         isActive:
           default: false
           type: boolean
+        hasPublishedSnapshot:
+          type: boolean
         shareCount:
-          default: 0
           type: number
         createdAt:
           type: string
@@ -163378,6 +164321,11 @@ components:
                   - "null"
               canUse:
                 type: boolean
+              mode:
+                type: string
+                enum:
+                  - full
+                  - skeleton
               thumbnail:
                 type:
                   - string
@@ -163487,6 +164435,7 @@ components:
               - path
               - projectSlug
               - canUse
+              - mode
               - pages
               - offers
               - flows
@@ -163567,6 +164516,11 @@ components:
                 type: boolean
               affiliationIsShared:
                 type: boolean
+              source:
+                type: string
+                enum:
+                  - manual
+                  - derived
               defaultCommission:
                 anyOf:
                   - type: integer
@@ -163589,14 +164543,30 @@ components:
               - name
               - affiliationIsActive
               - affiliationIsShared
+              - source
               - productName
               - originalPrice
+            additionalProperties: false
+        includedAssets:
+          type: array
+          items:
+            type: object
+            properties:
+              kind:
+                type: string
+              name:
+                type:
+                  - string
+                  - "null"
+            required:
+              - kind
             additionalProperties: false
       required:
         - id
         - funnelsEngine
         - name
         - isActive
+        - hasPublishedSnapshot
         - shareCount
         - createdAt
         - updatedAt
@@ -163739,48 +164709,6 @@ components:
                             type: string
                           stepLabel:
                             type: string
-                          step:
-                            anyOf:
-                              - type: object
-                                properties:
-                                  id:
-                                    type: string
-                                    format: uuid
-                                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                                  type:
-                                    type: string
-                                  action:
-                                    type:
-                                      - string
-                                      - "null"
-                                  target:
-                                    anyOf:
-                                      - type: string
-                                      - type: object
-                                        propertyNames:
-                                          type: string
-                                        additionalProperties:
-                                          type: string
-                                      - type: "null"
-                                  meta:
-                                    anyOf:
-                                      - type: object
-                                        propertyNames:
-                                          type: string
-                                        additionalProperties: {}
-                                      - type: "null"
-                                  input:
-                                    anyOf:
-                                      - type: object
-                                        propertyNames:
-                                          type: string
-                                        additionalProperties: {}
-                                      - type: "null"
-                                required:
-                                  - id
-                                  - type
-                                additionalProperties: false
-                              - type: "null"
                           fieldPath:
                             type: string
                           required:
@@ -163881,48 +164809,6 @@ components:
                       type: string
                     stepLabel:
                       type: string
-                    step:
-                      anyOf:
-                        - type: object
-                          properties:
-                            id:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            type:
-                              type: string
-                            action:
-                              type:
-                                - string
-                                - "null"
-                            target:
-                              anyOf:
-                                - type: string
-                                - type: object
-                                  propertyNames:
-                                    type: string
-                                  additionalProperties:
-                                    type: string
-                                - type: "null"
-                            meta:
-                              anyOf:
-                                - type: object
-                                  propertyNames:
-                                    type: string
-                                  additionalProperties: {}
-                                - type: "null"
-                            input:
-                              anyOf:
-                                - type: object
-                                  propertyNames:
-                                    type: string
-                                  additionalProperties: {}
-                                - type: "null"
-                          required:
-                            - id
-                            - type
-                          additionalProperties: false
-                        - type: "null"
                     fieldPath:
                       type: string
                     required:
@@ -163987,6 +164873,69 @@ components:
               - id
               - name
             additionalProperties: false
+        affiliationBlockers:
+          type: array
+          items:
+            type: object
+            properties:
+              offerId:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              offerName:
+                type:
+                  - string
+                  - "null"
+              productId:
+                anyOf:
+                  - type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  - type: "null"
+              productName:
+                type:
+                  - string
+                  - "null"
+              reason:
+                type: string
+                enum:
+                  - affiliation_disabled
+                  - product_deleted
+                  - importer_suspended
+            required:
+              - offerId
+              - reason
+            additionalProperties: false
+        setupNodes:
+          type: array
+          items:
+            type: object
+            properties:
+              nodeId:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              funnelId:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              funnelName:
+                type: string
+              label:
+                type: string
+              kind:
+                type: string
+                enum:
+                  - quiz
+                  - calendar
+                  - webchat
+            required:
+              - nodeId
+              - funnelId
+              - funnelName
+              - label
+              - kind
+            additionalProperties: false
         pageEmbeds:
           type: array
           items:
@@ -164041,6 +164990,8 @@ components:
         - standaloneAutomations
         - standaloneOffers
         - channels
+        - affiliationBlockers
+        - setupNodes
         - pageEmbeds
       additionalProperties: false
     PacksSnapshotGetOutput:
@@ -164083,6 +165034,12 @@ components:
                       - "null"
                   message:
                     type: string
+                  params:
+                    type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties:
+                      type: string
                 required:
                   - severity
                   - code
@@ -164140,6 +165097,10 @@ components:
                 type: string
                 format: uuid
                 pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              packId:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
               projectId:
                 anyOf:
                   - type: string
@@ -164157,6 +165118,32 @@ components:
                   - failed
                   - success
                   - partial
+              snapshotVersion:
+                anyOf:
+                  - type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  - type: "null"
+              latestVersion:
+                anyOf:
+                  - type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  - type: "null"
+              updateStatus:
+                anyOf:
+                  - anyOf:
+                      - type: string
+                        const: pending
+                      - type: string
+                        const: failed
+                      - type: string
+                        const: success
+                      - type: string
+                        const: partial
+                      - type: "null"
+                        const: null
+                  - type: "null"
               user:
                 type: object
                 properties:
@@ -164187,6 +165174,7 @@ components:
                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
             required:
               - id
+              - packId
               - status
               - user
               - createdAt
@@ -164240,6 +165228,11 @@ components:
             - failed
             - success
             - partial
+        funnelsEngine:
+          type: string
+          enum:
+            - funnels3
+            - funnels4
         user:
           type: object
           properties:
@@ -164468,6 +165461,7 @@ components:
       required:
         - id
         - status
+        - funnelsEngine
         - user
         - createdAt
         - updatedAt
@@ -164496,10 +165490,6 @@ components:
         isFunnelOnly:
           default: false
           type: boolean
-        thumbnailUrl:
-          type:
-            - string
-            - "null"
         level:
           anyOf:
             - anyOf:
@@ -164568,15 +165558,10 @@ components:
             - string
             - "null"
         isActive:
-          default: false
           type: boolean
         isFunnelOnly:
           default: false
           type: boolean
-        thumbnailUrl:
-          type:
-            - string
-            - "null"
         level:
           anyOf:
             - anyOf:
@@ -164662,6 +165647,12 @@ components:
             enum:
               - full
               - skeleton
+        offerSharing:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: boolean
       required:
         - packId
     PacksAppendOutput:
@@ -164669,8 +165660,22 @@ components:
       properties:
         appended:
           type: boolean
+        snapshot:
+          anyOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                version:
+                  type: number
+              required:
+                - id
+                - version
+              additionalProperties: false
+            - type: "null"
       required:
         - appended
+        - snapshot
       additionalProperties: false
     PacksRemoveInput:
       type: object
@@ -164717,11 +165722,9 @@ components:
       type: object
       properties:
         commission:
-          anyOf:
-            - type: integer
-              minimum: -9007199254740991
-              maximum: 9007199254740991
-            - type: "null"
+          type: integer
+          minimum: 1
+          maximum: 80
         packId:
           type: string
           format: uuid
@@ -164731,6 +165734,7 @@ components:
           format: uuid
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
       required:
+        - commission
         - packId
         - offerId
     PacksAffiliationOfferUpdateInput:
@@ -164741,11 +165745,9 @@ components:
           format: uuid
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         commission:
-          anyOf:
-            - type: integer
-              minimum: -9007199254740991
-              maximum: 9007199254740991
-            - type: "null"
+          type: integer
+          minimum: 1
+          maximum: 80
         isActive:
           type: boolean
         offerId:
@@ -164850,6 +165852,12 @@ components:
                       - "null"
                   message:
                     type: string
+                  params:
+                    type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties:
+                      type: string
                 required:
                   - severity
                   - code
@@ -164897,42 +165905,22 @@ components:
                 type: string
                 enum:
                   - automation
-              stepsDependencies:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    stepId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    type:
-                      type: string
-                    action:
-                      type: string
-                    target:
-                      anyOf:
-                        - type: string
-                        - type: object
-                          propertyNames:
-                            type: string
-                          additionalProperties:
-                            type: string
-                    meta:
-                      type: object
-                      propertyNames:
-                        type: string
-                      additionalProperties: {}
-                    input:
-                      type: object
-                      propertyNames:
-                        type: string
-                      additionalProperties: {}
-                  required:
-                    - stepId
-                    - type
+              skip:
+                type: boolean
             required:
               - type
+        valueMap:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: object
+            propertyNames:
+              type: string
+            additionalProperties:
+              type:
+                - string
+                - "null"
         offerResolutions:
           type: object
           propertyNames:
@@ -164982,6 +165970,35 @@ components:
                   type: string
                   format: uuid
                   pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        nodeResolutions:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: object
+            properties:
+              resourceId:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              name:
+                type: string
+                maxLength: 255
+              slug:
+                anyOf:
+                  - type: string
+                    maxLength: 255
+                  - type: "null"
+              url:
+                type: string
+                format: uri
+              pageUrl:
+                anyOf:
+                  - type: string
+                    format: uri
+                  - type: "null"
+            required:
+              - resourceId
         externalPageUrls:
           type: object
           propertyNames:
@@ -165016,6 +166033,915 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
       required:
         - id
+      additionalProperties: false
+    PacksImportedSlotsListOutput:
+      type: object
+      properties:
+        slots:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              entity:
+                type: string
+              sourceLabel:
+                type:
+                  - string
+                  - "null"
+              status:
+                type: string
+                enum:
+                  - open
+                  - pending
+                  - filled
+                  - skipped
+              resolvedId:
+                type:
+                  - string
+                  - "null"
+              resolvedLabel:
+                type:
+                  - string
+                  - "null"
+              fillable:
+                type: boolean
+              candidates:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    label:
+                      type: string
+                  required:
+                    - id
+                    - label
+                  additionalProperties: false
+              suggestedId:
+                type:
+                  - string
+                  - "null"
+              placements:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assetName:
+                      type:
+                        - string
+                        - "null"
+                    kind:
+                      type: string
+                    role:
+                      anyOf:
+                        - anyOf:
+                            - type: string
+                              const: owner
+                            - type: string
+                              const: admin
+                            - type: string
+                              const: member
+                            - type: "null"
+                              const: null
+                        - type: "null"
+                    weight:
+                      type:
+                        - number
+                        - "null"
+                  required:
+                    - kind
+                  additionalProperties: false
+              locations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assetId:
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    assetName:
+                      type:
+                        - string
+                        - "null"
+                    kind:
+                      type: string
+                  required:
+                    - assetId
+                    - kind
+                  additionalProperties: false
+              template:
+                anyOf:
+                  - type: object
+                    properties:
+                      elementName:
+                        type: string
+                      languageCode:
+                        type: string
+                      category:
+                        type: string
+                      header:
+                        type: string
+                      body:
+                        type: string
+                      footer:
+                        type: string
+                      replicable:
+                        type: boolean
+                    required:
+                      - elementName
+                      - languageCode
+                      - category
+                      - header
+                      - body
+                      - footer
+                      - replicable
+                    additionalProperties: false
+                  - type: "null"
+              review:
+                anyOf:
+                  - type: object
+                    properties:
+                      templateId:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      elementName:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - templateId
+                      - elementName
+                      - status
+                    additionalProperties: false
+                  - type: "null"
+              aiAgent:
+                anyOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  - type: "null"
+            required:
+              - id
+              - entity
+              - status
+              - fillable
+              - candidates
+              - placements
+              - locations
+            additionalProperties: false
+        whatsappNumbers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              label:
+                type: string
+            required:
+              - id
+              - label
+            additionalProperties: false
+      required:
+        - slots
+        - whatsappNumbers
+      additionalProperties: false
+    PacksImportedSlotsUpdateInput:
+      type: object
+      properties:
+        importId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        slotId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        resolvedId:
+          anyOf:
+            - type: string
+              minLength: 1
+              maxLength: 128
+            - type: "null"
+        applyToSameEntity:
+          type: boolean
+      required:
+        - importId
+        - slotId
+    PacksImportedSlotsUpdateOutput:
+      type: object
+      properties:
+        slots:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              entity:
+                type: string
+              sourceLabel:
+                type:
+                  - string
+                  - "null"
+              status:
+                type: string
+                enum:
+                  - open
+                  - pending
+                  - filled
+                  - skipped
+              resolvedId:
+                type:
+                  - string
+                  - "null"
+              resolvedLabel:
+                type:
+                  - string
+                  - "null"
+              fillable:
+                type: boolean
+              candidates:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    label:
+                      type: string
+                  required:
+                    - id
+                    - label
+                  additionalProperties: false
+              suggestedId:
+                type:
+                  - string
+                  - "null"
+              placements:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assetName:
+                      type:
+                        - string
+                        - "null"
+                    kind:
+                      type: string
+                    role:
+                      anyOf:
+                        - anyOf:
+                            - type: string
+                              const: owner
+                            - type: string
+                              const: admin
+                            - type: string
+                              const: member
+                            - type: "null"
+                              const: null
+                        - type: "null"
+                    weight:
+                      type:
+                        - number
+                        - "null"
+                  required:
+                    - kind
+                  additionalProperties: false
+              locations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assetId:
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    assetName:
+                      type:
+                        - string
+                        - "null"
+                    kind:
+                      type: string
+                  required:
+                    - assetId
+                    - kind
+                  additionalProperties: false
+              template:
+                anyOf:
+                  - type: object
+                    properties:
+                      elementName:
+                        type: string
+                      languageCode:
+                        type: string
+                      category:
+                        type: string
+                      header:
+                        type: string
+                      body:
+                        type: string
+                      footer:
+                        type: string
+                      replicable:
+                        type: boolean
+                    required:
+                      - elementName
+                      - languageCode
+                      - category
+                      - header
+                      - body
+                      - footer
+                      - replicable
+                    additionalProperties: false
+                  - type: "null"
+              review:
+                anyOf:
+                  - type: object
+                    properties:
+                      templateId:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      elementName:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - templateId
+                      - elementName
+                      - status
+                    additionalProperties: false
+                  - type: "null"
+              aiAgent:
+                anyOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  - type: "null"
+            required:
+              - id
+              - entity
+              - status
+              - fillable
+              - candidates
+              - placements
+              - locations
+            additionalProperties: false
+        whatsappNumbers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              label:
+                type: string
+            required:
+              - id
+              - label
+            additionalProperties: false
+      required:
+        - slots
+        - whatsappNumbers
+      additionalProperties: false
+    PacksImportedSlotsTemplatesCreateInput:
+      type: object
+      properties:
+        importId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        channelInstanceId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        slotIds:
+          minItems: 1
+          maxItems: 50
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - importId
+        - channelInstanceId
+        - slotIds
+    PacksImportedSlotsTemplatesCreateOutput:
+      type: object
+      properties:
+        slots:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              entity:
+                type: string
+              sourceLabel:
+                type:
+                  - string
+                  - "null"
+              status:
+                type: string
+                enum:
+                  - open
+                  - pending
+                  - filled
+                  - skipped
+              resolvedId:
+                type:
+                  - string
+                  - "null"
+              resolvedLabel:
+                type:
+                  - string
+                  - "null"
+              fillable:
+                type: boolean
+              candidates:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    label:
+                      type: string
+                  required:
+                    - id
+                    - label
+                  additionalProperties: false
+              suggestedId:
+                type:
+                  - string
+                  - "null"
+              placements:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assetName:
+                      type:
+                        - string
+                        - "null"
+                    kind:
+                      type: string
+                    role:
+                      anyOf:
+                        - anyOf:
+                            - type: string
+                              const: owner
+                            - type: string
+                              const: admin
+                            - type: string
+                              const: member
+                            - type: "null"
+                              const: null
+                        - type: "null"
+                    weight:
+                      type:
+                        - number
+                        - "null"
+                  required:
+                    - kind
+                  additionalProperties: false
+              locations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assetId:
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    assetName:
+                      type:
+                        - string
+                        - "null"
+                    kind:
+                      type: string
+                  required:
+                    - assetId
+                    - kind
+                  additionalProperties: false
+              template:
+                anyOf:
+                  - type: object
+                    properties:
+                      elementName:
+                        type: string
+                      languageCode:
+                        type: string
+                      category:
+                        type: string
+                      header:
+                        type: string
+                      body:
+                        type: string
+                      footer:
+                        type: string
+                      replicable:
+                        type: boolean
+                    required:
+                      - elementName
+                      - languageCode
+                      - category
+                      - header
+                      - body
+                      - footer
+                      - replicable
+                    additionalProperties: false
+                  - type: "null"
+              review:
+                anyOf:
+                  - type: object
+                    properties:
+                      templateId:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      elementName:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - templateId
+                      - elementName
+                      - status
+                    additionalProperties: false
+                  - type: "null"
+              aiAgent:
+                anyOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  - type: "null"
+            required:
+              - id
+              - entity
+              - status
+              - fillable
+              - candidates
+              - placements
+              - locations
+            additionalProperties: false
+        whatsappNumbers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              label:
+                type: string
+            required:
+              - id
+              - label
+            additionalProperties: false
+        failed:
+          type: array
+          items:
+            type: object
+            properties:
+              slotId:
+                type: string
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              error:
+                type: string
+            required:
+              - slotId
+              - error
+            additionalProperties: false
+      required:
+        - slots
+        - whatsappNumbers
+        - failed
+      additionalProperties: false
+    PacksImportedUpdateGetOutput:
+      type: object
+      properties:
+        importId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        fromVersion:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        toVersion:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        upToDate:
+          type: boolean
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              kind:
+                type: string
+                enum:
+                  - funnel
+                  - page
+                  - flow
+              sourceId:
+                type: string
+              name:
+                type:
+                  - string
+                  - "null"
+              change:
+                type: string
+                enum:
+                  - changed
+                  - added
+                  - removed
+              targetId:
+                type:
+                  - string
+                  - "null"
+              edited:
+                type: boolean
+              live:
+                type: boolean
+              ask:
+                type: boolean
+            required:
+              - kind
+              - sourceId
+              - change
+              - edited
+              - live
+              - ask
+            additionalProperties: false
+      required:
+        - importId
+        - toVersion
+        - upToDate
+        - items
+      additionalProperties: false
+    PacksImportedUpdateApplyInput:
+      type: object
+      properties:
+        importId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        decisions:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: string
+            enum:
+              - keep
+              - take
+              - delete
+      required:
+        - importId
+        - decisions
+    PacksImportedUpdateApplyOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - id
+      additionalProperties: false
+    PacksSnapshotAssetsListOutput:
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            type: object
+            properties:
+              kind:
+                type: string
+              sourceId:
+                type: string
+              origin:
+                type: string
+                enum:
+                  - manual
+                  - derived
+              name:
+                type:
+                  - string
+                  - "null"
+            required:
+              - kind
+              - sourceId
+              - origin
+            additionalProperties: false
+      required:
+        - assets
+      additionalProperties: false
+    PacksCheckoutOffersPreviewInput:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        funnels:
+          maxItems: 100
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        pages:
+          maxItems: 100
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - packId
+    PacksCheckoutOffersPreviewOutput:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            anyOf:
+              - type: object
+                properties:
+                  offerId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  offerName:
+                    type: string
+                    maxLength: 1000
+                  productId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  productName:
+                    type: string
+                    maxLength: 1000
+                  commission:
+                    type:
+                      - number
+                      - "null"
+                  isShared:
+                    type: boolean
+                  fromOtherProducer:
+                    type: boolean
+                    const: false
+                required:
+                  - offerId
+                  - offerName
+                  - productId
+                  - productName
+                  - isShared
+                  - fromOtherProducer
+                additionalProperties: false
+              - type: object
+                properties:
+                  offerId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  funnelName:
+                    type:
+                      - string
+                      - "null"
+                  pageName:
+                    type:
+                      - string
+                      - "null"
+                  fromOtherProducer:
+                    type: boolean
+                    const: true
+                required:
+                  - offerId
+                  - fromOtherProducer
+                additionalProperties: false
+      required:
+        - data
+      additionalProperties: false
+    PacksOfferSharingUpdateInput:
+      type: object
+      properties:
+        isShared:
+          type: boolean
+        packId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        offerId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - isShared
+        - packId
+        - offerId
+    PacksCoverSetInput:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        imageUrl:
+          type: string
+      required:
+        - packId
+        - imageUrl
+    PacksCoverSetOutput:
+      type: object
+      properties:
+        thumbnailUrl:
+          type:
+            - string
+            - "null"
+      additionalProperties: false
+    PacksCoverRemoveInput:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - packId
+    PacksCoverRemoveOutput:
+      type: object
+      properties:
+        thumbnailUrl:
+          type:
+            - string
+            - "null"
       additionalProperties: false
     ProjectsFiltersOutput:
       type: object

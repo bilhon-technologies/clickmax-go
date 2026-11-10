@@ -237,6 +237,7 @@ const (
 	PlansInvoiceSummaryOutputAddonsItemMetricSocial                      PlansInvoiceSummaryOutputAddonsItemMetric = "social"
 	PlansInvoiceSummaryOutputAddonsItemMetricWebchat                     PlansInvoiceSummaryOutputAddonsItemMetric = "webchat"
 	PlansInvoiceSummaryOutputAddonsItemMetricForms                       PlansInvoiceSummaryOutputAddonsItemMetric = "forms"
+	PlansInvoiceSummaryOutputAddonsItemMetricMaxDesign                   PlansInvoiceSummaryOutputAddonsItemMetric = "max_design"
 	PlansInvoiceSummaryOutputAddonsItemMetricCredits                     PlansInvoiceSummaryOutputAddonsItemMetric = "credits"
 	PlansInvoiceSummaryOutputAddonsItemMetricAICredits                   PlansInvoiceSummaryOutputAddonsItemMetric = "ai_credits"
 	PlansInvoiceSummaryOutputAddonsItemMetricAIStandardAllowance         PlansInvoiceSummaryOutputAddonsItemMetric = "ai_standard_allowance"
@@ -367,6 +368,7 @@ const (
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricSocial                      PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "social"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricWebchat                     PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "webchat"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricForms                       PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "forms"
+	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricMaxDesign                   PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "max_design"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricCredits                     PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "credits"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricAICredits                   PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "ai_credits"
 	PlansTransactionHistoryOutputDataItemOrderDetailsItemMetricAIStandardAllowance         PlansTransactionHistoryOutputDataItemOrderDetailsItemMetric = "ai_standard_allowance"
@@ -496,6 +498,7 @@ const (
 	PlansUpgradeListOutputPlansItemMetricsItemMetricSocial                      PlansUpgradeListOutputPlansItemMetricsItemMetric = "social"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricWebchat                     PlansUpgradeListOutputPlansItemMetricsItemMetric = "webchat"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricForms                       PlansUpgradeListOutputPlansItemMetricsItemMetric = "forms"
+	PlansUpgradeListOutputPlansItemMetricsItemMetricMaxDesign                   PlansUpgradeListOutputPlansItemMetricsItemMetric = "max_design"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricCredits                     PlansUpgradeListOutputPlansItemMetricsItemMetric = "credits"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricAICredits                   PlansUpgradeListOutputPlansItemMetricsItemMetric = "ai_credits"
 	PlansUpgradeListOutputPlansItemMetricsItemMetricAIStandardAllowance         PlansUpgradeListOutputPlansItemMetricsItemMetric = "ai_standard_allowance"
@@ -523,16 +526,26 @@ type PlansUserMetricsOutput struct {
 
 // PlansUserMetricsOutputDataItem is an element of [PlansUserMetricsOutput.Data].
 type PlansUserMetricsOutputDataItem struct {
-	Metric         PlansUserMetricsOutputDataItemMetric `json:"metric"`
-	Kind           *PlansUserMetricsOutputDataItemKind  `json:"kind,omitzero"`
-	Used           *float64                             `json:"used,omitzero"`
-	Limit          *float64                             `json:"limit,omitzero"`
-	ExtraLimit     float64                              `json:"extraLimit"`
-	Remaining      *float64                             `json:"remaining,omitzero"`
-	UsedPercentage *float64                             `json:"usedPercentage,omitzero"`
-	TrialEndsAt    *time.Time                           `json:"trialEndsAt,omitzero"`
-	From           PlansUserMetricsOutputDataItemFrom   `json:"from"`
+	Metric         PlansUserMetricsOutputDataItemMetric     `json:"metric"`
+	Kind           *PlansUserMetricsOutputDataItemKind      `json:"kind,omitzero"`
+	Used           *float64                                 `json:"used,omitzero"`
+	Limit          *float64                                 `json:"limit,omitzero"`
+	ExtraLimit     float64                                  `json:"extraLimit"`
+	Remaining      *float64                                 `json:"remaining,omitzero"`
+	UsedPercentage *float64                                 `json:"usedPercentage,omitzero"`
+	TrialEndsAt    *time.Time                               `json:"trialEndsAt,omitzero"`
+	CountMode      *PlansUserMetricsOutputDataItemCountMode `json:"countMode,omitzero"`
+	From           PlansUserMetricsOutputDataItemFrom       `json:"from"`
 }
+
+// PlansUserMetricsOutputDataItemCountMode is the type of [PlansUserMetricsOutputDataItem.CountMode].
+type PlansUserMetricsOutputDataItemCountMode string
+
+// Values of [PlansUserMetricsOutputDataItemCountMode].
+const (
+	PlansUserMetricsOutputDataItemCountModeActive PlansUserMetricsOutputDataItemCountMode = "active"
+	PlansUserMetricsOutputDataItemCountModeUses   PlansUserMetricsOutputDataItemCountMode = "uses"
+)
 
 // PlansUserMetricsOutputDataItemFrom is the type of [PlansUserMetricsOutputDataItem.From].
 type PlansUserMetricsOutputDataItemFrom struct {
@@ -596,6 +609,7 @@ const (
 	PlansUserMetricsOutputDataItemMetricSocial                      PlansUserMetricsOutputDataItemMetric = "social"
 	PlansUserMetricsOutputDataItemMetricWebchat                     PlansUserMetricsOutputDataItemMetric = "webchat"
 	PlansUserMetricsOutputDataItemMetricForms                       PlansUserMetricsOutputDataItemMetric = "forms"
+	PlansUserMetricsOutputDataItemMetricMaxDesign                   PlansUserMetricsOutputDataItemMetric = "max_design"
 	PlansUserMetricsOutputDataItemMetricCredits                     PlansUserMetricsOutputDataItemMetric = "credits"
 	PlansUserMetricsOutputDataItemMetricAICredits                   PlansUserMetricsOutputDataItemMetric = "ai_credits"
 	PlansUserMetricsOutputDataItemMetricAIStandardAllowance         PlansUserMetricsOutputDataItemMetric = "ai_standard_allowance"
@@ -613,16 +627,27 @@ type PlansUserSummaryOutput struct {
 
 // PlansUserSummaryOutputMetricsItem is an element of [PlansUserSummaryOutput.Metrics].
 type PlansUserSummaryOutputMetricsItem struct {
-	Metric         PlansUserSummaryOutputMetricsItemMetric `json:"metric"`
-	Kind           *PlansUserSummaryOutputMetricsItemKind  `json:"kind,omitzero"`
-	Used           *float64                                `json:"used,omitzero"`
-	Limit          *float64                                `json:"limit,omitzero"`
-	ExtraLimit     float64                                 `json:"extraLimit"`
-	Remaining      *float64                                `json:"remaining,omitzero"`
-	UsedPercentage *float64                                `json:"usedPercentage,omitzero"`
-	TrialEndsAt    *time.Time                              `json:"trialEndsAt,omitzero"`
-	From           PlansUserSummaryOutputMetricsItemFrom   `json:"from"`
+	Metric         PlansUserSummaryOutputMetricsItemMetric     `json:"metric"`
+	Kind           *PlansUserSummaryOutputMetricsItemKind      `json:"kind,omitzero"`
+	Used           *float64                                    `json:"used,omitzero"`
+	Limit          *float64                                    `json:"limit,omitzero"`
+	ExtraLimit     float64                                     `json:"extraLimit"`
+	Remaining      *float64                                    `json:"remaining,omitzero"`
+	UsedPercentage *float64                                    `json:"usedPercentage,omitzero"`
+	TrialEndsAt    *time.Time                                  `json:"trialEndsAt,omitzero"`
+	CountMode      *PlansUserSummaryOutputMetricsItemCountMode `json:"countMode,omitzero"`
+	From           PlansUserSummaryOutputMetricsItemFrom       `json:"from"`
 }
+
+// PlansUserSummaryOutputMetricsItemCountMode is the type of
+// [PlansUserSummaryOutputMetricsItem.CountMode].
+type PlansUserSummaryOutputMetricsItemCountMode string
+
+// Values of [PlansUserSummaryOutputMetricsItemCountMode].
+const (
+	PlansUserSummaryOutputMetricsItemCountModeActive PlansUserSummaryOutputMetricsItemCountMode = "active"
+	PlansUserSummaryOutputMetricsItemCountModeUses   PlansUserSummaryOutputMetricsItemCountMode = "uses"
+)
 
 // PlansUserSummaryOutputMetricsItemFrom is the type of [PlansUserSummaryOutputMetricsItem.From].
 type PlansUserSummaryOutputMetricsItemFrom struct {
@@ -688,6 +713,7 @@ const (
 	PlansUserSummaryOutputMetricsItemMetricSocial                      PlansUserSummaryOutputMetricsItemMetric = "social"
 	PlansUserSummaryOutputMetricsItemMetricWebchat                     PlansUserSummaryOutputMetricsItemMetric = "webchat"
 	PlansUserSummaryOutputMetricsItemMetricForms                       PlansUserSummaryOutputMetricsItemMetric = "forms"
+	PlansUserSummaryOutputMetricsItemMetricMaxDesign                   PlansUserSummaryOutputMetricsItemMetric = "max_design"
 	PlansUserSummaryOutputMetricsItemMetricCredits                     PlansUserSummaryOutputMetricsItemMetric = "credits"
 	PlansUserSummaryOutputMetricsItemMetricAICredits                   PlansUserSummaryOutputMetricsItemMetric = "ai_credits"
 	PlansUserSummaryOutputMetricsItemMetricAIStandardAllowance         PlansUserSummaryOutputMetricsItemMetric = "ai_standard_allowance"

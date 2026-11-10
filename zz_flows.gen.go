@@ -1059,6 +1059,61 @@ func (s *FlowsService) Validate(ctx context.Context, params FlowsValidateParams,
 	return &out, nil
 }
 
+// Set a flow webhook's field mapping.
+//
+// Replaces the WHOLE field mapping of a flow webhook (`id` from [FlowsService.WebhookGet]);
+// `fieldMapping: null`, or one without any path, removes it and the webhook goes back to reading only
+// the top-level keys. Applies to the next calls only — past calls are not reprocessed. A malformed
+// path is rejected with 400. `fieldMapping` = `{ fields?: { <contactField>: <path> }, customFields?: {
+// <ref>: <path> } }` — TARGET field ← SOURCE path in the received JSON body. `<contactField>` =
+// one of the keys the `fields` schema lists (`address` cannot be mapped; any other key is dropped).
+// `<ref>` = a CONTACT custom field id, `fieldName` or display name (as in [CustomFieldsService.List]).
+// `<path>` is a path inside the body WITHOUT `$trigger` and without braces: `contact.email`,
+// `data.items[0].sku`, `order["customer name"]`; a JSON string value is navigable. A mapped value WINS
+// over a top-level key of the same name (e.g. the seller `email` at the root of an order payload); a
+// path missing in a payload leaves the field empty and never erases the top-level key. A numeric
+// phone/document becomes text and `tags` given as "a, b, c" becomes a list. Without a mapping only
+// TOP-LEVEL contract keys are read as contact data (`email`, `fullName`, `telephone`, …,
+// `customFields`, `tags`, `leadId`). Every other key, nested ones included, stays available to the
+// steps as `{{$trigger.<path>}}`. Example: body
+// `{"event":"order.paid","customer":{"mail":"ana@x.com","phone":5511987654321,"name":"Ana"},"plan":{"code":"annual"}}`
+// →
+// `{"fields":{"email":"customer.mail","telephone":"customer.phone","fullName":"customer.name"},"customFields":{"plano":"plan.code"}}`.
+//
+// Calls POST /flows/webhook-field-mapping-set.
+func (s *FlowsService) WebhookFieldMappingSet(ctx context.Context, body FlowsWebhookFieldMappingSetInput, opts ...Option) (*FlowsWebhookFieldMappingSetOutput, error) {
+	var out FlowsWebhookFieldMappingSetOutput
+	if err := s.client.do(ctx, "POST", "/flows/webhook-field-mapping-set", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Get a flow's webhook URL and field mapping.
+//
+// The webhook of ONE flow: its `id`, the public `publicUrl` an external system POSTs JSON to,
+// `rotatedAt`, the current `fieldMapping` (null = only the top-level keys of the body are read) and
+// the call log — `recentCalls` = the 5 newest calls (older ones are left out; `callsTotal` counts
+// all), each with the `payload` received (a payload over 4000 chars of JSON, or past 16000 chars
+// across the calls, comes TRUNCATED as `{ truncated: true, preview }` — `preview` = the first chars
+// of its JSON; when the budget is spent the oldest calls come as just `{ truncated: true }`), `status`
+// (`accepted` | `duplicated` | `invalid` | `error`), `result` and the `instanceId` of the execution it
+// started (null when the flow was paused, no trigger matched or the contact was in its re-entry
+// interval). Read `recentCalls[].payload` to learn the real shape before writing a mapping with
+// [FlowsService.WebhookFieldMappingSet]. Each flow has exactly ONE webhook, created on the first call
+// and returned unchanged afterwards. Its `id` is the `flowWebhookId` constraint of the flow entry
+// trigger `crm.flow_webhook.received.v1`; a flow without that trigger never runs from the URL.
+// Payloads hold contact data. 404 = the flow does not exist in this workspace.
+//
+// Calls POST /flows/webhook-get.
+func (s *FlowsService) WebhookGet(ctx context.Context, body FlowsWebhookGetInput, opts ...Option) (*FlowsWebhookGetOutput, error) {
+	var out FlowsWebhookGetOutput
+	if err := s.client.do(ctx, "POST", "/flows/webhook-get", nil, body, &out, opts); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // FlowsActionsCatalogOutput is the response of [FlowsService.ActionsCatalog].
 type FlowsActionsCatalogOutput struct {
 	Data []FlowsActionsCatalogOutputDataItem `json:"data"`
@@ -5724,6 +5779,7 @@ const (
 	FlowsTriggersCatalogParamsGroupInstagram     FlowsTriggersCatalogParamsGroup = "instagram"
 	FlowsTriggersCatalogParamsGroupSocial        FlowsTriggersCatalogParamsGroup = "social"
 	FlowsTriggersCatalogParamsGroupWhatsapp      FlowsTriggersCatalogParamsGroup = "whatsapp"
+	FlowsTriggersCatalogParamsGroupWhatsappWeb   FlowsTriggersCatalogParamsGroup = "whatsappWeb"
 	FlowsTriggersCatalogParamsGroupEmail         FlowsTriggersCatalogParamsGroup = "email"
 	FlowsTriggersCatalogParamsGroupTelegram      FlowsTriggersCatalogParamsGroup = "telegram"
 	FlowsTriggersCatalogParamsGroupVoice         FlowsTriggersCatalogParamsGroup = "voice"
@@ -5849,3 +5905,129 @@ func (p FlowsValidateParams) values() url.Values {
 	addString(v, "flowId", &p.FlowID)
 	return v
 }
+
+// FlowsWebhookFieldMappingSetInput is the request body of [FlowsService.WebhookFieldMappingSet].
+type FlowsWebhookFieldMappingSetInput struct {
+	ID           string                                                 `json:"id"`
+	FieldMapping Nullable[FlowsWebhookFieldMappingSetInputFieldMapping] `json:"fieldMapping,omitzero"`
+}
+
+// FlowsWebhookFieldMappingSetInputFieldMapping is the type of
+// [FlowsWebhookFieldMappingSetInput.FieldMapping].
+type FlowsWebhookFieldMappingSetInputFieldMapping struct {
+	Fields       *FlowsWebhookFieldMappingSetInputFieldMappingFields `json:"fields,omitzero"`
+	CustomFields map[string]string                                   `json:"customFields,omitzero"`
+}
+
+// FlowsWebhookFieldMappingSetInputFieldMappingFields is the type of
+// [FlowsWebhookFieldMappingSetInputFieldMapping.Fields].
+type FlowsWebhookFieldMappingSetInputFieldMappingFields struct {
+	Email          *string `json:"email,omitzero"`
+	FullName       *string `json:"fullName,omitzero"`
+	Telephone      *string `json:"telephone,omitzero"`
+	Document       *string `json:"document,omitzero"`
+	Instagram      *string `json:"instagram,omitzero"`
+	Birthday       *string `json:"birthday,omitzero"`
+	Profession     *string `json:"profession,omitzero"`
+	City           *string `json:"city,omitzero"`
+	State          *string `json:"state,omitzero"`
+	Tags           *string `json:"tags,omitzero"`
+	LeadID         *string `json:"leadId,omitzero"`
+	IdempotencyKey *string `json:"idempotencyKey,omitzero"`
+}
+
+// FlowsWebhookFieldMappingSetOutput is the response of [FlowsService.WebhookFieldMappingSet].
+type FlowsWebhookFieldMappingSetOutput struct {
+	ID           string                                         `json:"id"`
+	FlowID       string                                         `json:"flowId"`
+	PublicURL    string                                         `json:"publicUrl"`
+	CreatedAt    time.Time                                      `json:"createdAt"`
+	RotatedAt    *time.Time                                     `json:"rotatedAt,omitzero"`
+	FieldMapping *FlowsWebhookFieldMappingSetOutputFieldMapping `json:"fieldMapping,omitzero"`
+}
+
+// FlowsWebhookFieldMappingSetOutputFieldMapping is the type of
+// [FlowsWebhookFieldMappingSetOutput.FieldMapping].
+type FlowsWebhookFieldMappingSetOutputFieldMapping struct {
+	Fields       *FlowsWebhookFieldMappingSetOutputFieldMappingFields `json:"fields,omitzero"`
+	CustomFields map[string]string                                    `json:"customFields,omitzero"`
+}
+
+// FlowsWebhookFieldMappingSetOutputFieldMappingFields is the type of
+// [FlowsWebhookFieldMappingSetOutputFieldMapping.Fields].
+type FlowsWebhookFieldMappingSetOutputFieldMappingFields struct {
+	Email          *string `json:"email,omitzero"`
+	FullName       *string `json:"fullName,omitzero"`
+	Telephone      *string `json:"telephone,omitzero"`
+	Document       *string `json:"document,omitzero"`
+	Instagram      *string `json:"instagram,omitzero"`
+	Birthday       *string `json:"birthday,omitzero"`
+	Profession     *string `json:"profession,omitzero"`
+	City           *string `json:"city,omitzero"`
+	State          *string `json:"state,omitzero"`
+	Tags           *string `json:"tags,omitzero"`
+	LeadID         *string `json:"leadId,omitzero"`
+	IdempotencyKey *string `json:"idempotencyKey,omitzero"`
+}
+
+// FlowsWebhookGetInput is the request body of [FlowsService.WebhookGet].
+type FlowsWebhookGetInput struct {
+	FlowID string `json:"flowId"`
+}
+
+// FlowsWebhookGetOutput is the response of [FlowsService.WebhookGet].
+type FlowsWebhookGetOutput struct {
+	ID           string                                 `json:"id"`
+	FlowID       string                                 `json:"flowId"`
+	PublicURL    string                                 `json:"publicUrl"`
+	CreatedAt    time.Time                              `json:"createdAt"`
+	RotatedAt    *time.Time                             `json:"rotatedAt,omitzero"`
+	FieldMapping *FlowsWebhookGetOutputFieldMapping     `json:"fieldMapping,omitzero"`
+	RecentCalls  []FlowsWebhookGetOutputRecentCallsItem `json:"recentCalls"`
+	CallsTotal   float64                                `json:"callsTotal"`
+}
+
+// FlowsWebhookGetOutputFieldMapping is the type of [FlowsWebhookGetOutput.FieldMapping].
+type FlowsWebhookGetOutputFieldMapping struct {
+	Fields       *FlowsWebhookGetOutputFieldMappingFields `json:"fields,omitzero"`
+	CustomFields map[string]string                        `json:"customFields,omitzero"`
+}
+
+// FlowsWebhookGetOutputFieldMappingFields is the type of [FlowsWebhookGetOutputFieldMapping.Fields].
+type FlowsWebhookGetOutputFieldMappingFields struct {
+	Email          *string `json:"email,omitzero"`
+	FullName       *string `json:"fullName,omitzero"`
+	Telephone      *string `json:"telephone,omitzero"`
+	Document       *string `json:"document,omitzero"`
+	Instagram      *string `json:"instagram,omitzero"`
+	Birthday       *string `json:"birthday,omitzero"`
+	Profession     *string `json:"profession,omitzero"`
+	City           *string `json:"city,omitzero"`
+	State          *string `json:"state,omitzero"`
+	Tags           *string `json:"tags,omitzero"`
+	LeadID         *string `json:"leadId,omitzero"`
+	IdempotencyKey *string `json:"idempotencyKey,omitzero"`
+}
+
+// FlowsWebhookGetOutputRecentCallsItem is an element of [FlowsWebhookGetOutput.RecentCalls].
+type FlowsWebhookGetOutputRecentCallsItem struct {
+	ID             string                                     `json:"id"`
+	Status         FlowsWebhookGetOutputRecentCallsItemStatus `json:"status"`
+	Payload        map[string]any                             `json:"payload"`
+	Result         map[string]any                             `json:"result,omitzero"`
+	IdempotencyKey *string                                    `json:"idempotencyKey,omitzero"`
+	CreatedAt      time.Time                                  `json:"createdAt"`
+	InstanceID     *string                                    `json:"instanceId,omitzero"`
+}
+
+// FlowsWebhookGetOutputRecentCallsItemStatus is the type of
+// [FlowsWebhookGetOutputRecentCallsItem.Status].
+type FlowsWebhookGetOutputRecentCallsItemStatus string
+
+// Values of [FlowsWebhookGetOutputRecentCallsItemStatus].
+const (
+	FlowsWebhookGetOutputRecentCallsItemStatusAccepted   FlowsWebhookGetOutputRecentCallsItemStatus = "accepted"
+	FlowsWebhookGetOutputRecentCallsItemStatusDuplicated FlowsWebhookGetOutputRecentCallsItemStatus = "duplicated"
+	FlowsWebhookGetOutputRecentCallsItemStatusInvalid    FlowsWebhookGetOutputRecentCallsItemStatus = "invalid"
+	FlowsWebhookGetOutputRecentCallsItemStatusError      FlowsWebhookGetOutputRecentCallsItemStatus = "error"
+)

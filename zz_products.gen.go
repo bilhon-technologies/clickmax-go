@@ -728,24 +728,27 @@ type ProductsListOutput struct {
 
 // ProductsListOutputDataItem is an element of [ProductsListOutput.Data].
 type ProductsListOutputDataItem struct {
-	ID                   string                                 `json:"id"`
-	Name                 string                                 `json:"name"`
-	ProductType          ProductsListOutputDataItemProductType  `json:"productType"`
-	Class                ProductsListOutputDataItemClass        `json:"class"`
-	Category             ProductsListOutputDataItemCategory     `json:"category"`
-	ProjectID            string                                 `json:"projectId"`
-	ProjectName          *string                                `json:"projectName,omitzero"`
-	ProjectIconURL       *string                                `json:"projectIconUrl,omitzero"`
-	IsArchived           *bool                                  `json:"isArchived,omitzero"`
-	TotalOffersCount     int64                                  `json:"totalOffersCount"`
-	IsExternalCheckout   bool                                   `json:"isExternalCheckout"`
-	Status               *string                                `json:"status,omitzero"`
-	IsAffiliated         *bool                                  `json:"isAffiliated,omitzero"`
-	HasActiveAffiliation bool                                   `json:"hasActiveAffiliation"`
-	AffiliateCommission  *int64                                 `json:"affiliateCommission,omitzero"`
-	Offers               []ProductsListOutputDataItemOffersItem `json:"offers"`
-	CreatedBy            ProductsListOutputDataItemCreatedBy    `json:"createdBy"`
-	UpdatedBy            ProductsListOutputDataItemUpdatedBy    `json:"updatedBy"`
+	ID                     string                                 `json:"id"`
+	Name                   string                                 `json:"name"`
+	ProductType            ProductsListOutputDataItemProductType  `json:"productType"`
+	Class                  ProductsListOutputDataItemClass        `json:"class"`
+	Category               ProductsListOutputDataItemCategory     `json:"category"`
+	ProjectID              string                                 `json:"projectId"`
+	ProjectName            *string                                `json:"projectName,omitzero"`
+	ProjectIconURL         *string                                `json:"projectIconUrl,omitzero"`
+	IsArchived             *bool                                  `json:"isArchived,omitzero"`
+	TotalOffersCount       int64                                  `json:"totalOffersCount"`
+	IsExternalCheckout     bool                                   `json:"isExternalCheckout"`
+	Status                 *string                                `json:"status,omitzero"`
+	IsAffiliated           *bool                                  `json:"isAffiliated,omitzero"`
+	HasActiveAffiliation   bool                                   `json:"hasActiveAffiliation"`
+	HasPendingCoproduction *bool                                  `json:"hasPendingCoproduction,omitzero"`
+	AffiliateCommission    *int64                                 `json:"affiliateCommission,omitzero"`
+	CoproductionCommission *int64                                 `json:"coproductionCommission,omitzero"`
+	CoproducersCount       *int64                                 `json:"coproducersCount,omitzero"`
+	Offers                 []ProductsListOutputDataItemOffersItem `json:"offers"`
+	CreatedBy              ProductsListOutputDataItemCreatedBy    `json:"createdBy"`
+	UpdatedBy              ProductsListOutputDataItemUpdatedBy    `json:"updatedBy"`
 }
 
 // ProductsListOutputDataItemCategory is the type of [ProductsListOutputDataItem.Category].

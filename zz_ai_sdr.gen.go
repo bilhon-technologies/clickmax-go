@@ -19,9 +19,11 @@ type AISDRService struct {
 // how long the contact waited (`waitMs`), the tools it ran and where it happened (agent, deployment,
 // number). Use to answer "why did the SDR not answer <contact>": resolve the contact with
 // [LeadsService.Search] first and pass `leadId` — this tool never takes a name. Filter by `outcome`,
-// `reasonCode`, `trigger` (`inbound` = contact message, `follow_up`, `flow_opening`), `delivered`,
-// agent, deployment or number. Window = `days` (default 7, max 90); widen it before saying there is no
-// decision. Rows include the contact name: only repeat it to the user who asked.
+// `reasonCode`, `trigger` (`inbound` = contact message, `follow_up`, `flow_opening`, `commitment` = a
+// date agreed in the conversation came due, `routine_morning` = the morning routine answering a
+// message sent after hours), `delivered`, agent, deployment or number. Window = `days` (default 7, max 90);
+// widen it before saying there is no decision. Rows include the contact name: only repeat it to the
+// user who asked.
 //
 // Calls GET /ai-sdr/decisions-list.
 func (s *AISDRService) DecisionsList(ctx context.Context, params AISDRDecisionsListParams, opts ...Option) (*AISDRDecisionsListOutput, error) {
@@ -165,9 +167,11 @@ type AISDRDecisionsListParamsTrigger string
 
 // Values of [AISDRDecisionsListParamsTrigger].
 const (
-	AISDRDecisionsListParamsTriggerInbound     AISDRDecisionsListParamsTrigger = "inbound"
-	AISDRDecisionsListParamsTriggerFollowUp    AISDRDecisionsListParamsTrigger = "follow_up"
-	AISDRDecisionsListParamsTriggerFlowOpening AISDRDecisionsListParamsTrigger = "flow_opening"
+	AISDRDecisionsListParamsTriggerInbound        AISDRDecisionsListParamsTrigger = "inbound"
+	AISDRDecisionsListParamsTriggerFollowUp       AISDRDecisionsListParamsTrigger = "follow_up"
+	AISDRDecisionsListParamsTriggerFlowOpening    AISDRDecisionsListParamsTrigger = "flow_opening"
+	AISDRDecisionsListParamsTriggerCommitment     AISDRDecisionsListParamsTrigger = "commitment"
+	AISDRDecisionsListParamsTriggerRoutineMorning AISDRDecisionsListParamsTrigger = "routine_morning"
 )
 
 // AISDROverviewOutput is the response of [AISDRService.Overview].

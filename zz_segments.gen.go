@@ -1140,6 +1140,7 @@ const (
 	SegmentsGetLeadsOutputDataItemSubOriginSocialComment         SegmentsGetLeadsOutputDataItemSubOrigin = "SocialComment"
 	SegmentsGetLeadsOutputDataItemSubOriginCxManualCreation      SegmentsGetLeadsOutputDataItemSubOrigin = "CxManualCreation"
 	SegmentsGetLeadsOutputDataItemSubOriginCxManualImportCSV     SegmentsGetLeadsOutputDataItemSubOrigin = "CxManualImportCsv"
+	SegmentsGetLeadsOutputDataItemSubOriginCxCRMImport           SegmentsGetLeadsOutputDataItemSubOrigin = "CxCrmImport"
 )
 
 // SegmentsGetLeadsOutputDataItemSuspectedFraudReasonsItem is an element of

@@ -1108,6 +1108,7 @@ const (
 	LeadsCommonProductsInputFilterFilterSubOriginItemSocialComment         LeadsCommonProductsInputFilterFilterSubOriginItem = "SocialComment"
 	LeadsCommonProductsInputFilterFilterSubOriginItemCxManualCreation      LeadsCommonProductsInputFilterFilterSubOriginItem = "CxManualCreation"
 	LeadsCommonProductsInputFilterFilterSubOriginItemCxManualImportCSV     LeadsCommonProductsInputFilterFilterSubOriginItem = "CxManualImportCsv"
+	LeadsCommonProductsInputFilterFilterSubOriginItemCxCRMImport           LeadsCommonProductsInputFilterFilterSubOriginItem = "CxCrmImport"
 )
 
 // LeadsCommonProductsInputFilterFilterTemperatureStatusItem is an element of
@@ -1682,6 +1683,7 @@ const (
 	LeadsContextOutputCapturesSubOriginSocialComment         LeadsContextOutputCapturesSubOrigin = "SocialComment"
 	LeadsContextOutputCapturesSubOriginCxManualCreation      LeadsContextOutputCapturesSubOrigin = "CxManualCreation"
 	LeadsContextOutputCapturesSubOriginCxManualImportCSV     LeadsContextOutputCapturesSubOrigin = "CxManualImportCsv"
+	LeadsContextOutputCapturesSubOriginCxCRMImport           LeadsContextOutputCapturesSubOrigin = "CxCrmImport"
 )
 
 // LeadsContextOutputCapturesUTMSourcesItem is an element of [LeadsContextOutputCaptures.UTMSources].
@@ -2043,6 +2045,7 @@ const (
 	LeadsContextOutputLeadSubOriginSocialComment         LeadsContextOutputLeadSubOrigin = "SocialComment"
 	LeadsContextOutputLeadSubOriginCxManualCreation      LeadsContextOutputLeadSubOrigin = "CxManualCreation"
 	LeadsContextOutputLeadSubOriginCxManualImportCSV     LeadsContextOutputLeadSubOrigin = "CxManualImportCsv"
+	LeadsContextOutputLeadSubOriginCxCRMImport           LeadsContextOutputLeadSubOrigin = "CxCrmImport"
 )
 
 // LeadsContextOutputLeadTemperatureStatus is the type of [LeadsContextOutputLead.TemperatureStatus].
@@ -3544,6 +3547,7 @@ const (
 	LeadsGetOutputSubOriginSocialComment         LeadsGetOutputSubOrigin = "SocialComment"
 	LeadsGetOutputSubOriginCxManualCreation      LeadsGetOutputSubOrigin = "CxManualCreation"
 	LeadsGetOutputSubOriginCxManualImportCSV     LeadsGetOutputSubOrigin = "CxManualImportCsv"
+	LeadsGetOutputSubOriginCxCRMImport           LeadsGetOutputSubOrigin = "CxCrmImport"
 )
 
 // LeadsGetOutputSubmissionsItem is an element of [LeadsGetOutput.Submissions].
@@ -4042,6 +4046,7 @@ const (
 	LeadsInvoicesInputFilterFilterSubOriginItemSocialComment         LeadsInvoicesInputFilterFilterSubOriginItem = "SocialComment"
 	LeadsInvoicesInputFilterFilterSubOriginItemCxManualCreation      LeadsInvoicesInputFilterFilterSubOriginItem = "CxManualCreation"
 	LeadsInvoicesInputFilterFilterSubOriginItemCxManualImportCSV     LeadsInvoicesInputFilterFilterSubOriginItem = "CxManualImportCsv"
+	LeadsInvoicesInputFilterFilterSubOriginItemCxCRMImport           LeadsInvoicesInputFilterFilterSubOriginItem = "CxCrmImport"
 )
 
 // LeadsInvoicesInputFilterFilterTemperatureStatusItem is an element of
@@ -4433,6 +4438,7 @@ const (
 	LeadsOriginsTreeOutputDataItemSubOriginsItemSocialComment         LeadsOriginsTreeOutputDataItemSubOriginsItem = "SocialComment"
 	LeadsOriginsTreeOutputDataItemSubOriginsItemCxManualCreation      LeadsOriginsTreeOutputDataItemSubOriginsItem = "CxManualCreation"
 	LeadsOriginsTreeOutputDataItemSubOriginsItemCxManualImportCSV     LeadsOriginsTreeOutputDataItemSubOriginsItem = "CxManualImportCsv"
+	LeadsOriginsTreeOutputDataItemSubOriginsItemCxCRMImport           LeadsOriginsTreeOutputDataItemSubOriginsItem = "CxCrmImport"
 )
 
 // LeadsPaymentsOutput is the response of [LeadsService.Payments].
@@ -5513,6 +5519,7 @@ const (
 	LeadsSearchOutputDataItemSubOriginSocialComment         LeadsSearchOutputDataItemSubOrigin = "SocialComment"
 	LeadsSearchOutputDataItemSubOriginCxManualCreation      LeadsSearchOutputDataItemSubOrigin = "CxManualCreation"
 	LeadsSearchOutputDataItemSubOriginCxManualImportCSV     LeadsSearchOutputDataItemSubOrigin = "CxManualImportCsv"
+	LeadsSearchOutputDataItemSubOriginCxCRMImport           LeadsSearchOutputDataItemSubOrigin = "CxCrmImport"
 )
 
 // LeadsSearchOutputDataItemSuspectedFraudReasonsItem is an element of
@@ -5623,6 +5630,7 @@ const (
 	LeadsSubOriginsOutputDataItemSocialComment         LeadsSubOriginsOutputDataItem = "SocialComment"
 	LeadsSubOriginsOutputDataItemCxManualCreation      LeadsSubOriginsOutputDataItem = "CxManualCreation"
 	LeadsSubOriginsOutputDataItemCxManualImportCSV     LeadsSubOriginsOutputDataItem = "CxManualImportCsv"
+	LeadsSubOriginsOutputDataItemCxCRMImport           LeadsSubOriginsOutputDataItem = "CxCrmImport"
 )
 
 // LeadsValidateEmailInput is the request body of [LeadsService.ValidateEmail].

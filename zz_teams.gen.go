@@ -111,6 +111,8 @@ type TeamsListOutputDataItemAppointmentSchedulesItem struct {
 	BookingScreeningMode             TeamsListOutputDataItemAppointmentSchedulesItemBookingScreeningMode      `json:"bookingScreeningMode"`
 	GroupCapacity                    *int64                                                                   `json:"groupCapacity,omitzero"`
 	GroupShowSeatsLeft               bool                                                                     `json:"groupShowSeatsLeft"`
+	GroupShowSessionBadge            bool                                                                     `json:"groupShowSessionBadge"`
+	GroupSessionsEnabled             bool                                                                     `json:"groupSessionsEnabled"`
 	OwnerID                          string                                                                   `json:"ownerId"`
 	CreatedAt                        time.Time                                                                `json:"createdAt"`
 	UpdatedAt                        time.Time                                                                `json:"updatedAt"`
