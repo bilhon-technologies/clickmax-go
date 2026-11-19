@@ -24,6 +24,7 @@ const baseURLEnv = "CLICKMAX_CLIENT_BASE_URL"
 var apiKeyPattern = regexp.MustCompile(`^cx([a-z])_[A-Za-z0-9_-]{43}$`)
 
 // Production ("p") maps to "" because its keys work against DefaultBaseURL.
+// App client secrets use the same letters.
 var keyEnvironments = map[string]string{
 	"p": "",
 	"d": "development",
@@ -82,10 +83,15 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 // normalizeBaseURL trims trailing slashes so operation paths, which start with
 // "/", can be appended as they are.
 func normalizeBaseURL(raw string) (string, error) {
+	return normalizeURL("base URL", raw)
+}
+
+// normalizeURL is normalizeBaseURL for any URL option; name goes in the error.
+func normalizeURL(name, raw string) (string, error) {
 	trimmed := strings.TrimRight(raw, "/")
 	u, err := url.Parse(trimmed)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return "", fmt.Errorf("base URL must be an http or https URL, got %q", raw)
+		return "", fmt.Errorf("%s must be an http or https URL, got %q", name, raw)
 	}
 	return trimmed, nil
 }

@@ -21,7 +21,9 @@ type HTTPClient interface {
 // call works on its own copy, so per-call options cannot leak into the client.
 type settings struct {
 	apiKey     string
+	app        *installationTokens // set by NewApp instead of apiKey; shared by every copy
 	baseURL    string
+	authURL    string
 	httpClient HTTPClient // nil means http.DefaultClient, looked up per request
 	header     http.Header
 	timeout    time.Duration
@@ -43,9 +45,16 @@ func (s settings) with(opts []Option) settings {
 }
 
 // WithBaseURL sends requests to baseURL instead of [DefaultBaseURL]. Keys that
-// do not start with "cxp_" belong to other environments and need it. The URL
-// must use http or https; trailing slashes are trimmed. An empty baseURL leaves
-// the current value unchanged.
+// do not start with "cxp_" and client secrets that do not start with "cxp_cs_"
+// belong to other environments and need it. The URL must use http or https;
+// trailing slashes are trimmed. An empty baseURL leaves the current value
+// unchanged.
+//
+// Installation tokens of a client built with [NewApp] are issued for the
+// scheme and host of its base URL. On a method call of such a client, a
+// baseURL with another scheme or host fails the call with
+// [ErrorTypeInvalidRequest] and code "invalid_argument", without sending
+// anything; build another client with NewApp to reach that API.
 func WithBaseURL(baseURL string) Option {
 	return func(s *settings) {
 		if baseURL != "" {
@@ -54,8 +63,28 @@ func WithBaseURL(baseURL string) Option {
 	}
 }
 
+// WithAuthURL sends the token requests of [NewApp] and [ExchangeInstallCode]
+// to authURL, the root of the login server, instead of [DefaultAuthURL].
+// Client secrets that do not start with "cxp_cs_" belong to other environments
+// and need it, together with [WithBaseURL]. The URL must use http or https;
+// trailing slashes are trimmed. An empty authURL leaves the current value
+// unchanged.
+//
+// Clients built with [New] ignore it, and so do method calls: a client built
+// with NewApp keeps the login server it was given.
+func WithAuthURL(authURL string) Option {
+	return func(s *settings) {
+		if authURL != "" {
+			s.authURL = authURL
+		}
+	}
+}
+
 // WithHTTPClient sends requests through client instead of
 // [http.DefaultClient]. Passing nil goes back to http.DefaultClient.
+//
+// Installation token requests of a client built with [NewApp] use the
+// HTTPClient given to NewApp, never one passed to a method call.
 //
 // A Timeout set on an [*http.Client] still applies, but when it fires the
 // error has type [ErrorTypeNetwork]; use [WithTimeout] to get
@@ -71,7 +100,8 @@ func WithHTTPClient(client HTTPClient) Option {
 // client's value for that call only.
 //
 // Authorization and X-Clickmax-Sdk cannot be changed this way: every request
-// carries the client's API key and the SDK version.
+// carries the client's credentials and the SDK version. Token requests to the
+// login server do not carry these headers.
 func WithHeader(key, value string) Option {
 	return func(s *settings) {
 		if s.header == nil {
@@ -85,9 +115,13 @@ func WithHeader(key, value string) Option {
 // the whole response body. The default is 60 seconds and 0 disables the limit.
 // A request that runs out of time fails with [ErrorTypeTimeout].
 //
-// A negative d makes [New] return an error. On a method call it fails that
-// call with [ErrorTypeInvalidRequest] and code "invalid_argument", without
-// sending anything.
+// On a client built with [NewApp], the limit of a method call also covers
+// waiting for an installation token and the retry after a 401. The token
+// request itself is limited by the timeout given to NewApp.
+//
+// A negative d makes [New] and [NewApp] return an error. On a method call or
+// [ExchangeInstallCode] it fails that call with [ErrorTypeInvalidRequest] and
+// code "invalid_argument", without sending anything.
 func WithTimeout(d time.Duration) Option {
 	return func(s *settings) {
 		s.timeout = d
