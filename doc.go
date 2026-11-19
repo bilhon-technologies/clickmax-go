@@ -13,6 +13,19 @@
 // share nothing, so several workspaces can be used side by side. Keep the key
 // on a server: anyone holding it can call the API on behalf of its workspace.
 //
+// # Clickmax Apps
+//
+// A Clickmax App is installed by many workspaces. [ExchangeInstallCode] turns
+// the code of an install into an installation, and [NewApp] builds a client
+// for one installation from the app's client id and secret. That client
+// requests, caches and renews installation tokens on its own:
+//
+//	c, err := clickmax.NewApp(clickmax.AppCredentials{
+//		ClientID:       os.Getenv("CLICKMAX_CLIENT_ID"),
+//		ClientSecret:   os.Getenv("CLICKMAX_CLIENT_SECRET"),
+//		InstallationID: installationID,
+//	})
+//
 // # Options
 //
 // [Option] values passed to [New] set the defaults of every request. The same
@@ -34,7 +47,8 @@
 //		time.Sleep(cerr.RetryAfter)
 //	}
 //
-// The SDK never retries a request on its own.
+// The SDK never retries a request on its own, except that a client built with
+// [NewApp] sends a call once more with a new installation token after a 401.
 //
 // # Optional and null fields
 //

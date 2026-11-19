@@ -10,7 +10,8 @@ Public Go module `clickmax.io/go` (package `clickmax`, Apache-2.0) = code genera
 - Root module has zero dependencies (`go.mod` without `require`). The generator is a separate module (`internal/generator/go.mod`) so its dependencies never reach users.
 - `go 1.24` floor = `omitzero` json tags. Raising it is a breaking change for users on older toolchains.
 - Generated code depends on these runtime names: `settings`, `Option`, `(*Client).do`, `addString/addInt/addFloat/addBool/addTime`, `Nullable`. The generator reads the runtime files and fails on name collisions with them.
-- Methods never retry and never validate input or output beyond JSON decoding (parity with the TypeScript SDK).
+- Methods never retry and never validate input or output beyond JSON decoding (parity with the TypeScript SDK). Only exception: an app client (`NewApp`) resends a call once with a new installation token after a 401.
+- App credentials (`app.go`) mirror the TypeScript SDK: client secret `cx<letter>_cs_` + 43 chars with the API key environment letters; non-production secrets need explicit `WithBaseURL` AND `WithAuthURL`. Apps never read the hidden base URL override that `New` reads for non-production keys, and it stays undocumented. One shared token request per client, detached from callers' contexts and bounded by the `NewApp` timeout and HTTPClient. Successful token response bodies never go in `Error.Raw` or messages.
 - Hand-written code: godoc on every exported identifier; comments explain why/when, never what.
 
 ## Type mapping tradeoffs

@@ -35,7 +35,8 @@ var keyEnvironments = map[string]string{
 var errNegativeTimeout = errors.New("timeout must not be negative")
 
 // New returns a client that authenticates every request with apiKey, a
-// workspace API key ("cxp_" followed by 43 characters).
+// workspace API key ("cxp_" followed by 43 characters). A Clickmax App
+// installed in many workspaces uses [NewApp] instead.
 //
 // New makes no request. It returns an error when the key is empty or
 // malformed, when an option is invalid, or when a key issued for another
