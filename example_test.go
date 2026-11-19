@@ -49,24 +49,39 @@ func ExampleNewApp() {
 	log.Printf("%d tags", len(tags.Data))
 }
 
-func ExampleExchangeInstallCode() {
-	// In the handler of the redirect URI: r is the callback request and the
-	// verifier was kept in the person's session when the install link was
-	// built.
-	r, _ := http.NewRequest(http.MethodGet, "https://app.example.com/clickmax/callback?code=abc&state=xyz", nil)
-	codeVerifier := "verifier kept in the session"
+// session stands for the application's session store, which keeps the state
+// and PKCE verifier generated with the install link.
+type session struct{ State, CodeVerifier string }
 
-	out, err := clickmax.ExchangeInstallCode(r.Context(), clickmax.InstallCodeExchangeInput{
-		ClientID:     os.Getenv("CLICKMAX_CLIENT_ID"),
-		ClientSecret: os.Getenv("CLICKMAX_CLIENT_SECRET"),
-		Code:         r.URL.Query().Get("code"),
-		CodeVerifier: codeVerifier,
-		RedirectURI:  "https://app.example.com/clickmax/callback",
+type sessionStore struct{}
+
+func (sessionStore) Get(*http.Request) session { return session{} }
+
+var sessions sessionStore
+
+func ExampleExchangeInstallCode() {
+	http.HandleFunc("/clickmax/callback", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		sess := sessions.Get(r)
+		if q.Get("code") == "" || q.Get("state") != sess.State {
+			http.Error(w, "app not installed", http.StatusBadRequest)
+			return
+		}
+
+		out, err := clickmax.ExchangeInstallCode(r.Context(), clickmax.InstallCodeExchangeInput{
+			ClientID:     os.Getenv("CLICKMAX_CLIENT_ID"),
+			ClientSecret: os.Getenv("CLICKMAX_CLIENT_SECRET"),
+			Code:         q.Get("code"),
+			CodeVerifier: sess.CodeVerifier,
+			RedirectURI:  "https://app.example.com/clickmax/callback",
+		})
+		if err != nil {
+			http.Error(w, "install failed", http.StatusBadGateway)
+			return
+		}
+		// Store out.InstallationID with the workspace; NewApp needs it.
+		log.Printf("installed in workspace %s as %s", out.WorkspaceID, out.InstallationID)
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("installed in workspace %s as %s", out.WorkspaceID, out.InstallationID)
 }
 
 func ExampleTagsService_ManualList() {

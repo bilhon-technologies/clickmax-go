@@ -68,9 +68,9 @@ if err != nil {
 tags, err := c.Tags.List(ctx)
 ```
 
-The client exchanges the credentials for an installation token on the first call and sends it as the bearer token. A token lasts 10 minutes. The client reuses it until one minute before it expires, and concurrent calls that need a new one wait on a single token request. When the API answers 401, the client requests a new token and sends that call once more; a second 401 is returned as the error. Token requests use the `WithHTTPClient` and `WithTimeout` passed to `NewApp`, never the ones passed to a method call. Canceling a call's `ctx` stops only that call's wait: the token request goes on for the other calls waiting on it.
+The client exchanges the credentials for an installation token on the first call and sends it as the bearer token. A token lasts 10 minutes. The client reuses it until one minute before it expires, and concurrent calls that need a new one wait on a single token request. When the API answers 401, the client requests a new token and sends that call once more; a second 401 is returned as the error. Token requests use the `WithHTTPClient` and `WithTimeout` passed to `NewApp`, never the ones passed to a method call; with `WithTimeout(0)` a token request is still limited to 60 seconds. Canceling a call's `ctx` stops only that call's wait: the token request goes on for the other calls waiting on it.
 
-Each client keeps its own token, so build one client per installation and reuse it. A per-call `WithBaseURL` must keep the scheme and host given to `NewApp`, because the token is issued for that API; another one fails the call with code `invalid_argument`.
+Each client keeps its own token, so build one client per installation and reuse it. The token is issued for the API given to `NewApp`, so a per-call base URL with a different scheme or host fails the call with code `invalid_argument`.
 
 When the login server refuses the credentials, the call fails with `ErrorTypeAuthentication`, the HTTP status of the token response, and the OAuth error as `Code`:
 

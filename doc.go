@@ -15,9 +15,10 @@
 //
 // # Clickmax Apps
 //
-// A Clickmax App is installed by many workspaces. [ExchangeInstallCode] turns
-// the code of an install into an installation, and [NewApp] builds a client
-// for one installation from the app's client id and secret. That client
+// A Clickmax App is installed by many workspaces. [ExchangeInstallCode]
+// exchanges the authorization code of an install for its installation ID, and
+// [NewApp] builds a client for one installation from the app's client id and
+// secret. That client
 // requests, caches and renews installation tokens on its own:
 //
 //	c, err := clickmax.NewApp(clickmax.AppCredentials{
