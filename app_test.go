@@ -245,6 +245,79 @@ func TestAppCallerGivingUpKeepsTheTokenRequest(t *testing.T) {
 	}
 }
 
+type httpClientFunc func(*http.Request) (*http.Response, error)
+
+func (f httpClientFunc) Do(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestAppHungLoginServerWithoutTimeout(t *testing.T) {
+	var mu sync.Mutex
+	tokenReqs := 0
+	client := httpClientFunc(func(r *http.Request) (*http.Response, error) {
+		body := `{"data":[]}`
+		if strings.HasSuffix(r.URL.Path, "/oauth2/token") {
+			mu.Lock()
+			tokenReqs++
+			first := tokenReqs == 1
+			mu.Unlock()
+			if first {
+				<-r.Context().Done()
+				return nil, r.Context().Err()
+			}
+			body = `{"access_token":"t2","expires_in":600}`
+		}
+		return &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(body)), Request: r}, nil
+	})
+	c, err := NewApp(AppCredentials{ClientID: clientID, ClientSecret: prodSecret, InstallationID: installationID}, WithHTTPClient(client), WithTimeout(0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.cfg.app.fallbackTimeout = 20 * time.Millisecond
+
+	// The calls' own deadline turns a regression into a failure instead of a
+	// hang; it is far above the 20ms bound.
+	call := func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return c.do(ctx, http.MethodGet, "/whoami", nil, nil, nil, nil)
+	}
+	if e := asError(t, call()); e.Type != ErrorTypeTimeout {
+		t.Fatalf("call during the hung token request got %+v, want a timeout", e)
+	}
+	if err := call(); err != nil {
+		t.Fatalf("later call: %v", err)
+	}
+}
+
+func TestAPIResource(t *testing.T) {
+	cases := []struct {
+		baseURL string
+		want    string // "" means an error
+	}{
+		{"https://MCP.Example.test:443/api/v0", "https://mcp.example.test/api"},
+		{"http://localhost:80/api/v0", "http://localhost/api"},
+		{"http://localhost:8080/api/v0", "http://localhost:8080/api"},
+		{"https://mcp.example.test:/api/v0", "https://mcp.example.test/api"},
+		{"https://mcp.example.test:0443/api/v0", "https://mcp.example.test/api"},
+		{"http://[0:0:0:0:0:0:0:1]:8080/api/v0", "http://[::1]:8080/api"},
+		{"https://[2001:DB8::1]/api/v0", "https://[2001:db8::1]/api"},
+		{"https://xn--bcher-kva.example/api/v0", "https://xn--bcher-kva.example/api"},
+		{"https://bücher.example/api/v0", ""},
+		{"https://mcp.example.test:65536/api/v0", ""},
+	}
+	for _, tc := range cases {
+		got, err := apiResource(tc.baseURL)
+		if tc.want == "" {
+			if err == nil {
+				t.Errorf("apiResource(%q) = %q, want an error", tc.baseURL, got)
+			}
+			continue
+		}
+		if err != nil || got != tc.want {
+			t.Errorf("apiResource(%q) = %q, %v; want %q", tc.baseURL, got, err, tc.want)
+		}
+	}
+}
+
 func TestAppTokenFailures(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -320,6 +393,7 @@ func TestNewAppRejects(t *testing.T) {
 		{"staging secret without WithBaseURL ignores host override", staging, apiURL, []Option{WithAuthURL(authURL)}},
 		{"staging secret without WithAuthURL", staging, "", []Option{WithBaseURL(apiURL)}},
 		{"non-http auth URL", creds, "", []Option{WithAuthURL("ftp://login.example.test")}},
+		{"non-ASCII API host", creds, "", []Option{WithBaseURL("https://bücher.example/api/v0")}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

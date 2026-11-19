@@ -117,7 +117,10 @@ func WithHeader(key, value string) Option {
 //
 // On a client built with [NewApp], the limit of a method call also covers
 // waiting for an installation token and the retry after a 401. The token
-// request itself is limited by the timeout given to NewApp.
+// request itself is limited by the timeout given to NewApp, or by 60 seconds
+// when that timeout is 0, so a login server that never answers cannot hold
+// every later call. [ExchangeInstallCode] runs on the caller's ctx and keeps 0
+// as no limit.
 //
 // A negative d makes [New] and [NewApp] return an error. On a method call or
 // [ExchangeInstallCode] it fails that call with [ErrorTypeInvalidRequest] and

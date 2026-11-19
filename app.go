@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // DefaultAuthURL is the production login server. [NewApp] and
@@ -59,10 +62,14 @@ type AppCredentials struct {
 // call and sends it as the bearer token. It reuses the token until one minute
 // before it expires, and concurrent calls that need a new one wait on a single
 // token request. When the API answers 401, the client requests a new token and
-// sends that call once more; a second 401 is returned. Token requests use the
-// [WithHTTPClient] and [WithTimeout] given to NewApp, never the ones passed to
-// a method call, and a caller that gives up waiting does not cancel the token
-// request for the others.
+// sends that call once more; a second 401 is returned, and when the new token
+// cannot be obtained the call returns that token error instead.
+//
+// Token requests use the [WithHTTPClient] and [WithTimeout] given to NewApp,
+// never the ones passed to a method call, and a caller that gives up waiting
+// does not cancel the token request for the others. With WithTimeout(0) a
+// token request is still limited to 60 seconds, so a login server that never
+// answers cannot hold every later call.
 //
 // When the login server refuses the credentials or the installation, the call
 // fails with [ErrorTypeAuthentication], the status of the token response and
@@ -70,9 +77,10 @@ type AppCredentials struct {
 // "invalid_grant".
 //
 // NewApp makes no request. It returns an error when a credential is empty or
-// malformed, when an option is invalid, or when a client secret issued for
+// malformed, when an option is invalid, when a client secret issued for
 // another environment ("cxd_cs_", "cxs_cs_", "cxt_cs_") lacks [WithBaseURL]
-// or [WithAuthURL].
+// or [WithAuthURL], or when the base URL host is an internationalized domain
+// name not written in its ASCII ("xn--") form.
 func NewApp(creds AppCredentials, opts ...Option) (*Client, error) {
 	cfg := settings{header: http.Header{}, timeout: defaultTimeout}.with(opts)
 	endpoint, env, err := appTokenEndpoint(creds.ClientID, creds.ClientSecret, cfg)
@@ -89,12 +97,17 @@ func NewApp(creds AppCredentials, opts ...Option) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("clickmax: %w", err)
 	}
+	resource, err := apiResource(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("clickmax: %w", err)
+	}
 	cfg.baseURL = baseURL
 	cfg.app = &installationTokens{
-		endpoint:       endpoint,
-		installationID: creds.InstallationID,
-		resource:       apiResource(baseURL),
-		now:            time.Now,
+		endpoint:        endpoint,
+		installationID:  creds.InstallationID,
+		resource:        resource,
+		now:             time.Now,
+		fallbackTimeout: defaultTimeout,
 	}
 	return newClient(cfg), nil
 }
@@ -237,7 +250,7 @@ func appTokenEndpoint(clientID, clientSecret string, cfg settings) (tokenEndpoin
 		return tokenEndpoint{}, secretEnvironment{}, errors.New("missing ClientID")
 	}
 	if clientSecret == "" {
-		return tokenEndpoint{}, secretEnvironment{}, errors.New("missing client secret")
+		return tokenEndpoint{}, secretEnvironment{}, errors.New("missing ClientSecret")
 	}
 	var env secretEnvironment
 	known := false
@@ -265,19 +278,47 @@ func appTokenEndpoint(clientID, clientSecret string, cfg settings) (tokenEndpoin
 }
 
 // apiResource is the audience of installation tokens: the origin of the API
-// followed by /api, whatever version path the base URL carries. Host case and
-// default ports are normalized as the WHATWG URL parser does, so the value
-// matches what other Clickmax SDKs send.
-func apiResource(baseURL string) string {
+// followed by /api, whatever version path the base URL carries. The origin is
+// serialized as the WHATWG URL parser does (lowercase host, compressed IPv6,
+// no empty or default port), because the login server compares the audience
+// as a string.
+func apiResource(baseURL string) (string, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	host := strings.ToLower(u.Host)
-	if (u.Scheme == "https" && strings.HasSuffix(host, ":443")) || (u.Scheme == "http" && strings.HasSuffix(host, ":80")) {
-		host = host[:strings.LastIndexByte(host, ':')]
+	host, port := u.Hostname(), u.Port()
+	if strings.Contains(host, ":") {
+		// Zones are rejected because URLs cannot carry them.
+		addr, err := netip.ParseAddr(host)
+		if err != nil || addr.Zone() != "" {
+			return "", fmt.Errorf("base URL host %q is not a valid IPv6 address", host)
+		}
+		host = "[" + addr.String() + "]"
+	} else {
+		for i := 0; i < len(host); i++ {
+			// The WHATWG parser would convert it to punycode; the SDK has no
+			// IDNA tables, and the login server refuses any other form.
+			if host[i] >= utf8.RuneSelf {
+				return "", fmt.Errorf("base URL host %q must be written in its ASCII (punycode, \"xn--\") form", host)
+			}
+		}
+		host = strings.ToLower(host)
 	}
-	return u.Scheme + "://" + host + "/api"
+	if port != "" {
+		n, err := strconv.ParseUint(port, 10, 16)
+		if err != nil {
+			return "", fmt.Errorf("base URL port %q is not a valid port", port)
+		}
+		port = strconv.FormatUint(n, 10)
+		if (u.Scheme == "https" && port == "443") || (u.Scheme == "http" && port == "80") {
+			port = ""
+		}
+	}
+	if port != "" {
+		host += ":" + port
+	}
+	return u.Scheme + "://" + host + "/api", nil
 }
 
 // installationTokens keeps the installation token of one client: reused until
@@ -288,6 +329,10 @@ type installationTokens struct {
 	installationID string
 	resource       string
 	now            func() time.Time // replaced in tests
+	// fallbackTimeout bounds a token request when the client has no timeout:
+	// callers can stop waiting, but a request that never ends would stay
+	// pending and every later call would join it. Shortened in tests.
+	fallbackTimeout time.Duration
 
 	mu        sync.Mutex
 	token     string // "" when none is cached
@@ -353,23 +398,44 @@ func (t *installationTokens) renew(ctx context.Context, rejected string) (string
 // fetch runs detached from every caller, so one caller giving up does not fail
 // the others waiting on the same request. The client's timeout bounds it.
 func (t *installationTokens) fetch(req *tokenRequest) {
+	var (
+		token    string
+		lifetime time.Duration
+		err      *Error
+	)
 	// Measured before the request, so time in flight counts against the token.
 	startedAt := t.now()
-	token, lifetime, err := t.request()
-	t.mu.Lock()
-	// A failure is not cached: the next call tries again.
-	if err == nil {
-		t.token = token
-		t.refreshAt = startedAt.Add(lifetime - min(tokenRefreshMargin, lifetime/2))
-	}
-	t.pending = nil
-	t.mu.Unlock()
-	req.token, req.err = token, err
-	close(req.done)
+	defer func() {
+		// A panicking HTTPClient would otherwise crash the program from a
+		// goroutine the caller cannot guard, and leave every waiter blocked.
+		if r := recover(); r != nil {
+			token, err = "", &Error{
+				Type:    ErrorTypeNetwork,
+				Code:    string(ErrorTypeNetwork),
+				Message: "token request panicked",
+				Err:     fmt.Errorf("%v", r),
+			}
+		}
+		t.mu.Lock()
+		// A failure is not cached: the next call tries again.
+		if err == nil {
+			t.token = token
+			t.refreshAt = startedAt.Add(lifetime - min(tokenRefreshMargin, lifetime/2))
+		}
+		t.pending = nil
+		t.mu.Unlock()
+		req.token, req.err = token, err
+		close(req.done)
+	}()
+	token, lifetime, err = t.request()
 }
 
 func (t *installationTokens) request() (string, time.Duration, *Error) {
-	status, body, err := postToken(context.Background(), t.endpoint, url.Values{
+	endpoint := t.endpoint
+	if endpoint.timeout == 0 {
+		endpoint.timeout = t.fallbackTimeout
+	}
+	status, body, err := postToken(context.Background(), endpoint, url.Values{
 		"grant_type":      {installationGrantType},
 		"installation_id": {t.installationID},
 		"resource":        {t.resource},
@@ -471,10 +537,11 @@ func tokenError(status int, header http.Header, data []byte, body map[string]jso
 		return errorFromResponse(status, header, data)
 	}
 	return &Error{
-		Type:    ErrorTypeAuthentication,
-		Code:    oauthErr,
-		Status:  status,
-		Message: firstNonEmpty(stringField(body, "error_description"), oauthErr),
-		Raw:     data,
+		Type:      ErrorTypeAuthentication,
+		Code:      oauthErr,
+		Status:    status,
+		Message:   firstNonEmpty(stringField(body, "error_description"), oauthErr),
+		RequestID: header.Get("Cf-Ray"),
+		Raw:       data,
 	}
 }

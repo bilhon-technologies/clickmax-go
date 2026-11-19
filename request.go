@@ -27,8 +27,14 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 			return invalidArgument(err)
 		}
 		// The installation token would be refused by an API on another origin.
-		if cfg.app != nil && apiResource(baseURL) != cfg.app.resource {
-			return invalidArgument(fmt.Errorf("base URL %q is not on the API the client's installation tokens are issued for (%s); build another client with NewApp", cfg.baseURL, cfg.app.resource))
+		if cfg.app != nil {
+			resource, err := apiResource(baseURL)
+			if err != nil {
+				return invalidArgument(err)
+			}
+			if resource != cfg.app.resource {
+				return invalidArgument(fmt.Errorf("base URL %q is not on the API the client's installation tokens are issued for (%s); build another client with NewApp", cfg.baseURL, cfg.app.resource))
+			}
 		}
 		cfg.baseURL = baseURL
 	}
