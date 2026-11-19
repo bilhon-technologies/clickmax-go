@@ -24,7 +24,9 @@ const (
 	// refused to send (code "invalid_argument"). Fix the call before retrying.
 	ErrorTypeInvalidRequest ErrorType = "invalid_request"
 	// ErrorTypeAuthentication means the API key is missing, revoked or invalid
-	// (HTTP 401).
+	// (HTTP 401), or the login server refused the credentials, installation or
+	// install code of an app. In the second case [Error.Code] is the OAuth
+	// error, such as "invalid_client" or "invalid_grant".
 	ErrorTypeAuthentication ErrorType = "authentication"
 	// ErrorTypePlanLimit means the workspace plan does not allow the operation
 	// or a quota is used up (HTTP 402). [Error.Metric] names the quota.
@@ -53,7 +55,9 @@ const (
 	// ErrorTypeAborted means the context of the call was canceled.
 	ErrorTypeAborted ErrorType = "aborted"
 	// ErrorTypeParse means a 2xx response carried a body that could not be
-	// decoded. [Error.Raw] holds it.
+	// decoded, or a token response from the login server lacked a required
+	// field. [Error.Raw] holds the body, except for token responses, which
+	// can carry credentials.
 	ErrorTypeParse ErrorType = "parse"
 )
 
@@ -96,6 +100,8 @@ type Error struct {
 	// set when Code is "upstream_error".
 	UpstreamStatus int
 	// Raw is the response body as received, or nil when there was none.
+	// Successful token responses are never kept, because they can carry
+	// credentials.
 	Raw []byte
 	// Err is the underlying cause, such as a network error or
 	// [context.Canceled]. [errors.Is] and [errors.As] see it through Unwrap.
